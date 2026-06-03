@@ -33,7 +33,9 @@ refactor/api/.env
 refactor/api/coverage/
 refactor/mobile/.expo/
 
-# ---- Jangan commit ke repo publik: kunci & sampah ----
+# ---- Jangan commit ke repo publik: kunci, kredensial & sampah ----
 instascan-master/deploy/id_rsa.enc
 instascan-master/deploy/id_rsa.pub
 application/application.zip
+refactor/TEST-USERS.md
+refactor/mobile/.env
