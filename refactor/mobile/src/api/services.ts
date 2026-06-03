@@ -20,6 +20,7 @@ import {
   TariffResult,
   UserProfile,
   TunggakanResponse,
+  KinerjaResponse,
   Worklist,
 } from '../types';
 
@@ -171,6 +172,13 @@ export async function apiTunggakan(page = 1, limit = 50) {
 }
 
 // OCR angka meter dari foto.
+export async function apiKinerja(month?: number, year?: number) {
+  const { data } = await api.get<KinerjaResponse>('/reports/kinerja', {
+    params: { month, year },
+  });
+  return data;
+}
+
 export async function apiOcrMeter(photoUri: string) {
   const form = new FormData();
   form.append('photo', {

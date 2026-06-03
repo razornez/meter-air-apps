@@ -28,4 +28,6 @@ export type RootStackParamList = {
   Worklist: undefined;
   // Sprint 10
   Tunggakan: undefined;
+  // Sprint 11
+  Kinerja: undefined;
 };

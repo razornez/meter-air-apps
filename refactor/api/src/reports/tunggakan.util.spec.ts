@@ -2,9 +2,9 @@ import { groupTunggakan, RawTunggakanRow } from './tunggakan.util';
 
 describe('groupTunggakan', () => {
   const rows: RawTunggakanRow[] = [
-    { customerId: 1, nama: 'A', alamat: 'x', total: 50000, denda: 5000, hariTelat: 100 },
-    { customerId: 1, nama: 'A', alamat: 'x', total: 30000, denda: 5000, hariTelat: 50 },
-    { customerId: 2, nama: 'B', alamat: 'y', total: 200000, denda: 5000, hariTelat: 200 },
+    { customerId: 1, nama: 'A', alamat: 'x', telp: '081234', total: 50000, denda: 5000, hariTelat: 100 },
+    { customerId: 1, nama: 'A', alamat: 'x', telp: '081234', total: 30000, denda: 5000, hariTelat: 50 },
+    { customerId: 2, nama: 'B', alamat: 'y', telp: null, total: 200000, denda: 5000, hariTelat: 200 },
   ];
 
   it('mengelompokkan multi-faktur per pelanggan', () => {
@@ -29,7 +29,7 @@ describe('groupTunggakan', () => {
 
   it('denda null dianggap 0', () => {
     const out = groupTunggakan([
-      { customerId: 5, nama: 'C', alamat: null, total: '15000', denda: null, hariTelat: '10' },
+      { customerId: 5, nama: 'C', alamat: null, telp: null, total: '15000', denda: null, hariTelat: '10' },
     ]);
     expect(out[0].totalDenda).toBe(0);
     expect(out[0].grandTotal).toBe(15000);

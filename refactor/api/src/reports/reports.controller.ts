@@ -29,6 +29,18 @@ export class ReportsController {
     return this.reports.worklist();
   }
 
+  // S11-03 — rekap kinerja pencatatan per petugas.
+  @Get('kinerja')
+  kinerja(
+    @Query('month') month?: string,
+    @Query('year') year?: string,
+  ) {
+    return this.reports.kinerja(
+      month ? parseInt(month, 10) : undefined,
+      year ? parseInt(year, 10) : undefined,
+    );
+  }
+
   // S10-00 — tunggakan + denda per pelanggan.
   @Get('tunggakan')
   tunggakan(

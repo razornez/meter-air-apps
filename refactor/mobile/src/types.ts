@@ -102,6 +102,7 @@ export interface TunggakanItem {
   customerId: number;
   nama: string | null;
   alamat: string | null;
+  telp: string | null;
   jumlahFaktur: number;
   totalTagihan: number;
   totalDenda: number;
@@ -214,6 +215,20 @@ export interface SupplierItem {
   telepon: string | null;
 }
 
+export interface KinerjaItem {
+  kasirId: number;
+  nama: string;
+  jumlah: number;
+  pct: number;
+}
+
+export interface KinerjaResponse {
+  periode: string;
+  total: number;
+  totalPelanggan: number;
+  data: KinerjaItem[];
+}
+
 export interface FakturDetail {
   noFaktur: string | null;
   tanggal: string | null;
@@ -230,6 +245,7 @@ export interface FakturDetail {
     nama: string | null;
     alamat: string | null;
     tipe: string | null;
+    telp?: string | null;
   } | null;
   items: {
     produk: string | null;

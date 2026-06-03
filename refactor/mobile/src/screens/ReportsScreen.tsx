@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { apiReportMonthly, apiReportSummary } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -8,7 +10,9 @@ import { fonts, formatRupiah, palette, radius, shadow, tracking, Theme } from '.
 import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
 
-export default function ReportsScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'Reports'>;
+
+export default function ReportsScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
   const [summary, setSummary] = useState<ReportSummary | null>(null);
@@ -69,6 +73,19 @@ export default function ReportsScreen() {
         <Kpi t={t} s={s} label="Pemakaian" value={`${b.pemakaianM3} m³`} />
         <Kpi t={t} s={s} label="Rata/Faktur" value={b.jumlahFaktur ? formatRupiah(Math.round(b.totalTagihan / b.jumlahFaktur)) : '-'} />
       </View>
+
+      <TouchableOpacity
+        style={s.kinerjaCard}
+        onPress={() => navigation.navigate('Kinerja')}
+        activeOpacity={0.85}
+      >
+        <Text style={s.kinerjaIcon}>👷</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={s.kinerjaTitle}>Rekap Kinerja Petugas</Text>
+          <Text style={s.kinerjaSubtitle}>Jumlah catatan per petugas per periode</Text>
+        </View>
+        <Text style={s.kinerjaChevron}>›</Text>
+      </TouchableOpacity>
 
       <Text style={s.section}>Rekap 6 Bulan</Text>
       {monthly.length === 0 ? (
@@ -159,4 +176,20 @@ const createStyles = (t: Theme) =>
     monthRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
     val: { fontFamily: fonts.semibold, color: t.text },
     muted: { color: t.muted, fontFamily: fonts.regular },
+    kinerjaCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.surface,
+      borderRadius: radius.lg,
+      padding: 14,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: t.border,
+      gap: 10,
+      ...shadow.soft,
+    },
+    kinerjaIcon: { fontSize: 26 },
+    kinerjaTitle: { fontFamily: fonts.bold, color: t.text, fontSize: 15 },
+    kinerjaSubtitle: { color: t.muted, fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },
+    kinerjaChevron: { fontSize: 22, color: t.muted },
   });

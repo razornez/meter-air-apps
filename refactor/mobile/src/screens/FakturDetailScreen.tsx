@@ -12,6 +12,7 @@ import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
 import { buildFakturHtml } from '../utils/fakturHtml';
+import { buildWAMessage, openWA } from '../utils/whatsapp';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FakturDetail'>;
 
@@ -63,6 +64,27 @@ export default function FakturDetailScreen({ route }: Props) {
         },
       },
     ]);
+  }
+
+  async function onSendWA() {
+    if (!data) return;
+    const phone = data.pelanggan?.telp;
+    const msg = buildWAMessage({
+      namaCustomer: data.pelanggan?.nama ?? null,
+      noFaktur: data.noFaktur,
+      total: data.total ?? 0,
+      tglJatuhTempo: data.tglJatuhTempo,
+      namaPerusahaan: config?.perusahaan,
+    });
+    const ok = await openWA(phone, msg);
+    if (!ok) {
+      Alert.alert(
+        'WhatsApp tidak bisa dibuka',
+        phone
+          ? `Nomor "${phone}" tidak dapat diproses. Pastikan WhatsApp terpasang.`
+          : 'Pelanggan ini tidak punya nomor HP yang terdaftar.',
+      );
+    }
   }
 
   async function onPrintOrShare(share: boolean) {
@@ -117,6 +139,16 @@ export default function FakturDetailScreen({ route }: Props) {
           <Text style={s.actionGhostText}>📤 Bagikan</Text>
         </TouchableOpacity>
       </View>
+      {/* Tombol WA — hanya tampil bila belum lunas (reminder tagihan) */}
+      {!data.isLunas && (
+        <TouchableOpacity
+          style={[s.waBtn, acting && { opacity: 0.5 }]}
+          onPress={onSendWA}
+          disabled={acting}
+        >
+          <Text style={s.waBtnText}>📲 Kirim Reminder via WhatsApp</Text>
+        </TouchableOpacity>
+      )}
       {acting && (
         <View style={s.actingRow}>
           <ActivityIndicator color={t.primary} />
@@ -191,6 +223,14 @@ const createStyles = (t: Theme) =>
     actionGhost: { borderWidth: 1.5, borderColor: t.primary, backgroundColor: 'transparent' },
     actionGhostText: { color: t.primary, fontFamily: fonts.bold, fontSize: 13 },
     actingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    waBtn: {
+      backgroundColor: '#25D366', // warna hijau WhatsApp
+      borderRadius: radius.sm,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    waBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
     card: {
       backgroundColor: t.surface,
       borderRadius: radius.lg,

@@ -6,10 +6,11 @@ import { Faktur } from '../meter/entities/faktur.entity';
 import { Transaksi } from '../meter/entities/transaksi.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { HistoryMeter } from '../meter/entities/history-meter.entity';
+import { User } from '../auth/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Faktur, Transaksi, Customer, HistoryMeter]),
+    TypeOrmModule.forFeature([Faktur, Transaksi, Customer, HistoryMeter, User]),
   ],
   controllers: [ReportsController],
   providers: [ReportsService],

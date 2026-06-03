@@ -5,6 +5,7 @@ import { RootStackParamList } from '../navigation/types';
 import { apiTunggakan } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { TunggakanItem, TunggakanResponse } from '../types';
+import { buildWAMessage, formatPhoneWA, openWA } from '../utils/whatsapp';
 import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
@@ -87,6 +88,24 @@ export default function TunggakanScreen({ navigation }: Props) {
             <View style={s.right}>
               <Text style={s.grand}>{formatRupiah(item.grandTotal)}</Text>
               {item.totalDenda > 0 && <Text style={s.denda}>denda {formatRupiah(item.totalDenda)}</Text>}
+              {/* Tombol WA — hanya tampil bila ada nomor HP valid */}
+              {!!formatPhoneWA(item.telp) && (
+                <TouchableOpacity
+                  style={s.waSmall}
+                  onPress={async (e) => {
+                    e.stopPropagation?.();
+                    const msg = buildWAMessage({
+                      namaCustomer: item.nama,
+                      noFaktur: `${item.jumlahFaktur} faktur`,
+                      total: item.grandTotal,
+                      tglJatuhTempo: null,
+                    });
+                    await openWA(item.telp, msg);
+                  }}
+                >
+                  <Text style={s.waSmallText}>📲 WA</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </TouchableOpacity>
         )}
@@ -135,5 +154,14 @@ const createStyles = (t: Theme) =>
     right: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 8 },
     grand: { color: t.danger, fontFamily: fonts.displayBold, fontSize: 15 },
     denda: { color: t.warning, fontSize: 11, marginTop: 2, fontFamily: fonts.medium },
+    waSmall: {
+      marginTop: 6,
+      backgroundColor: '#25D366',
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      alignItems: 'center',
+    },
+    waSmallText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12 },
     footer: { textAlign: 'center', padding: 14, color: t.muted, fontFamily: fonts.regular },
   });

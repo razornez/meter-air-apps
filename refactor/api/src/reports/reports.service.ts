@@ -5,6 +5,7 @@ import { Faktur } from '../meter/entities/faktur.entity';
 import { Transaksi } from '../meter/entities/transaksi.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { HistoryMeter } from '../meter/entities/history-meter.entity';
+import { User } from '../auth/entities/user.entity';
 import { normalizeMonthlyRow, RawMonthlyRow } from './reports.util';
 import { AnomalyType, detectUsageAnomaly } from './anomaly.util';
 import { partitionWorklist } from './worklist.util';
@@ -38,6 +39,46 @@ export class ReportsService {
     private readonly history: Repository<HistoryMeter>,
   ) {}
 
+  // S11-03 — rekap kinerja pencatatan per petugas.
+  async kinerja(month?: number, year?: number) {
+    const now = new Date();
+    const m = month ?? now.getMonth() + 1;
+    const y = year ?? now.getFullYear();
+
+    const rows = await this.faktur
+      .createQueryBuilder('f')
+      .leftJoin(User, 'u', 'u.id_user = f.kasir')
+      .select('f.kasir', 'kasirId')
+      .addSelect('COALESCE(u.fullname, u.username, "Tidak dikenal")', 'nama')
+      .addSelect('COUNT(f.id)', 'jumlah')
+      .where('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
+      .andWhere('f.kasir IS NOT NULL')
+      .groupBy('f.kasir')
+      .addGroupBy('u.fullname')
+      .addGroupBy('u.username')
+      .orderBy('jumlah', 'DESC')
+      .getRawMany<{
+        kasirId: string | number;
+        nama: string;
+        jumlah: string | number;
+      }>();
+
+    const total = rows.reduce((s, r) => s + Number(r.jumlah), 0);
+    const data = rows.map((r) => ({
+      kasirId: Number(r.kasirId),
+      nama: r.nama,
+      jumlah: Number(r.jumlah),
+      pct: total > 0 ? Math.round((Number(r.jumlah) / total) * 100) : 0,
+    }));
+
+    return {
+      periode: `${y}-${String(m).padStart(2, '0')}`,
+      total,
+      totalPelanggan: await this.customers.count(),
+      data,
+    };
+  }
+
   // S10-00 — tunggakan + denda: daftar pelanggan menunggak dikelompokkan per pelanggan.
   async tunggakan(page = 1, limit = 50) {
     const take = Math.min(Math.max(limit, 1), 200);
@@ -49,6 +90,7 @@ export class ReportsService {
       .select('f.customer', 'customerId')
       .addSelect('c.nama', 'nama')
       .addSelect('c.alamat', 'alamat')
+      .addSelect('c.telp', 'telp')
       .addSelect('f.total', 'total')
       .addSelect('COALESCE(f.denda, 0)', 'denda')
       .addSelect('DATEDIFF(NOW(), f.tgl_jatuh_tempo)', 'hariTelat')

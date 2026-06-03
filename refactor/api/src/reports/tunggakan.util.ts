@@ -4,6 +4,7 @@ export interface RawTunggakanRow {
   customerId: number | string;
   nama: string | null;
   alamat: string | null;
+  telp: string | null;
   total: number | string | null;
   denda: number | string | null;
   hariTelat: number | string | null;
@@ -13,6 +14,7 @@ export interface TunggakanItem {
   customerId: number;
   nama: string | null;
   alamat: string | null;
+  telp: string | null;
   jumlahFaktur: number;
   totalTagihan: number;
   totalDenda: number;
@@ -36,11 +38,14 @@ export function groupTunggakan(rows: RawTunggakanRow[]): TunggakanItem[] {
       existing.totalDenda += denda;
       existing.grandTotal += tagihan + denda;
       existing.hariTelatMax = Math.max(existing.hariTelatMax, hari);
+      // ambil telp bila belum ada
+      if (!existing.telp && r.telp) existing.telp = r.telp;
     } else {
       map.set(id, {
         customerId: id,
         nama: r.nama,
         alamat: r.alamat,
+        telp: r.telp,
         jumlahFaktur: 1,
         totalTagihan: tagihan,
         totalDenda: denda,

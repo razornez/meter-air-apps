@@ -189,6 +189,7 @@ export class FakturService {
             nama: pelanggan.nama,
             alamat: pelanggan.alamat,
             tipe: pelanggan.tipe,
+            telp: pelanggan.telp,
           }
         : null,
       items: items.map((t) => ({

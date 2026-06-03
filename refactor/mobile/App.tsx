@@ -40,6 +40,7 @@ import SetLocationScreen from './src/screens/SetLocationScreen';
 import AnomalyScreen from './src/screens/AnomalyScreen';
 import WorklistScreen from './src/screens/WorklistScreen';
 import TunggakanScreen from './src/screens/TunggakanScreen';
+import KinerjaScreen from './src/screens/KinerjaScreen';
 import { fonts, gradients } from './src/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -80,6 +81,7 @@ function RootNavigator() {
           <Stack.Screen name="Anomaly" component={AnomalyScreen} options={{ title: 'Anomali Konsumsi' }} />
           <Stack.Screen name="Worklist" component={WorklistScreen} options={{ title: 'Worklist Pencatatan' }} />
           <Stack.Screen name="Tunggakan" component={TunggakanScreen} options={{ title: 'Tunggakan & Denda' }} />
+          <Stack.Screen name="Kinerja" component={KinerjaScreen} options={{ title: 'Rekap Kinerja' }} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
