@@ -95,6 +95,20 @@ export interface CustomerMarker {
   status: 'lunas' | 'belum' | 'none';
 }
 
+export interface Anomaly {
+  customerId: number;
+  nama: string | null;
+  alamat: string | null;
+  type: 'lonjakan' | 'nol' | 'turun';
+  severity: 'tinggi' | 'sedang';
+  latest: number;
+  rata: number;
+  rasio: number;
+  alasan: string;
+  lastMeter: number;
+  tanggal: string;
+}
+
 export interface MeterHistoryItem {
   id: number;
   tanggal: string;

@@ -84,6 +84,8 @@ async function main() {
     ['GET  /faktur/payments', 'GET', `/faktur/payments?noFaktur=${encodeURIComponent(sampleFaktur)}`, { token }],
     ['GET  /reports/summary', 'GET', '/reports/summary', { token }],
     ['GET  /reports/monthly=12', 'GET', '/reports/monthly?months=12', { token }],
+    ['GET  /reports/anomalies', 'GET', '/reports/anomalies', { token }],
+    ['GET  /customers/map', 'GET', '/customers/map', { token }],
     ['GET  /produk', 'GET', '/produk?limit=20', { token }],
     ['GET  /supplier', 'GET', '/supplier?limit=20', { token }],
     ['GET  /config', 'GET', '/config', { token }],

@@ -58,6 +58,20 @@ mencegah full-scan pada query lookup terberat:
 > Tanpa index, `/customers/snapshot` (subquery `MAX(id)` per 658 pelanggan) berisiko
 > lambat. Dengan index, turun ke belasan milidetik.
 
+## Update (E8/E9)
+
+Endpoint baru masuk guardrail `npm run perf`:
+
+| Endpoint | max | Catatan |
+|----------|----:|---------|
+| GET /reports/anomalies | ~16 ms | deteksi anomali (scan history in-memory) |
+| GET /customers/map | ~61 ms | setelah 658 pelanggan diberi koordinat |
+
+> ⚠️ **Regresi tertangkap guardrail:** setelah semua 658 pelanggan diberi koordinat,
+> `/customers/map` sempat **1133 ms** (subquery korelasi `MAX(faktur.id)` × 658).
+> Diperbaiki dengan **derived-table JOIN** (hitung MAX sekali) → turun ke **61 ms**.
+> Bukti nyata budget < 1 detik menjaga kualitas.
+
 ## Catatan
 
 - Guardrail ini menguji **latensi per request** di lingkungan lokal. Untuk produksi,

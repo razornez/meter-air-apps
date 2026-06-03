@@ -21,4 +21,6 @@ export type RootStackParamList = {
     lat: number | null;
     lng: number | null;
   };
+  // Sprint 8 (anomali)
+  Anomaly: undefined;
 };

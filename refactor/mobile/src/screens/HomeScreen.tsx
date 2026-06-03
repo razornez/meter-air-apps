@@ -177,6 +177,15 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.mapSub}>Sebaran pelanggan & status bayar</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.anomalyCard}
+        onPress={() => navigation.navigate('Anomaly')}
+      >
+        <Text style={styles.menuIcon}>⚠️</Text>
+        <Text style={styles.mapLabel}>Anomali Konsumsi</Text>
+        <Text style={styles.mapSub}>Deteksi bocor / meter rusak otomatis</Text>
+      </TouchableOpacity>
+
       <View style={styles.cacheRow}>
         <Text style={styles.cacheText}>
           📇 Cache: {cacheCount} pelanggan · {formatSyncedAt(cacheSyncedAt)}
@@ -316,6 +325,13 @@ const styles = StyleSheet.create({
   },
   mapLabel: { marginTop: 6, fontWeight: '700', color: '#fff', fontSize: 16 },
   mapSub: { color: '#E0F7FA', fontSize: 12, marginTop: 2 },
+  anomalyCard: {
+    backgroundColor: colors.warning,
+    borderRadius: 14,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginTop: 12,
+  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',

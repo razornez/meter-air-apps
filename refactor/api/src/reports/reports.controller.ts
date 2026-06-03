@@ -16,4 +16,10 @@ export class ReportsController {
   monthly(@Query('months') months?: string) {
     return this.reports.monthly(months ? parseInt(months, 10) : 6);
   }
+
+  // S8-01 — daftar anomali konsumsi.
+  @Get('anomalies')
+  anomalies(@Query('limit') limit?: string) {
+    return this.reports.anomalies(limit ? parseInt(limit, 10) : 100);
+  }
 }

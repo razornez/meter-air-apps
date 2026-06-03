@@ -105,7 +105,10 @@ pemakaian melimpah ke level berikutnya; level terakhir menampung semua sisa.
   - Marker pelanggan berwarna status bayar (hijau=lunas/merah=belum/abu=tanpa tagihan),
     admin atur titik via peta. `GET /customers/map` + `PATCH /:id/location`.
   - 41 test backend, 28 test mobile. Lintas-platform (web iframe / native webview).
-- [ ] **Backlog** — E8b (GPS petugas + impor koordinat) · pembayaran digital · OCR meter
+- [x] **E9** — Deteksi Anomali Konsumsi (rule-based, gratis) — **SELESAI & TERUJI**
+  - `GET /reports/anomalies` deteksi lonjakan(bocor)/nol(meter rusak)/turun; layar Anomali.
+  - Menemukan kasus nyata (rasio puluhan kali). 48 test backend, 28 mobile. Latensi 15ms.
+- [ ] **Backlog** — Pengaduan+lapor kebocoran (peta, gratis) · pembayaran QRIS · WhatsApp · OCR
 
 ## Test (guardrail)
 

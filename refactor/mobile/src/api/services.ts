@@ -1,6 +1,7 @@
 import { api } from './client';
 import { CachedCustomer } from '../offline/customerCache';
 import {
+  Anomaly,
   AppConfig,
   CustomerDetail,
   CustomerListItem,
@@ -144,6 +145,13 @@ export async function apiReportSummary() {
 export async function apiReportMonthly(months = 6) {
   const { data } = await api.get<MonthlyReport[]>('/reports/monthly', {
     params: { months },
+  });
+  return data;
+}
+
+export async function apiAnomalies(limit = 100) {
+  const { data } = await api.get<Anomaly[]>('/reports/anomalies', {
+    params: { limit },
   });
   return data;
 }

@@ -20,6 +20,7 @@ import ReportsScreen from './src/screens/ReportsScreen';
 import MasterDataScreen from './src/screens/MasterDataScreen';
 import MapScreen from './src/screens/MapScreen';
 import SetLocationScreen from './src/screens/SetLocationScreen';
+import AnomalyScreen from './src/screens/AnomalyScreen';
 import { colors } from './src/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -99,6 +100,11 @@ function RootNavigator() {
             name="SetLocation"
             component={SetLocationScreen}
             options={{ title: 'Atur Lokasi' }}
+          />
+          <Stack.Screen
+            name="Anomaly"
+            component={AnomalyScreen}
+            options={{ title: 'Anomali Konsumsi' }}
           />
         </>
       ) : (

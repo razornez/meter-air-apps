@@ -118,14 +118,22 @@ export class CustomersService {
   }
 
   // S7-01 — titik pelanggan ber-koordinat + status bayar (faktur terakhir).
+  // Optimasi: MAX(faktur.id) per pelanggan dihitung SEKALI (derived table) lalu
+  // di-join — hindari subquery korelasi per baris (jaga budget < 1 detik).
   async mapMarkers() {
     const rows = (await this.customers
       .createQueryBuilder('c')
       .leftJoin(
-        'faktur',
-        'f',
-        'f.id = (SELECT MAX(f2.id) FROM faktur f2 WHERE f2.customer = c.id)',
+        (qb) =>
+          qb
+            .select('f2.customer', 'customer')
+            .addSelect('MAX(f2.id)', 'maxid')
+            .from(Faktur, 'f2')
+            .groupBy('f2.customer'),
+        'mx',
+        'mx.customer = c.id',
       )
+      .leftJoin(Faktur, 'f', 'f.id = mx.maxid')
       .select('c.id', 'id')
       .addSelect('c.nama', 'nama')
       .addSelect('c.alamat', 'alamat')
