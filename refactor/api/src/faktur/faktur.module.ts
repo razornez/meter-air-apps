@@ -7,6 +7,7 @@ import { Transaksi } from '../meter/entities/transaksi.entity';
 import { HistoryMeter } from '../meter/entities/history-meter.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
+import { Pembayaran } from './entities/pembayaran.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ActivityLog } from '../auth/entities/activity-log.entity';
       HistoryMeter,
       Customer,
       ActivityLog,
+      Pembayaran,
     ]),
   ],
   controllers: [FakturController],

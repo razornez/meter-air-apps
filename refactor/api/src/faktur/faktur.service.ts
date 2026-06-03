@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { Faktur } from '../meter/entities/faktur.entity';
@@ -6,6 +6,7 @@ import { Transaksi } from '../meter/entities/transaksi.entity';
 import { HistoryMeter } from '../meter/entities/history-meter.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
+import { Pembayaran } from './entities/pembayaran.entity';
 import { ListFakturDto } from './dto/list-faktur.dto';
 import { normalizeFakturRow, RawFakturRow } from './faktur-mapper.util';
 
@@ -13,6 +14,8 @@ const MAX_LIMIT = 100;
 
 @Injectable()
 export class FakturService {
+  private readonly logger = new Logger(FakturService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(Faktur) private readonly faktur: Repository<Faktur>,
@@ -24,7 +27,48 @@ export class FakturService {
     private readonly customers: Repository<Customer>,
     @InjectRepository(ActivityLog)
     private readonly logs: Repository<ActivityLog>,
+    @InjectRepository(Pembayaran)
+    private readonly pembayaran: Repository<Pembayaran>,
   ) {}
+
+  /**
+   * TD-5 — catat riwayat pembayaran (best-effort). Bila tabel `pembayaran`
+   * belum dimigrasi, JANGAN gagalkan pelunasan inti — cukup catat peringatan.
+   * Lihat migrasi 001_create_pembayaran.sql.
+   */
+  private async recordPayment(
+    noFaktur: string,
+    jumlah: number,
+    lunas: boolean,
+    userId: number,
+  ) {
+    try {
+      await this.pembayaran.insert({
+        noFaktur,
+        jumlah,
+        tipe: lunas ? 'lunas' : 'batal',
+        idUser: userId,
+        waktu: new Date(),
+      });
+    } catch (e) {
+      this.logger.warn(
+        `Gagal mencatat riwayat pembayaran untuk ${noFaktur} ` +
+          `(tabel 'pembayaran' belum dimigrasi?): ${(e as Error).message}`,
+      );
+    }
+  }
+
+  // TD-5 — riwayat pembayaran sebuah faktur (kosong bila belum dimigrasi).
+  async listPayments(noFaktur: string) {
+    try {
+      return await this.pembayaran.find({
+        where: { noFaktur },
+        order: { id: 'DESC' },
+      });
+    } catch {
+      return [];
+    }
+  }
 
   /**
    * S3-01 — set/batal status lunas faktur. Atomik + audit ke log_aktivitas.
@@ -51,6 +95,9 @@ export class FakturService {
       jenis: 'pembayaran',
       waktu: new Date(),
     });
+
+    // Riwayat pembayaran terstruktur (best-effort; lihat TD-5).
+    await this.recordPayment(noFaktur, dibayar, lunas, userId);
 
     return { noFaktur, isLunas: lunas, dibayar };
   }

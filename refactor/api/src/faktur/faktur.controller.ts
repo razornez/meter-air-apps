@@ -27,6 +27,13 @@ export class FakturController {
     return this.faktur.setLunas(dto.noFaktur, dto.lunas ?? true, user.id);
   }
 
+  // TD-5 — riwayat pembayaran sebuah faktur.
+  @Get('payments')
+  payments(@Query('noFaktur') noFaktur: string) {
+    if (!noFaktur) throw new BadRequestException('noFaktur wajib diisi');
+    return this.faktur.listPayments(noFaktur);
+  }
+
   // S2-03 — detail tagihan. noFaktur memuat '/', maka dikirim sebagai query
   // (di-encode klien) untuk menghindari masalah %2F pada path.
   @Get('detail')

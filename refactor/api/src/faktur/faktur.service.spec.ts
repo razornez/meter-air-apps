@@ -8,6 +8,10 @@ function makeService(faktur: any) {
     findOne: jest.fn(async () => faktur),
   };
   const logs = { insert: jest.fn(async (_entity: any) => ({})) };
+  const pembayaran = {
+    insert: jest.fn(async (_entity: any) => ({})),
+    find: jest.fn(async () => []),
+  };
   const noop = {} as any;
   const service = new FakturService(
     dataSource as any,
@@ -16,8 +20,9 @@ function makeService(faktur: any) {
     noop, // history repo
     noop, // customer repo
     logs as any,
+    pembayaran as any,
   );
-  return { service, transaction, logs, fakturRepo };
+  return { service, transaction, logs, fakturRepo, pembayaran };
 }
 
 describe('FakturService.setLunas', () => {
@@ -55,5 +60,33 @@ describe('FakturService.setLunas', () => {
     const res = await service.setLunas('FA/Y', false, 1);
     expect(res.isLunas).toBe(false);
     expect(res.dibayar).toBe(0);
+  });
+
+  it('TD-5: mencatat riwayat pembayaran (jumlah=total, tipe=lunas)', async () => {
+    const { service, pembayaran } = makeService({
+      id: 9,
+      noFaktur: 'FA/BD/26/06/1',
+      total: 65000,
+    });
+    await service.setLunas('FA/BD/26/06/1', true, 7);
+    expect(pembayaran.insert).toHaveBeenCalledTimes(1);
+    expect(pembayaran.insert.mock.calls[0]?.[0]).toMatchObject({
+      noFaktur: 'FA/BD/26/06/1',
+      jumlah: 65000,
+      tipe: 'lunas',
+      idUser: 7,
+    });
+  });
+
+  it('TD-5: gagal mencatat pembayaran TIDAK menggagalkan pelunasan (best-effort)', async () => {
+    const { service, pembayaran } = makeService({
+      id: 9,
+      noFaktur: 'FA/Z',
+      total: 1000,
+    });
+    pembayaran.insert.mockRejectedValueOnce(new Error("table 'pembayaran' missing"));
+    // tetap sukses meski recording gagal
+    const res = await service.setLunas('FA/Z', true, 1);
+    expect(res.isLunas).toBe(true);
   });
 });

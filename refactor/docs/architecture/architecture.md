@@ -54,6 +54,15 @@ app lama.
 coba barcode → fallback id numerik. **Konsekuensi:** scan tetap berfungsi; QR fisik
 sebaiknya mengkodekan id pelanggan.
 
+### ADR-007 — Tabel `pembayaran` + recording best-effort (TD-5)
+**Konteks:** ADR-005 menunda riwayat pembayaran granular. **Keputusan:** tambah tabel
+`pembayaran` (aditif, via `migrations/001_create_pembayaran.sql`); `setLunas` mencatat
+ke tabel ini **best-effort** (di luar transaksi inti, gagal → hanya warning) supaya
+pelunasan tetap jalan walau migrasi belum diterapkan. Endpoint `GET /faktur/payments`
+mengembalikan `[]` bila tabel belum ada. **Alasan:** memungkinkan rollout bertahap
+tanpa memutus fitur pelunasan yang sudah berjalan. **Konsekuensi:** jalankan migrasi
+saat deploy agar riwayat tersimpan; setelah migrasi, recording aktif otomatis.
+
 ### ADR-005 — Pelunasan tanpa tabel baru (sementara)
 **Konteks:** E5 butuh status lunas; skema lama tak punya tabel pembayaran.
 **Keputusan:** pelunasan memakai `faktur.is_lunas` + `transaksi.dibayar`; audit ke
