@@ -1,12 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { apiReportMonthly, apiReportSummary } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { MonthlyReport, ReportSummary } from '../types';
-import { colors, formatRupiah } from '../theme';
+import { fonts, formatRupiah, palette, radius, shadow, tracking, Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
 
 export default function ReportsScreen() {
+  const t = useTheme();
+  const s = useMemo(() => createStyles(t), [t]);
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [monthly, setMonthly] = useState<MonthlyReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,11 +20,8 @@ export default function ReportsScreen() {
     setLoading(true);
     setError(null);
     try {
-      const [s, m] = await Promise.all([
-        apiReportSummary(),
-        apiReportMonthly(6),
-      ]);
-      setSummary(s);
+      const [sum, m] = await Promise.all([apiReportSummary(), apiReportMonthly(6)]);
+      setSummary(sum);
       setMonthly(m);
     } catch (e) {
       setError(apiErrorMessage(e));
@@ -34,56 +35,63 @@ export default function ReportsScreen() {
   }, [load]);
 
   if (loading) return <Loading />;
-  if (error || !summary)
-    return <ErrorState message={error ?? 'Data tidak tersedia'} onRetry={load} />;
+  if (error || !summary) return <ErrorState message={error ?? 'Data tidak tersedia'} onRetry={load} />;
 
   const b = summary.bulanIni;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
-      <Text style={styles.section}>Bulan Ini ({b.periode})</Text>
-      <View style={styles.kpiGrid}>
-        <Kpi label="Pelanggan" value={String(summary.totalPelanggan)} wide />
-        <Kpi label="Faktur" value={String(b.jumlahFaktur)} />
-        <Kpi label="Pemakaian" value={`${b.pemakaianM3} m³`} />
-        <Kpi label="Total Tagihan" value={formatRupiah(b.totalTagihan)} wide />
-        <Kpi
-          label="Terbayar"
-          value={formatRupiah(b.totalTerbayar)}
-          color={colors.success}
-        />
-        <Kpi
-          label="Belum"
-          value={formatRupiah(b.totalBelum)}
-          color={colors.danger}
-        />
+    <ScrollView style={s.container} contentContainerStyle={{ padding: 16 }}>
+      {/* headline revenue */}
+      <LinearGradient
+        colors={t.hero}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[s.headline, shadow.glow]}
+      >
+        <Text style={s.headlineLabel}>Total Tagihan · {b.periode}</Text>
+        <Text style={s.headlineValue}>{formatRupiah(b.totalTagihan)}</Text>
+        <View style={s.headlineRow}>
+          <View style={s.hPill}>
+            <Text style={s.hPillLabel}>Terbayar</Text>
+            <Text style={s.hPillValue}>{formatRupiah(b.totalTerbayar)}</Text>
+          </View>
+          <View style={s.hPill}>
+            <Text style={s.hPillLabel}>Belum</Text>
+            <Text style={s.hPillValue}>{formatRupiah(b.totalBelum)}</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <Text style={s.section}>Ringkasan Bulan Ini</Text>
+      <View style={s.kpiGrid}>
+        <Kpi t={t} s={s} label="Pelanggan" value={String(summary.totalPelanggan)} />
+        <Kpi t={t} s={s} label="Faktur" value={String(b.jumlahFaktur)} />
+        <Kpi t={t} s={s} label="Pemakaian" value={`${b.pemakaianM3} m³`} />
+        <Kpi t={t} s={s} label="Rata/Faktur" value={b.jumlahFaktur ? formatRupiah(Math.round(b.totalTagihan / b.jumlahFaktur)) : '-'} />
       </View>
 
-      <Text style={styles.section}>Rekap 6 Bulan</Text>
+      <Text style={s.section}>Rekap 6 Bulan</Text>
       {monthly.length === 0 ? (
-        <Text style={styles.muted}>Belum ada data.</Text>
+        <Text style={s.muted}>Belum ada data.</Text>
       ) : (
         monthly.map((m) => (
-          <View key={m.periode} style={styles.monthCard}>
-            <View style={styles.monthHead}>
-              <Text style={styles.periode}>{m.periode}</Text>
-              <Text style={styles.muted}>{m.jumlahFaktur} faktur</Text>
+          <View key={m.periode} style={s.monthCard}>
+            <View style={s.monthHead}>
+              <Text style={s.periode}>{m.periode}</Text>
+              <Text style={s.muted}>{m.jumlahFaktur} faktur</Text>
             </View>
-            <View style={styles.monthRow}>
-              <Text style={styles.muted}>Tagihan</Text>
-              <Text style={styles.val}>{formatRupiah(m.totalTagihan)}</Text>
+            <Bar t={t} s={s} paid={m.totalTerbayar} total={m.totalTagihan} />
+            <View style={s.monthRow}>
+              <Text style={s.muted}>Tagihan</Text>
+              <Text style={s.val}>{formatRupiah(m.totalTagihan)}</Text>
             </View>
-            <View style={styles.monthRow}>
-              <Text style={styles.muted}>Terbayar</Text>
-              <Text style={[styles.val, { color: colors.success }]}>
-                {formatRupiah(m.totalTerbayar)}
-              </Text>
+            <View style={s.monthRow}>
+              <Text style={s.muted}>Terbayar</Text>
+              <Text style={[s.val, { color: t.success }]}>{formatRupiah(m.totalTerbayar)}</Text>
             </View>
-            <View style={styles.monthRow}>
-              <Text style={styles.muted}>Belum</Text>
-              <Text style={[styles.val, { color: colors.danger }]}>
-                {formatRupiah(m.totalBelum)}
-              </Text>
+            <View style={s.monthRow}>
+              <Text style={s.muted}>Belum</Text>
+              <Text style={[s.val, { color: t.danger }]}>{formatRupiah(m.totalBelum)}</Text>
             </View>
           </View>
         ))
@@ -93,70 +101,62 @@ export default function ReportsScreen() {
   );
 }
 
-function Kpi({
-  label,
-  value,
-  color,
-  wide,
-}: {
-  label: string;
-  value: string;
-  color?: string;
-  wide?: boolean;
-}) {
+function Kpi({ t, s, label, value }: { t: Theme; s: ReturnType<typeof createStyles>; label: string; value: string }) {
   return (
-    <View style={[styles.kpi, wide && styles.kpiWide]}>
-      <Text style={styles.kpiLabel}>{label}</Text>
-      <Text style={[styles.kpiValue, color ? { color } : null]}>{value}</Text>
+    <View style={s.kpi}>
+      <Text style={s.kpiLabel}>{label}</Text>
+      <Text style={s.kpiValue}>{value}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  section: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
-    marginTop: 8,
-    marginBottom: 10,
-  },
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  kpi: {
-    width: '47%',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  kpiWide: { width: '100%' },
-  kpiLabel: { color: colors.muted, fontSize: 12 },
-  kpiValue: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '800',
-    marginTop: 4,
-  },
-  monthCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  monthHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  periode: { fontWeight: '800', color: colors.primaryDark, fontSize: 16 },
-  monthRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 3,
-  },
-  val: { fontWeight: '600', color: colors.text },
-  muted: { color: colors.muted },
-});
+function Bar({ t, s, paid, total }: { t: Theme; s: ReturnType<typeof createStyles>; paid: number; total: number }) {
+  const pct = total > 0 ? Math.max(0, Math.min(1, paid / total)) : 0;
+  return (
+    <View style={s.barTrack}>
+      <View style={[s.barFill, { width: `${pct * 100}%`, backgroundColor: t.success }]} />
+    </View>
+  );
+}
+
+const createStyles = (t: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: 'transparent' },
+    headline: { borderRadius: radius.xl, padding: 20, marginBottom: 8 },
+    headlineLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.semibold, fontSize: 11.5, letterSpacing: tracking.overline, textTransform: 'uppercase' },
+    headlineValue: { color: palette.white, fontFamily: fonts.displayBlack, fontSize: 34, marginTop: 6, letterSpacing: tracking.display },
+    headlineRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+    hPill: { flex: 1, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: radius.md, padding: 12 },
+    hPillLabel: { color: 'rgba(255,255,255,0.8)', fontFamily: fonts.medium, fontSize: 11 },
+    hPillValue: { color: palette.white, fontFamily: fonts.bold, fontSize: 14, marginTop: 3 },
+    section: { fontSize: 19, fontFamily: fonts.display, color: t.text, marginTop: 22, marginBottom: 13, letterSpacing: tracking.tight },
+    kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    kpi: {
+      width: '47.5%',
+      flexGrow: 1,
+      backgroundColor: t.surface,
+      borderRadius: radius.lg,
+      padding: 15,
+      borderWidth: 1,
+      borderColor: t.border,
+      ...shadow.soft,
+    },
+    kpiLabel: { color: t.muted, fontSize: 12, fontFamily: fonts.medium },
+    kpiValue: { color: t.text, fontSize: 21, fontFamily: fonts.displayBold, marginTop: 6, letterSpacing: tracking.tight },
+    monthCard: {
+      backgroundColor: t.surface,
+      borderRadius: radius.lg,
+      padding: 15,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: t.border,
+      ...shadow.soft,
+    },
+    monthHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'center' },
+    periode: { fontFamily: fonts.displayBold, color: t.text, fontSize: 17, letterSpacing: tracking.tight },
+    barTrack: { height: 8, borderRadius: 4, backgroundColor: t.surfaceAlt, overflow: 'hidden', marginBottom: 12 },
+    barFill: { height: '100%', borderRadius: 4 },
+    monthRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
+    val: { fontFamily: fonts.semibold, color: t.text },
+    muted: { color: t.muted, fontFamily: fonts.regular },
+  });

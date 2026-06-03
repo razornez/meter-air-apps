@@ -5,13 +5,16 @@ import { apiErrorMessage } from '../api/client';
 import { CustomerMarker } from '../types';
 import { LeafletMap } from '../components/LeafletMap';
 import { STATUS_COLOR } from '../components/mapHtml';
-import { colors } from '../theme';
+import { fonts, radius, shadow, Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
 
 // Default area Kab. Bandung (Kiangroke) bila tak ada titik.
 const DEFAULT_CENTER = { lat: -7.0215, lng: 107.581 };
 
 export default function MapScreen() {
+  const t = useTheme();
+  const s = useMemo(() => createStyles(t), [t]);
   const [markers, setMarkers] = useState<CustomerMarker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,48 +51,44 @@ export default function MapScreen() {
   if (loading) return <Loading label="Memuat peta…" />;
   if (error) return <ErrorState message={error} onRetry={load} />;
   if (markers.length === 0)
-    return (
-      <EmptyState label="Belum ada pelanggan dengan koordinat. Atur lokasi dari detail pelanggan." />
-    );
+    return <EmptyState label="Belum ada pelanggan dengan koordinat. Atur lokasi dari detail pelanggan." />;
 
   return (
-    <View style={styles.container}>
-      <LeafletMap
-        markers={markers}
-        center={center}
-        zoom={15}
-      />
-      <View style={styles.legend}>
-        <LegendItem color={STATUS_COLOR.lunas} label={`Lunas (${counts.lunas})`} />
-        <LegendItem color={STATUS_COLOR.belum} label={`Belum (${counts.belum})`} />
-        <LegendItem color={STATUS_COLOR.none} label={`Tanpa tagihan (${counts.none})`} />
+    <View style={s.container}>
+      <LeafletMap markers={markers} center={center} zoom={15} />
+      <View style={s.legend}>
+        <LegendItem s={s} color={STATUS_COLOR.lunas} label={`Lunas (${counts.lunas})`} />
+        <LegendItem s={s} color={STATUS_COLOR.belum} label={`Belum (${counts.belum})`} />
+        <LegendItem s={s} color={STATUS_COLOR.none} label={`Tanpa tagihan (${counts.none})`} />
       </View>
     </View>
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendItem({ s, color, label }: { s: ReturnType<typeof createStyles>; color: string; label: string }) {
   return (
-    <View style={styles.legendItem}>
-      <View style={[styles.dot, { backgroundColor: color }]} />
-      <Text style={styles.legendText}>{label}</Text>
+    <View style={s.legendItem}>
+      <View style={[s.dot, { backgroundColor: color }]} />
+      <Text style={s.legendText}>{label}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  legend: {
-    position: 'absolute',
-    left: 12,
-    bottom: 12,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  legendItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 2 },
-  dot: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
-  legendText: { fontSize: 12, color: colors.text },
-});
+const createStyles = (t: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: t.bg },
+    legend: {
+      position: 'absolute',
+      left: 12,
+      bottom: 12,
+      backgroundColor: t.surface,
+      borderRadius: radius.md,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: t.border,
+      ...shadow.float,
+    },
+    legendItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
+    dot: { width: 12, height: 12, borderRadius: 6, marginRight: 8 },
+    legendText: { fontSize: 12, color: t.text, fontFamily: fonts.medium },
+  });

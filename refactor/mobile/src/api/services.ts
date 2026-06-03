@@ -170,6 +170,26 @@ export async function apiTunggakan(page = 1, limit = 50) {
   return data;
 }
 
+// OCR angka meter dari foto.
+export async function apiOcrMeter(photoUri: string) {
+  const form = new FormData();
+  form.append('photo', {
+    uri: photoUri,
+    name: 'meter.jpeg',
+    type: 'image/jpeg',
+  } as unknown as Blob);
+  const { data } = await api.post<{
+    best: number | null;
+    candidates: { value: number; raw: string; confidence: 'high' | 'medium' }[];
+    rawText: string;
+  }>('/meter/ocr', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    // OCR bisa lambat (Tesseract) — timeout lebih panjang
+    timeout: 60000,
+  });
+  return data;
+}
+
 export async function apiListProduk(params: {
   search?: string;
   page?: number;

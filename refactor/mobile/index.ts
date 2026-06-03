@@ -1,3 +1,5 @@
+// Gesture handler must be the very first import (required by React Navigation + Reanimated).
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 import App from './App';

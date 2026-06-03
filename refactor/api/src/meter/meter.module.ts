@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MeterController } from './meter.controller';
 import { MeterService } from './meter.service';
 import { TariffService } from './tariff.service';
+import { OcrService } from './ocr.service';
 import { CustomersModule } from '../customers/customers.module';
 import { Faktur } from './entities/faktur.entity';
 import { HistoryMeter } from './entities/history-meter.entity';
@@ -15,6 +16,6 @@ import { LevelPemakaian } from './entities/level-pemakaian.entity';
     CustomersModule,
   ],
   controllers: [MeterController],
-  providers: [MeterService, TariffService],
+  providers: [MeterService, TariffService, OcrService],
 })
 export class MeterModule {}

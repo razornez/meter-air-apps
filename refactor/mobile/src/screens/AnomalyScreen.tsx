@@ -1,17 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiAnomalies } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { Anomaly } from '../types';
-import { colors } from '../theme';
+import { fonts, radius, shadow, Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Anomaly'>;
@@ -22,14 +17,14 @@ const TYPE_LABEL: Record<Anomaly['type'], string> = {
   turun: '⤵ Turun',
 };
 
-function sevColor(s: Anomaly['severity']) {
-  return s === 'tinggi' ? colors.danger : colors.warning;
-}
-
 export default function AnomalyScreen({ navigation }: Props) {
+  const t = useTheme();
+  const s = useMemo(() => createStyles(t), [t]);
   const [items, setItems] = useState<Anomaly[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const sevColor = (sev: Anomaly['severity']) => (sev === 'tinggi' ? t.danger : t.warning);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,40 +44,32 @@ export default function AnomalyScreen({ navigation }: Props) {
 
   if (loading) return <Loading label="Memeriksa anomali…" />;
   if (error) return <ErrorState message={error} onRetry={load} />;
-  if (items.length === 0)
-    return <EmptyState label="Tidak ada anomali konsumsi terdeteksi 👍" />;
+  if (items.length === 0) return <EmptyState label="Tidak ada anomali konsumsi terdeteksi 👍" />;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.summary}>
-        {items.length} pelanggan perlu diverifikasi
-      </Text>
+    <View style={s.container}>
+      <Text style={s.summary}>{items.length} pelanggan perlu diverifikasi</Text>
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.customerId)}
+        contentContainerStyle={{ padding: 14, gap: 10 }}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.row}
-            onPress={() =>
-              navigation.navigate('CustomerDetail', { id: item.customerId })
-            }
+            style={s.row}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('CustomerDetail', { id: item.customerId })}
           >
-            <View style={[styles.sevBar, { backgroundColor: sevColor(item.severity) }]} />
-            <View style={{ flex: 1 }}>
-              <View style={styles.head}>
-                <Text style={styles.nama} numberOfLines={1}>
-                  {item.nama ?? `ID ${item.customerId}`}
-                </Text>
-                <View
-                  style={[styles.badge, { backgroundColor: sevColor(item.severity) }]}
-                >
-                  <Text style={styles.badgeText}>{TYPE_LABEL[item.type]}</Text>
+            <View style={[s.sevBar, { backgroundColor: sevColor(item.severity) }]} />
+            <View style={{ flex: 1, padding: 14 }}>
+              <View style={s.head}>
+                <Text style={s.nama} numberOfLines={1}>{item.nama ?? `ID ${item.customerId}`}</Text>
+                <View style={[s.badge, { backgroundColor: sevColor(item.severity) + '22' }]}>
+                  <Text style={[s.badgeText, { color: sevColor(item.severity) }]}>{TYPE_LABEL[item.type]}</Text>
                 </View>
               </View>
-              <Text style={styles.alasan}>{item.alasan}</Text>
-              <Text style={styles.meta}>
-                Terakhir <Text style={styles.bold}>{item.latest} m³</Text> · rata-rata{' '}
-                {item.rata} m³
+              <Text style={s.alasan}>{item.alasan}</Text>
+              <Text style={s.meta}>
+                Terakhir <Text style={s.bold}>{item.latest} m³</Text> · rata-rata {item.rata} m³
                 {item.rasio > 0 ? ` · ${item.rasio}×` : ''}
               </Text>
             </View>
@@ -93,43 +80,25 @@ export default function AnomalyScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  summary: {
-    padding: 12,
-    color: colors.muted,
-    fontSize: 13,
-    backgroundColor: colors.card,
-  },
-  row: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  sevBar: { width: 5 },
-  head: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    paddingHorizontal: 14,
-  },
-  nama: { fontWeight: '700', color: colors.text, fontSize: 15, flex: 1 },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  badgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  alasan: { color: colors.text, fontSize: 13, paddingHorizontal: 14, marginTop: 4 },
-  meta: {
-    color: colors.muted,
-    fontSize: 12,
-    paddingHorizontal: 14,
-    paddingTop: 4,
-    paddingBottom: 12,
-  },
-  bold: { fontWeight: '700', color: colors.text },
-});
+const createStyles = (t: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: 'transparent' },
+    summary: { paddingHorizontal: 16, paddingTop: 14, color: t.muted, fontSize: 13, fontFamily: fonts.medium },
+    row: {
+      flexDirection: 'row',
+      backgroundColor: t.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: t.border,
+      overflow: 'hidden',
+      ...shadow.soft,
+    },
+    sevBar: { width: 5, alignSelf: 'stretch' },
+    head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    nama: { fontFamily: fonts.bold, color: t.text, fontSize: 15, flex: 1 },
+    badge: { paddingHorizontal: 9, paddingVertical: 4, borderRadius: radius.pill, marginLeft: 8 },
+    badgeText: { fontSize: 11, fontFamily: fonts.extrabold },
+    alasan: { color: t.text, fontSize: 13, marginTop: 5, fontFamily: fonts.regular },
+    meta: { color: t.muted, fontSize: 12, marginTop: 5, fontFamily: fonts.regular },
+    bold: { fontFamily: fonts.bold, color: t.text },
+  });

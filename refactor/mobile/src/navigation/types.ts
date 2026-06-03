@@ -2,6 +2,7 @@ import { MeterInfo } from '../types';
 
 export type RootStackParamList = {
   Login: undefined;
+  Main: undefined;
   Home: undefined;
   Scan: undefined;
   Reading: { meterInfo: MeterInfo };

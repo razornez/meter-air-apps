@@ -1,23 +1,20 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiTunggakan } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { TunggakanItem, TunggakanResponse } from '../types';
-import { colors, formatRupiah } from '../theme';
+import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
+import { useTheme } from '../ThemeContext';
 import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Tunggakan'>;
 const LIMIT = 50;
 
 export default function TunggakanScreen({ navigation }: Props) {
+  const t = useTheme();
+  const s = useMemo(() => createStyles(t), [t]);
   const [res, setRes] = useState<TunggakanResponse | null>(null);
   const [items, setItems] = useState<TunggakanItem[]>([]);
   const [page, setPage] = useState(1);
@@ -50,57 +47,46 @@ export default function TunggakanScreen({ navigation }: Props) {
   const canLoadMore = items.length < res.total;
 
   return (
-    <View style={styles.container}>
-      {/* Header ringkasan */}
-      <View style={styles.summary}>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Pelanggan menunggak</Text>
-          <Text style={styles.summaryValue}>{res.total} orang</Text>
+    <View style={s.container}>
+      <View style={s.summary}>
+        <Text style={s.summaryTitle}>Ringkasan Tunggakan</Text>
+        <View style={s.summaryRow}>
+          <Text style={s.summaryLabel}>Pelanggan menunggak</Text>
+          <Text style={s.summaryValue}>{res.total} orang</Text>
         </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total tagihan</Text>
-          <Text style={styles.summaryValue}>{formatRupiah(res.totalTagihan)}</Text>
+        <View style={s.summaryRow}>
+          <Text style={s.summaryLabel}>Total tagihan</Text>
+          <Text style={s.summaryValue}>{formatRupiah(res.totalTagihan)}</Text>
         </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total denda</Text>
-          <Text style={[styles.summaryValue, { color: colors.danger }]}>
-            {formatRupiah(res.totalDenda)}
-          </Text>
+        <View style={s.summaryRow}>
+          <Text style={s.summaryLabel}>Total denda</Text>
+          <Text style={[s.summaryValue, { color: t.danger }]}>{formatRupiah(res.totalDenda)}</Text>
         </View>
-        <View style={[styles.summaryRow, styles.grandRow]}>
-          <Text style={styles.grandLabel}>Grand total</Text>
-          <Text style={styles.grandValue}>{formatRupiah(res.grandTotal)}</Text>
+        <View style={[s.summaryRow, s.grandRow]}>
+          <Text style={s.grandLabel}>Grand total</Text>
+          <Text style={s.grandValue}>{formatRupiah(res.grandTotal)}</Text>
         </View>
       </View>
 
       <FlatList
         data={items}
         keyExtractor={(it) => String(it.customerId)}
-        contentContainerStyle={items.length === 0 && { flex: 1 }}
+        contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
         ListEmptyComponent={<EmptyState label="Tidak ada tunggakan 🎉" />}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.row}
-            onPress={() =>
-              navigation.navigate('FakturList', { customerId: item.customerId })
-            }
+            style={s.row}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('FakturList', { customerId: item.customerId })}
           >
             <View style={{ flex: 1 }}>
-              <Text style={styles.nama} numberOfLines={1}>
-                {item.nama ?? `ID ${item.customerId}`}
-              </Text>
-              <Text style={styles.meta}>
-                {item.jumlahFaktur} faktur · telat {item.hariTelatMax} hari
-              </Text>
-              {!!item.alamat && (
-                <Text style={styles.alamat} numberOfLines={1}>{item.alamat}</Text>
-              )}
+              <Text style={s.nama} numberOfLines={1}>{item.nama ?? `ID ${item.customerId}`}</Text>
+              <Text style={s.meta}>{item.jumlahFaktur} faktur · telat {item.hariTelatMax} hari</Text>
+              {!!item.alamat && <Text style={s.alamat} numberOfLines={1}>{item.alamat}</Text>}
             </View>
-            <View style={styles.right}>
-              <Text style={styles.grand}>{formatRupiah(item.grandTotal)}</Text>
-              {item.totalDenda > 0 && (
-                <Text style={styles.denda}>denda {formatRupiah(item.totalDenda)}</Text>
-              )}
+            <View style={s.right}>
+              <Text style={s.grand}>{formatRupiah(item.grandTotal)}</Text>
+              {item.totalDenda > 0 && <Text style={s.denda}>denda {formatRupiah(item.totalDenda)}</Text>}
             </View>
           </TouchableOpacity>
         )}
@@ -108,52 +94,46 @@ export default function TunggakanScreen({ navigation }: Props) {
         onEndReached={() => {
           if (!loading && canLoadMore) load(page + 1);
         }}
-        ListFooterComponent={
-          loading && items.length > 0 ? (
-            <Text style={styles.footer}>Memuat…</Text>
-          ) : null
-        }
+        ListFooterComponent={loading && items.length > 0 ? <Text style={s.footer}>Memuat…</Text> : null}
       />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  summary: {
-    backgroundColor: colors.card,
-    padding: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.danger,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 3,
-  },
-  summaryLabel: { color: colors.muted, fontSize: 13 },
-  summaryValue: { color: colors.text, fontWeight: '600', fontSize: 13 },
-  grandRow: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginTop: 6,
-    paddingTop: 6,
-  },
-  grandLabel: { color: colors.text, fontWeight: '700', fontSize: 15 },
-  grandValue: { color: colors.danger, fontWeight: '800', fontSize: 15 },
-  row: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  nama: { fontWeight: '700', color: colors.text, fontSize: 15 },
-  meta: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  alamat: { color: colors.muted, fontSize: 11, marginTop: 1 },
-  right: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 8 },
-  grand: { color: colors.danger, fontWeight: '800', fontSize: 14 },
-  denda: { color: colors.warning, fontSize: 11, marginTop: 2 },
-  footer: { textAlign: 'center', padding: 12, color: colors.muted },
-});
+const createStyles = (t: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: 'transparent' },
+    summary: {
+      backgroundColor: t.surface,
+      margin: 14,
+      padding: 18,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: t.border,
+      ...shadow.soft,
+    },
+    summaryTitle: { fontFamily: fonts.displayBold, color: t.text, fontSize: 17, marginBottom: 8, letterSpacing: tracking.tight },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+    summaryLabel: { color: t.muted, fontSize: 13, fontFamily: fonts.regular },
+    summaryValue: { color: t.text, fontFamily: fonts.bold, fontSize: 13 },
+    grandRow: { borderTopWidth: 1, borderTopColor: t.border, marginTop: 8, paddingTop: 10 },
+    grandLabel: { color: t.text, fontFamily: fonts.bold, fontSize: 15 },
+    grandValue: { color: t.danger, fontFamily: fonts.displayBold, fontSize: 17 },
+    row: {
+      flexDirection: 'row',
+      backgroundColor: t.surface,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: t.border,
+      ...shadow.soft,
+    },
+    nama: { fontFamily: fonts.bold, color: t.text, fontSize: 15 },
+    meta: { color: t.muted, fontSize: 12, marginTop: 2, fontFamily: fonts.regular },
+    alamat: { color: t.muted, fontSize: 11, marginTop: 1, fontFamily: fonts.regular },
+    right: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 8 },
+    grand: { color: t.danger, fontFamily: fonts.displayBold, fontSize: 15 },
+    denda: { color: t.warning, fontSize: 11, marginTop: 2, fontFamily: fonts.medium },
+    footer: { textAlign: 'center', padding: 14, color: t.muted, fontFamily: fonts.regular },
+  });

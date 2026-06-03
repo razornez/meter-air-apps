@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { MeterService } from './meter.service';
+import { OcrService } from './ocr.service';
 import { CalculateDto } from './dto/calculate.dto';
 import { CreateReadingDto } from './dto/create-reading.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -28,6 +29,7 @@ export class MeterController {
 
   constructor(
     private readonly meter: MeterService,
+    private readonly ocr: OcrService,
     private readonly config: ConfigService,
   ) {
     this.uploadDir = this.config.get<string>(
@@ -51,6 +53,27 @@ export class MeterController {
       dto.meterBaru,
       dto.catatan,
     );
+  }
+
+  /**
+   * OCR angka meter dari foto (Tesseract.js, gratis, self-hosted).
+   * Kembalikan kandidat angka + best guess → mobile prefill input (editable).
+   */
+  @Post('ocr')
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      limits: { fileSize: 8 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (!/^image\//.test(file.mimetype)) {
+          return cb(new BadRequestException('File harus berupa gambar'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async recognizeMeter(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('File foto wajib diunggah');
+    return this.ocr.recognizeMeter(file.buffer);
   }
 
   // Upload foto meter untuk faktur tertentu (maks 8MB, hanya gambar).

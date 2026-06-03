@@ -1,20 +1,31 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import { apiErrorMessage } from '../api/client';
-import { colors } from '../theme';
+import { fonts, palette, radius, shadow, Theme } from '../theme';
+import { useTheme, useThemeMode } from '../ThemeContext';
+import WaveBackground from '../components/ui/WaveBackground';
+import { DropMark, MoonIcon, SunIcon } from '../components/ui/Icons';
+
+const { height: SCREEN_H } = Dimensions.get('window');
 
 export default function LoginScreen() {
+  const t = useTheme();
+  const s = useMemo(() => createStyles(t), [t]);
+  const { mode, toggle } = useThemeMode();
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -38,99 +49,128 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.container}
-      >
-        <View style={styles.logoWrap}>
-          <Text style={styles.logoIcon}>💧</Text>
-          <Text style={styles.title}>Meter Air</Text>
-          <Text style={styles.subtitle}>Aplikasi Petugas Pencatat Meter</Text>
-        </View>
+    <View style={{ flex: 1, backgroundColor: t.bg }}>
+      <WaveBackground height={SCREEN_H}>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={s.topBar}>
+            <TouchableOpacity onPress={toggle} style={s.toggle} activeOpacity={0.8}>
+              {mode === 'dark' ? <SunIcon size={18} color={palette.white} /> : <MoonIcon size={17} color={palette.white} />}
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.card}>
-          {error && <Text style={styles.error}>{error}</Text>}
-
-          <Text style={styles.label}>Username</Text>
-          <TextInput
-            style={styles.input}
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={username}
-            onChangeText={setUsername}
-            placeholder="username"
-            placeholderTextColor={colors.muted}
-          />
-
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••"
-            placeholderTextColor={colors.muted}
-            onSubmitEditing={onSubmit}
-          />
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={onSubmit}
-            disabled={loading}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={{ flex: 1 }}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Masuk</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+              <View style={s.brandWrap}>
+                <View style={s.mark}>
+                  <DropMark size={46} color={palette.white} />
+                </View>
+                <Text style={s.title}>Meter Air</Text>
+                <Text style={s.subtitle}>Aplikasi Petugas Pencatat Meter</Text>
+              </View>
+
+              <View style={s.card}>
+                {error && (
+                  <View style={s.errorBox}>
+                    <Text style={s.errorText}>{error}</Text>
+                  </View>
+                )}
+
+                <Text style={s.label}>Username</Text>
+                <TextInput
+                  style={s.input}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  value={username}
+                  onChangeText={setUsername}
+                  placeholder="username"
+                  placeholderTextColor={t.muted}
+                />
+
+                <Text style={s.label}>Password</Text>
+                <TextInput
+                  style={s.input}
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="••••••"
+                  placeholderTextColor={t.muted}
+                  onSubmitEditing={onSubmit}
+                />
+
+                <TouchableOpacity activeOpacity={0.9} onPress={onSubmit} disabled={loading} style={{ marginTop: 22 }}>
+                  <LinearGradient
+                    colors={t.scan}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[s.button, loading && { opacity: 0.7 }, shadow.glow]}
+                  >
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>Masuk</Text>}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={s.foot}>Koneksi aman · TIRTA · {new Date().getFullYear()}</Text>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </WaveBackground>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.primary },
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  logoWrap: { alignItems: 'center', marginBottom: 28 },
-  logoIcon: { fontSize: 56 },
-  title: { fontSize: 28, fontWeight: '700', color: '#fff', marginTop: 8 },
-  subtitle: { fontSize: 14, color: '#D6ECF7', marginTop: 4 },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    padding: 20,
-    elevation: 4,
-    // boxShadow lintas-platform (RN 0.81+ & web) — gantikan shadow* yang deprecated.
-    boxShadow: '0px 2px 8px rgba(0,0,0,0.1)',
-  },
-  label: { fontSize: 13, color: colors.muted, marginBottom: 6, marginTop: 12 },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: colors.text,
-    backgroundColor: '#fff',
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  error: {
-    backgroundColor: '#FDECEA',
-    color: colors.danger,
-    padding: 10,
-    borderRadius: 8,
-    fontSize: 13,
-  },
-});
+const createStyles = (t: Theme) =>
+  StyleSheet.create({
+    topBar: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 18, paddingTop: 6 },
+    toggle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.35)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+    brandWrap: { alignItems: 'center', marginBottom: 26 },
+    mark: {
+      width: 86,
+      height: 86,
+      borderRadius: 28,
+      backgroundColor: 'rgba(255,255,255,0.16)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.4)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    title: { fontSize: 40, fontFamily: fonts.displayBlack, color: palette.white, marginTop: 16, letterSpacing: -1 },
+    subtitle: { fontSize: 12.5, color: palette.foam, marginTop: 5, fontFamily: fonts.medium, letterSpacing: 0.3 },
+    card: {
+      backgroundColor: t.surface,
+      borderRadius: radius.xl,
+      padding: 22,
+      borderWidth: 1,
+      borderColor: t.border,
+      ...shadow.float,
+    },
+    label: { fontSize: 13, color: t.muted, marginBottom: 7, marginTop: 14, fontFamily: fonts.semibold },
+    input: {
+      borderWidth: 1,
+      borderColor: t.border,
+      borderRadius: radius.sm,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      fontSize: 16,
+      color: t.text,
+      backgroundColor: t.surfaceAlt,
+      fontFamily: fonts.medium,
+    },
+    button: { borderRadius: radius.md, paddingVertical: 15, alignItems: 'center' },
+    buttonText: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
+    errorBox: { backgroundColor: t.danger + '22', padding: 11, borderRadius: radius.sm },
+    errorText: { color: t.danger, fontSize: 13, fontFamily: fonts.medium },
+    foot: { textAlign: 'center', color: 'rgba(231,247,247,0.7)', fontSize: 11.5, marginTop: 22, fontFamily: fonts.regular },
+  });
