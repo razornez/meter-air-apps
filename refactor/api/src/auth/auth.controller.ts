@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -11,6 +12,8 @@ import {
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  // Lebih ketat dari global: maksimum 10 percobaan login / menit / IP.
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto.username, dto.password);

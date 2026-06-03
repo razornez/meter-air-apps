@@ -22,6 +22,10 @@ Sumber template: [`api/.env.example`](api/.env.example). Salin ke `api/.env` unt
 | `UPLOAD_DIR` | – | `uploads/foto_meter` | Folder simpan foto meter |
 | `AUTH_UPGRADE_PLAINTEXT` | – | `false` | `true` saat cutover → rehash password lama ke bcrypt |
 | `WATER_PRODUCT_BARCODE` | – | `B1502200001` | Barcode produk air (legacy) |
+| `NODE_ENV` | – | `production` | `production` → boot gagal bila `JWT_SECRET` default |
+| `CORS_ORIGIN` | – | `https://app.contoh.com` | Domain frontend (pisahkan koma). Kosong = izinkan semua (dev) |
+
+> Keamanan lengkap & checklist produksi: lihat [SECURITY.md](SECURITY.md).
 
 ## 2. Mobile (Expo / React Native) — variabel env
 

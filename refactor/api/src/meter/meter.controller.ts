@@ -53,9 +53,19 @@ export class MeterController {
     );
   }
 
-  // Upload foto meter untuk faktur tertentu.
+  // Upload foto meter untuk faktur tertentu (maks 8MB, hanya gambar).
   @Post('readings/:noFaktur/photo')
-  @UseInterceptors(FileInterceptor('photo'))
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      limits: { fileSize: 8 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (!/^image\//.test(file.mimetype)) {
+          return cb(new BadRequestException('File harus berupa gambar'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
   async uploadPhoto(
     @Param('noFaktur') noFaktur: string,
     @UploadedFile() file: Express.Multer.File,

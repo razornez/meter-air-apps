@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
 import { MeterModule } from './meter/meter.module';
@@ -12,6 +14,8 @@ import { CatalogModule } from './catalog/catalog.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Rate limit global: 120 request / menit / IP (anti penyalahgunaan/brute-force).
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 120 }]),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -34,6 +38,10 @@ import { CatalogModule } from './catalog/catalog.module';
     ConfigAppModule,
     ReportsModule,
     CatalogModule,
+  ],
+  providers: [
+    // Terapkan rate limit ke seluruh endpoint.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

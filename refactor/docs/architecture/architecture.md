@@ -54,6 +54,17 @@ app lama.
 coba barcode → fallback id numerik. **Konsekuensi:** scan tetap berfungsi; QR fisik
 sebaiknya mengkodekan id pelanggan.
 
+### ADR-008 — Hardening keamanan API
+**Konteks:** API publik perlu proteksi dasar. **Keputusan:** (1) `helmet` untuk header
+keamanan; (2) `@nestjs/throttler` rate limit global 120/menit + login 10/menit/IP
+(anti brute-force); (3) `ValidationPipe` `forbidNonWhitelisted` (tolak field tak
+dikenal); (4) CORS dibatasi via `CORS_ORIGIN` di produksi; (5) boot **gagal** di
+`NODE_ENV=production` bila `JWT_SECRET` masih default; (6) upload foto dibatasi 8MB &
+hanya `image/*`. **Alasan:** mitigasi serangan umum tanpa mengubah kontrak.
+**Konsekuensi:** klien wajib kirim payload sesuai DTO; set `CORS_ORIGIN` & `JWT_SECRET`
+saat deploy. Password lama tetap plaintext sampai cutover (hash via
+`AUTH_UPGRADE_PLAINTEXT=true`) agar tidak memutus panel admin lama.
+
 ### ADR-007 — Tabel `pembayaran` + recording best-effort (TD-5)
 **Konteks:** ADR-005 menunda riwayat pembayaran granular. **Keputusan:** tambah tabel
 `pembayaran` (aditif, via `migrations/001_create_pembayaran.sql`); `setLunas` mencatat
