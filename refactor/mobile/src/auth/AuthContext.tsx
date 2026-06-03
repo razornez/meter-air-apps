@@ -5,9 +5,13 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import * as SecureStore from 'expo-secure-store';
 import { setAuthToken } from '../api/client';
 import { apiLogin, apiMe } from '../api/services';
+import {
+  deleteToken,
+  getToken,
+  setToken as persistToken,
+} from './tokenStorage';
 import { UserProfile } from '../types';
 
 const TOKEN_KEY = 'meterair_token';
@@ -31,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const saved = await SecureStore.getItemAsync(TOKEN_KEY);
+        const saved = await getToken(TOKEN_KEY);
         if (saved) {
           setAuthToken(saved);
           const me = await apiMe();
@@ -40,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {
         // token kedaluwarsa / tidak valid → biarkan logout
-        await SecureStore.deleteItemAsync(TOKEN_KEY);
+        await deleteToken(TOKEN_KEY);
         setAuthToken(null);
       } finally {
         setInitializing(false);
@@ -51,13 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function login(username: string, password: string) {
     const res = await apiLogin(username, password);
     setAuthToken(res.access_token);
-    await SecureStore.setItemAsync(TOKEN_KEY, res.access_token);
+    await persistToken(TOKEN_KEY, res.access_token);
     setToken(res.access_token);
     setUser(res.user);
   }
 
   async function logout() {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await deleteToken(TOKEN_KEY);
     setAuthToken(null);
     setToken(null);
     setUser(null);

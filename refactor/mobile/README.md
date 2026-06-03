@@ -33,7 +33,30 @@ yang menembak database MySQL `pdam`.
    Lalu scan QR di terminal pakai aplikasi **Expo Go**, atau tekan `a` untuk
    emulator Android.
 
-> Kamera tidak berfungsi di Expo Go web; gunakan perangkat/emulator.
+## Menjalankan di iPhone (Expo Go) — fitur lengkap
+
+1. Install **Expo Go** dari App Store di iPhone.
+2. iPhone & PC harus **satu jaringan WiFi**.
+3. Set `EXPO_PUBLIC_API_URL` ke **IP LAN PC** (bukan localhost), mis.
+   `EXPO_PUBLIC_API_URL=http://192.168.x.x:4000/api` (cek IP: `ipconfig`).
+   Pastikan firewall mengizinkan port API.
+4. `npx expo start` → scan QR dengan **kamera iPhone** → terbuka di Expo Go.
+
+## Menjalankan di Browser (web)
+
+Cepat untuk melihat UI tanpa HP. Penyimpanan token otomatis pakai `localStorage`
+(lihat `src/auth/tokenStorage.ts`), jadi **login berfungsi**.
+
+```bash
+npx expo install react-dom react-native-web @expo/metro-runtime   # sekali saja
+# buat .env: EXPO_PUBLIC_API_URL=http://localhost:4000/api  (web = localhost)
+npx expo start --web      # atau tekan 'w' saat expo start berjalan
+```
+
+> Batasan web: **scan QR kamera** tidak penuh di browser → pakai **input ID manual**
+> di Home. **Bagikan PDF** tidak ada di web (cetak via dialog browser). Selebihnya
+> (login, daftar pelanggan, riwayat, tagihan, laporan, pelunasan) berfungsi.
+> Catatan: Expo SDK 56 menyarankan Node ≥ 20.19.4; v20.17 hanya memunculkan warning.
 
 ## Struktur
 
