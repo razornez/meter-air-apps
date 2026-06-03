@@ -56,7 +56,16 @@ komponen logika non-trivial). Helper murni (mis. `formatRupiah`) wajib diuji.
 - **MeterService**: `generateNoFaktur` (counter+1, format), `dueDate` (tgl 20 bulan
   depan), guard duplikat bulan ini → `ConflictException`.
 
-## 6. Definition of Done terkait test
+## 6. Guardrail performa
+
+Selain test fungsional, ada **budget latensi**: tidak ada endpoint fetch data yang
+boleh > **1000 ms**. Dijaga skrip `api/scripts/perf-check.mjs` (`npm run perf`) yang
+mengukur tiap endpoint dan gagal bila ada yang melebihi budget. Hasil terukur dicatat
+di [`PERFORMANCE.md`](../../PERFORMANCE.md). Jalankan setiap menambah endpoint/query
+baru. Optimasi utama: index DB (lihat `migrations/002_add_indexes.sql`).
+
+## 7. Definition of Done terkait test
 
 Story dengan logika bisnis **tidak boleh** "Done" tanpa unit test yang lulus untuk
-skenario utamanya. Lihat [definition-of-done.md](definition-of-done.md).
+skenario utamanya. Story yang menambah endpoint/query **tidak boleh** "Done" bila
+`npm run perf` melebihi budget. Lihat [definition-of-done.md](definition-of-done.md).

@@ -14,8 +14,17 @@ import { CatalogModule } from './catalog/catalog.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // Rate limit global: 120 request / menit / IP (anti penyalahgunaan/brute-force).
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 120 }]),
+    // Rate limit global (anti penyalahgunaan/brute-force). Bisa disetel via env
+    // THROTTLE_LIMIT/THROTTLE_TTL (mis. dinaikkan saat uji performa/beban).
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [
+        {
+          ttl: parseInt(config.get('THROTTLE_TTL', '60000'), 10),
+          limit: parseInt(config.get('THROTTLE_LIMIT', '120'), 10),
+        },
+      ],
+    }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

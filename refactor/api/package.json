@@ -11,7 +11,8 @@
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage"
+    "test:cov": "jest --coverage",
+    "perf": "node scripts/perf-check.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",

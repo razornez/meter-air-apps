@@ -108,7 +108,10 @@ pemakaian melimpah ke level berikutnya; level terakhir menampung semua sisa.
 ```bash
 cd refactor/api    && npm test   # 37 unit test (logika bisnis backend)
 cd refactor/mobile && npm test   # 24 unit test (util + offline antrian/sync/cache)
+cd refactor/api    && npm run perf  # guardrail performa: tiap endpoint < 1 detik
 ```
+
+Hasil performa terukur (semua ≤ ~13 ms): [refactor/PERFORMANCE.md](refactor/PERFORMANCE.md).
 
 > **Proses kerja & standar** ada di `refactor/docs/` (PRD, arsitektur, coding/testing
 > standards, Definition of Done, sprint & story). Lihat `docs/README.md`.
