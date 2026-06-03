@@ -123,6 +123,21 @@ export default function HomeScreen({ navigation }: Props) {
       )}
 
       <TouchableOpacity
+        style={styles.worklistCard}
+        onPress={() => navigation.navigate('Worklist')}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.worklistIcon}>📋</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.worklistTitle}>Worklist Pencatatan</Text>
+          <Text style={styles.worklistSub}>
+            Daftar yang belum dicatat bulan ini + progres
+          </Text>
+        </View>
+        <Text style={styles.worklistArrow}>›</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.scanCard}
         onPress={() => navigation.navigate('Scan')}
         activeOpacity={0.85}
@@ -269,6 +284,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   syncBtnText: { color: '#fff', fontWeight: '700', fontSize: 12 },
+  worklistCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryDark,
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  worklistIcon: { fontSize: 28, marginRight: 12 },
+  worklistTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  worklistSub: { color: '#D6ECF7', fontSize: 12, marginTop: 2 },
+  worklistArrow: { color: '#fff', fontSize: 26, marginLeft: 8 },
   scanCard: {
     backgroundColor: colors.primary,
     borderRadius: 18,

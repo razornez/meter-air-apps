@@ -22,4 +22,10 @@ export class ReportsController {
   anomalies(@Query('limit') limit?: string) {
     return this.reports.anomalies(limit ? parseInt(limit, 10) : 100);
   }
+
+  // S9-00 — worklist pencatatan (progres + belum dicatat bulan ini).
+  @Get('worklist')
+  worklist() {
+    return this.reports.worklist();
+  }
 }

@@ -39,6 +39,7 @@ MySQL `pdam` yang sama. Tujuan: pencatatan meter lebih cepat, akurat, dan andal
 | **E7b** | Cache unduh data pelanggan untuk lookup offline | ✅ Selesai (Sprint 6) |
 | **E8** | Peta konsumen (titik + status bayar + atur lokasi) | ✅ Selesai (Sprint 7) |
 | **E9** | Deteksi anomali konsumsi (bocor/meter rusak) | ✅ Selesai (Sprint 8) |
+| **E10** | Worklist pencatatan (progres + belum dicatat) | ✅ Selesai (Sprint 9) |
 
 ## 5. Ruang lingkup Sprint 2 (E3 + E4)
 

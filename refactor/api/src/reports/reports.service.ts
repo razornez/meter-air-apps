@@ -7,6 +7,7 @@ import { Customer } from '../customers/entities/customer.entity';
 import { HistoryMeter } from '../meter/entities/history-meter.entity';
 import { normalizeMonthlyRow, RawMonthlyRow } from './reports.util';
 import { AnomalyType, detectUsageAnomaly } from './anomaly.util';
+import { partitionWorklist } from './worklist.util';
 
 const MAX_MONTHS = 24;
 
@@ -35,6 +36,72 @@ export class ReportsService {
     @InjectRepository(HistoryMeter)
     private readonly history: Repository<HistoryMeter>,
   ) {}
+
+  // S9-00 — worklist pencatatan: progres + daftar pelanggan belum dicatat bulan ini.
+  async worklist() {
+    const now = new Date();
+    const m = now.getMonth() + 1;
+    const y = now.getFullYear();
+
+    // Pelanggan yang SUDAH punya faktur bulan & tahun ini.
+    const recRows = await this.faktur
+      .createQueryBuilder('f')
+      .select('DISTINCT f.customer', 'customer')
+      .where('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
+      .getRawMany<{ customer: string | null }>();
+    const recorded = new Set(
+      recRows.map((r) => String(r.customer)).filter((s) => s !== 'null'),
+    );
+
+    // Semua pelanggan + meter terakhir (derived-table join, cepat).
+    const custs = await this.customers
+      .createQueryBuilder('c')
+      .leftJoin(
+        (qb) =>
+          qb
+            .select('h2.id_pelanggan', 'idp')
+            .addSelect('MAX(h2.id)', 'maxid')
+            .from(HistoryMeter, 'h2')
+            .groupBy('h2.id_pelanggan'),
+        'mx',
+        'mx.idp = c.id',
+      )
+      .leftJoin(HistoryMeter, 'lm', 'lm.id = mx.maxid')
+      .select('c.id', 'id')
+      .addSelect('c.nama', 'nama')
+      .addSelect('c.alamat', 'alamat')
+      .addSelect('c.tipe', 'tipe')
+      .addSelect('c.barcode', 'barcode')
+      .addSelect('COALESCE(lm.meter, 0)', 'lastMeter')
+      .orderBy('c.nama', 'ASC')
+      .getRawMany<{
+        id: number | string;
+        nama: string | null;
+        alamat: string | null;
+        tipe: string | null;
+        barcode: string | null;
+        lastMeter: number | string;
+      }>();
+
+    const normalized = custs.map((c) => ({
+      id: Number(c.id),
+      nama: c.nama,
+      alamat: c.alamat,
+      tipe: c.tipe,
+      barcode: c.barcode,
+      lastMeter: Number(c.lastMeter),
+    }));
+
+    const { pending, done } = partitionWorklist(normalized, recorded);
+
+    return {
+      periode: `${y}-${String(m).padStart(2, '0')}`,
+      total: normalized.length,
+      done,
+      pending: pending.length,
+      customers: pending,
+    };
+  }
 
   // S8-01 — daftar pelanggan dengan pemakaian janggal (deteksi rule-based).
   async anomalies(limit = 100) {

@@ -21,6 +21,7 @@ import MasterDataScreen from './src/screens/MasterDataScreen';
 import MapScreen from './src/screens/MapScreen';
 import SetLocationScreen from './src/screens/SetLocationScreen';
 import AnomalyScreen from './src/screens/AnomalyScreen';
+import WorklistScreen from './src/screens/WorklistScreen';
 import { colors } from './src/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -105,6 +106,11 @@ function RootNavigator() {
             name="Anomaly"
             component={AnomalyScreen}
             options={{ title: 'Anomali Konsumsi' }}
+          />
+          <Stack.Screen
+            name="Worklist"
+            component={WorklistScreen}
+            options={{ title: 'Worklist Pencatatan' }}
           />
         </>
       ) : (

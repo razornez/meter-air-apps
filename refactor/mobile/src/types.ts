@@ -95,6 +95,23 @@ export interface CustomerMarker {
   status: 'lunas' | 'belum' | 'none';
 }
 
+export interface WorklistItem {
+  id: number;
+  nama: string | null;
+  alamat: string | null;
+  tipe: string | null;
+  barcode: string | null;
+  lastMeter: number;
+}
+
+export interface Worklist {
+  periode: string;
+  total: number;
+  done: number;
+  pending: number;
+  customers: WorklistItem[];
+}
+
 export interface Anomaly {
   customerId: number;
   nama: string | null;

@@ -19,6 +19,7 @@ import {
   SupplierItem,
   TariffResult,
   UserProfile,
+  Worklist,
 } from '../types';
 
 export async function apiLogin(username: string, password: string) {
@@ -153,6 +154,11 @@ export async function apiAnomalies(limit = 100) {
   const { data } = await api.get<Anomaly[]>('/reports/anomalies', {
     params: { limit },
   });
+  return data;
+}
+
+export async function apiWorklist() {
+  const { data } = await api.get<Worklist>('/reports/worklist');
   return data;
 }
 

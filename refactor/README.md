@@ -108,7 +108,10 @@ pemakaian melimpah ke level berikutnya; level terakhir menampung semua sisa.
 - [x] **E9** — Deteksi Anomali Konsumsi (rule-based, gratis) — **SELESAI & TERUJI**
   - `GET /reports/anomalies` deteksi lonjakan(bocor)/nol(meter rusak)/turun; layar Anomali.
   - Menemukan kasus nyata (rasio puluhan kali). 48 test backend, 28 mobile. Latensi 15ms.
-- [ ] **Backlog** — Pengaduan+lapor kebocoran (peta, gratis) · pembayaran QRIS · WhatsApp · OCR
+- [x] **E10** — Worklist Pencatatan (alat harian petugas) — **SELESAI & TERUJI**
+  - `GET /reports/worklist` progres (done/total) + daftar belum dicatat; tap → langsung catat.
+  - 51 test backend, 28 mobile. Latensi 9ms.
+- [ ] **Backlog (untuk PETUGAS)** — Tunggakan+denda · GPS otomatis saat catat · rekap kinerja · pembayaran QRIS · WhatsApp · OCR
 
 ## Test (guardrail)
 
