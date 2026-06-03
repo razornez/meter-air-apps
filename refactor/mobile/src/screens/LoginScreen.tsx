@@ -103,10 +103,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    // boxShadow lintas-platform (RN 0.81+ & web) — gantikan shadow* yang deprecated.
+    boxShadow: '0px 2px 8px rgba(0,0,0,0.1)',
   },
   label: { fontSize: 13, color: colors.muted, marginBottom: 6, marginTop: 12 },
   input: {
