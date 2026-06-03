@@ -35,6 +35,15 @@ export class CustomersController {
     return this.customers.meterInfo(customer.id);
   }
 
+  // S6-00 — snapshot pelanggan untuk cache offline (sebelum ':id' agar tak ter-shadow).
+  @Get('snapshot')
+  snapshot(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.customers.snapshot(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 200,
+    );
+  }
+
   @Get(':id/last-meter')
   meterInfo(@Param('id', ParseIntPipe) id: number) {
     return this.customers.meterInfo(id);

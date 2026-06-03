@@ -98,13 +98,16 @@ pemakaian melimpah ke level berikutnya; level terakhir menampung semua sisa.
   - Antrian lokal (AsyncStorage) + auto-enqueue saat offline + auto-sync saat online
     (NetInfo); idempoten via guard 409. Tabel `pembayaran` (TD-5) **sudah dimigrasi & live**.
   - 17 unit test mobile; bundle 859 modul. Detail di `docs/sprints/sprint-05-review.md`.
-- [ ] **Backlog** — E6b iterasi admin web · **E7b** cache unduh pelanggan (lookup offline)
+- [x] **E7b** — Lookup pelanggan offline (cache) — **SELESAI & TERUJI**
+  - API `GET /customers/snapshot` + cache mobile (AsyncStorage) + fallback scan/cari
+    saat offline. 37 test backend, 24 test mobile.
+- [ ] **Backlog** — E6b iterasi admin web · hardening security lanjutan
 
 ## Test (guardrail)
 
 ```bash
-cd refactor/api    && npm test   # 35 unit test (logika bisnis backend)
-cd refactor/mobile && npm test   # 17 unit test (util murni + antrian/sync offline)
+cd refactor/api    && npm test   # 37 unit test (logika bisnis backend)
+cd refactor/mobile && npm test   # 24 unit test (util + offline antrian/sync/cache)
 ```
 
 > **Proses kerja & standar** ada di `refactor/docs/` (PRD, arsitektur, coding/testing

@@ -1,4 +1,4 @@
-# Sprint 6 — Plan (rencana)
+# Sprint 6 — Plan
 
 **Tema:** Lookup pelanggan offline (E7b) — melengkapi E7
 **Tujuan sprint:** Petugas dapat **scan/cari pelanggan & lihat meter terakhir tanpa
@@ -14,16 +14,18 @@ koneksi → ini melengkapinya.
 
 | Story | Judul | Epic | Est | Status |
 |-------|-------|------|-----|--------|
-| **S6-00** | API: endpoint snapshot pelanggan (bulk/chunk) untuk cache | E7b | M | Draft |
-| **S6-01** | Mobile: simpan & segarkan cache pelanggan (expo-sqlite) | E7b | L | Draft |
-| **S6-02** | Mobile: resolve/cari & meter info dari cache saat offline | E7b | M | Draft |
+| **S6-00** | API: endpoint snapshot pelanggan (berhalaman) untuk cache | E7b | M | ✅ Done |
+| **S6-01** | Mobile: simpan & segarkan cache pelanggan (AsyncStorage) | E7b | L | ✅ Done |
+| **S6-02** | Mobile: resolve/cari & meter info dari cache saat offline | E7b | M | ✅ Done |
+
+> Sprint **selesai**. Bukti uji & retrospektif: `sprint-06-review.md`.
 
 ## Pendekatan teknis (usulan)
 
 - **Backend:** `GET /customers/snapshot?page=&limit=` ringkas (id, nama, alamat, tipe,
   barcode, lastMeter) untuk diunduh & disimpan. 658 baris → unduh berhalaman.
-- **Storage:** **`expo-sqlite`** (lebih tepat dari AsyncStorage untuk ratusan baris +
-  query cari/by-barcode).
+- **Storage:** **AsyncStorage** + cari in-memory (658 baris ≈ 66KB → cukup; logika
+  resolve/cari murni & unit-testable). SQLite ditunda sampai volume jauh lebih besar.
 - **Strategi baca:** online → API seperti biasa & segarkan cache; offline → baca dari
   SQLite. `alreadyRecordedThisMonth` offline = cek snapshot + **antrian lokal** (E7).
 - **Refresh:** otomatis saat app dibuka & online; indikator "terakhir disinkron".

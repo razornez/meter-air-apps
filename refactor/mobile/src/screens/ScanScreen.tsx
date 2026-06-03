@@ -14,32 +14,50 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiResolveCustomer } from '../api/services';
-import { apiErrorMessage } from '../api/client';
+import { apiErrorMessage, isNetworkError } from '../api/client';
+import { useOffline } from '../offline/OfflineContext';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 
 export default function ScanScreen({ navigation }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
+  const { resolveOffline } = useOffline();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Cegah callback scan terpicu berkali-kali untuk satu kode.
   const handled = useRef(false);
+
+  function retryLater() {
+    setTimeout(() => {
+      handled.current = false;
+    }, 1200);
+  }
 
   async function onScanned(result: BarcodeScanningResult) {
     if (handled.current || busy) return;
     handled.current = true;
     setBusy(true);
     setError(null);
+    const code = result.data.trim();
     try {
-      const info = await apiResolveCustomer(result.data.trim());
+      const info = await apiResolveCustomer(code);
       navigation.replace('Reading', { meterInfo: info });
     } catch (e) {
-      setError(apiErrorMessage(e));
-      // izinkan scan ulang setelah jeda singkat
-      setTimeout(() => {
-        handled.current = false;
-      }, 1200);
+      // Offline → coba dari cache lokal.
+      if (isNetworkError(e)) {
+        const offline = await resolveOffline(code);
+        if (offline) {
+          navigation.replace('Reading', { meterInfo: offline });
+          return;
+        }
+        setError(
+          'Offline & pelanggan tidak ada di cache. Sinkronkan data saat ada koneksi.',
+        );
+      } else {
+        setError(apiErrorMessage(e));
+      }
+      retryLater();
     } finally {
       setBusy(false);
     }

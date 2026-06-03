@@ -1,4 +1,5 @@
 import { api } from './client';
+import { CachedCustomer } from '../offline/customerCache';
 import {
   AppConfig,
   CustomerDetail,
@@ -82,6 +83,15 @@ export async function apiCustomerHistory(id: number, limit = 24) {
   const { data } = await api.get<MeterHistoryItem[]>(
     `/customers/${id}/history`,
     { params: { limit } },
+  );
+  return data;
+}
+
+// E7b — snapshot ringkas untuk cache offline.
+export async function apiCustomerSnapshot(page = 1, limit = 500) {
+  const { data } = await api.get<Paginated<CachedCustomer>>(
+    '/customers/snapshot',
+    { params: { page, limit } },
   );
   return data;
 }

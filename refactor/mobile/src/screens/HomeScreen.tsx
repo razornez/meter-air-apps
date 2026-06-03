@@ -12,14 +12,24 @@ import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
 import { useOffline } from '../offline/OfflineContext';
 import { apiResolveCustomer } from '../api/services';
-import { apiErrorMessage } from '../api/client';
+import { apiErrorMessage, isNetworkError } from '../api/client';
 import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
-  const { isOnline, pendingCount, syncing, sync } = useOffline();
+  const {
+    isOnline,
+    pendingCount,
+    syncing,
+    sync,
+    resolveOffline,
+    cacheCount,
+    cacheSyncedAt,
+    refreshingCache,
+    refreshCustomerCache,
+  } = useOffline();
   const [manualCode, setManualCode] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -35,17 +45,41 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   async function openManual() {
-    if (!manualCode.trim()) return;
+    const code = manualCode.trim();
+    if (!code) return;
     setLoading(true);
     try {
-      const info = await apiResolveCustomer(manualCode.trim());
+      const info = await apiResolveCustomer(code);
       setManualCode('');
       navigation.navigate('Reading', { meterInfo: info });
     } catch (e) {
-      Alert.alert('Tidak ditemukan', apiErrorMessage(e));
+      // Offline → coba dari cache lokal.
+      if (isNetworkError(e)) {
+        const offline = await resolveOffline(code);
+        if (offline) {
+          setManualCode('');
+          navigation.navigate('Reading', { meterInfo: offline });
+        } else {
+          Alert.alert(
+            'Offline',
+            'Pelanggan tidak ada di cache. Sinkronkan data saat ada koneksi.',
+          );
+        }
+      } else {
+        Alert.alert('Tidak ditemukan', apiErrorMessage(e));
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  function formatSyncedAt(iso: string | null): string {
+    if (!iso) return 'belum pernah';
+    const d = new Date(iso);
+    return `${d.toLocaleDateString('id-ID')} ${d.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
   }
 
   return (
@@ -134,6 +168,24 @@ export default function HomeScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.cacheRow}>
+        <Text style={styles.cacheText}>
+          📇 Cache: {cacheCount} pelanggan · {formatSyncedAt(cacheSyncedAt)}
+        </Text>
+        <TouchableOpacity
+          onPress={refreshCustomerCache}
+          disabled={refreshingCache || !isOnline}
+          style={[
+            styles.cacheBtn,
+            (refreshingCache || !isOnline) && { opacity: 0.5 },
+          ]}
+        >
+          <Text style={styles.cacheBtnText}>
+            {refreshingCache ? '...' : 'Perbarui'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.divider}>
         <View style={styles.line} />
         <Text style={styles.dividerText}>atau input manual</Text>
@@ -214,6 +266,26 @@ const styles = StyleSheet.create({
     marginTop: 6,
     textAlign: 'center',
   },
+  cacheRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.card,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cacheText: { color: colors.muted, fontSize: 11, flex: 1 },
+  cacheBtn: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  cacheBtnText: { color: '#fff', fontWeight: '700', fontSize: 11 },
   menuRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
   menuCard: {
     flex: 1,

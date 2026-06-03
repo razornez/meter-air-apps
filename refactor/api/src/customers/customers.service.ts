@@ -6,8 +6,10 @@ import { HistoryMeter } from '../meter/entities/history-meter.entity';
 import { Faktur } from '../meter/entities/faktur.entity';
 import { ListCustomersDto } from './dto/list-customers.dto';
 import { mapUsageHistory, RawReading } from './meter-history.util';
+import { normalizeSnapshotRow, RawSnapshotRow } from './snapshot.util';
 
 const MAX_LIMIT = 100;
+const MAX_SNAPSHOT_LIMIT = 1000;
 
 @Injectable()
 export class CustomersService {
@@ -78,6 +80,37 @@ export class CustomersService {
       barcode: c.barcode,
       lastMeter,
       alreadyRecordedThisMonth: alreadyRecorded,
+    };
+  }
+
+  // S6-00 — snapshot ringkas semua pelanggan + meter terakhir (untuk cache offline).
+  async snapshot(page = 1, limit = 200) {
+    const take = Math.min(Math.max(limit, 1), MAX_SNAPSHOT_LIMIT);
+    const total = await this.customers.count();
+
+    const rows = (await this.customers
+      .createQueryBuilder('c')
+      .leftJoin(
+        'history_meter',
+        'lm',
+        'lm.id_pelanggan = c.id AND lm.id = (SELECT MAX(h.id) FROM history_meter h WHERE h.id_pelanggan = c.id)',
+      )
+      .select('c.id', 'id')
+      .addSelect('c.nama', 'nama')
+      .addSelect('c.alamat', 'alamat')
+      .addSelect('c.tipe', 'tipe')
+      .addSelect('c.barcode', 'barcode')
+      .addSelect('COALESCE(lm.meter, 0)', 'lastMeter')
+      .orderBy('c.id', 'ASC')
+      .offset((page - 1) * take)
+      .limit(take)
+      .getRawMany()) as RawSnapshotRow[];
+
+    return {
+      data: rows.map(normalizeSnapshotRow),
+      total,
+      page,
+      limit: take,
     };
   }
 
