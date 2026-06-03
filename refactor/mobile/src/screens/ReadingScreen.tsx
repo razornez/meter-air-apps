@@ -17,6 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiCalculate, apiOcrMeter, apiSaveReading, apiUpdateLocation, apiUploadPhoto } from '../api/services';
+import { preprocessForOcr } from '../utils/imagePreprocess';
 import { apiErrorMessage, isNetworkError } from '../api/client';
 import { useOffline } from '../offline/OfflineContext';
 import { ReadingResult, TariffResult } from '../types';
@@ -54,7 +55,9 @@ export default function ReadingScreen({ route, navigation }: Props) {
     if (!photoUri) return;
     setOcrLoading(true);
     try {
-      const res = await apiOcrMeter(photoUri);
+      // Preprocess: resize ke maks 800px sebelum kirim → Tesseract lebih cepat.
+      const processedUri = await preprocessForOcr(photoUri);
+      const res = await apiOcrMeter(processedUri);
       if (res.best != null) {
         setMeterText(String(res.best));
         setOcrSource(true);
@@ -212,19 +215,17 @@ export default function ReadingScreen({ route, navigation }: Props) {
   // ---- Form ----
   return (
     <ScrollView style={{ backgroundColor: 'transparent' }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-      <View style={s.card}>
-        <Text style={s.custName}>{customer.nama ?? 'Tanpa nama'}</Text>
-        <Text style={s.custMeta}>ID {customer.id}</Text>
-        {!!customer.alamat && <Text style={s.custMeta}>{customer.alamat}</Text>}
-        <View style={s.badgeRow}>
-          <View style={s.badge}>
-            <Text style={s.badgeText}>Tipe {customer.tipe ?? '-'}</Text>
-          </View>
-          <View style={s.badge}>
-            <Text style={s.badgeText}>Meter lama: {lastMeter}</Text>
-          </View>
+      <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.custHero, shadow.glow]}>
+        <Text style={s.custHeroLabel}>PELANGGAN</Text>
+        <Text style={s.custHeroName} numberOfLines={1}>{customer.nama ?? 'Tanpa nama'}</Text>
+        <Text style={s.custHeroMeta} numberOfLines={1}>
+          ID {customer.id}{customer.alamat ? ` · ${customer.alamat}` : ''}
+        </Text>
+        <View style={s.custHeroBadges}>
+          <View style={s.custHeroBadge}><Text style={s.custHeroBadgeText}>Tipe {customer.tipe ?? '-'}</Text></View>
+          <View style={s.custHeroBadge}><Text style={s.custHeroBadgeText}>Meter lama {lastMeter}</Text></View>
         </View>
-      </View>
+      </LinearGradient>
 
       {alreadyRecordedThisMonth && (
         <View style={s.warnBox}>
@@ -263,6 +264,15 @@ export default function ReadingScreen({ route, navigation }: Props) {
         </TouchableOpacity>
       )}
       {gpsTagged && <Text style={s.gpsOk}>✓ Lokasi GPS dicatat</Text>}
+
+      {/* Info periode pencatatan */}
+      <View style={s.periodBar}>
+        <Text style={s.periodText}>
+          📅 Pencatatan{' '}
+          {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+        </Text>
+        <Text style={s.periodSub}>Meter lama: {lastMeter}</Text>
+      </View>
 
       <View style={s.labelRow}>
         <Text style={s.label}>Angka Meter Baru</Text>
@@ -386,11 +396,40 @@ const createStyles = (t: Theme) =>
       ...shadow.soft,
     },
     cardTitle: { fontFamily: fonts.bold, color: t.text, marginBottom: 8, fontSize: 15 },
+    custHero: { borderRadius: radius.xl, padding: 20, marginBottom: 16 },
+    custHeroLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.semibold, fontSize: 11.5, letterSpacing: tracking.overline },
+    custHeroName: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 24, marginTop: 4, letterSpacing: tracking.tight },
+    custHeroMeta: { color: 'rgba(255,255,255,0.9)', fontFamily: fonts.regular, fontSize: 12.5, marginTop: 3 },
+    custHeroBadges: { flexDirection: 'row', gap: 8, marginTop: 14 },
+    custHeroBadge: { backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)', paddingHorizontal: 11, paddingVertical: 6, borderRadius: radius.pill },
+    custHeroBadgeText: { color: '#fff', fontSize: 12, fontFamily: fonts.semibold },
     custName: { fontSize: 23, fontFamily: fonts.displayBold, color: t.text, letterSpacing: tracking.tight },
     custMeta: { color: t.muted, marginTop: 2, fontFamily: fonts.regular },
     badgeRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
     badge: { backgroundColor: t.badgeBg, paddingHorizontal: 11, paddingVertical: 6, borderRadius: radius.sm },
     badgeText: { color: t.primary, fontSize: 12, fontFamily: fonts.semibold },
+    periodBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: t.badgeBg,
+      borderRadius: radius.sm,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: t.primary + '33',
+    },
+    periodText: {
+      color: t.primary,
+      fontFamily: fonts.bold,
+      fontSize: 14,
+    },
+    periodSub: {
+      color: t.muted,
+      fontFamily: fonts.regular,
+      fontSize: 12,
+    },
     gpsBanner: {
       flexDirection: 'row',
       alignItems: 'center',
