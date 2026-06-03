@@ -132,17 +132,33 @@ Hasil performa terukur (semua ≤ ~13 ms): [refactor/PERFORMANCE.md](refactor/PE
 | Simpan ulang bulan sama | ✅ 409 Conflict |
 | Mobile bundle (Metro) | ✅ 826 modul, tanpa error |
 
-## Menjalankan (dev)
+## Menjalankan (dev) — AUTO-RELOAD
+
+> Kedua perintah di bawah **otomatis reload saat kode berubah** — TIDAK perlu
+> restart manual. Backend pakai `start:dev` (nest watch), Mobile pakai Fast Refresh.
+> **Jangan** pakai `node dist/main` untuk dev (itu tidak auto-reload).
+
+**Cara cepat (Windows, 1 klik — buka 2 terminal otomatis):**
+
+```powershell
+cd refactor
+powershell -ExecutionPolicy Bypass -File .\dev.ps1
+```
+
+**Atau manual (2 terminal terpisah):**
 
 ```bash
-# Backend
+# Terminal 1 — Backend (auto-recompile + restart tiap file berubah)
 cd refactor/api
-cp .env.example .env      # sesuaikan kredensial MySQL
+cp .env.example .env        # set PORT=4000, kredensial MySQL
 npm install
-npm run start:dev         # http://localhost:3000
+npm run start:dev           # http://localhost:4000/api
 
-# Mobile
+# Terminal 2 — Mobile (Fast Refresh: perubahan langsung tampil)
 cd refactor/mobile
 npm install
-npx expo start            # set EXPO_PUBLIC_API_URL ke IP lokal backend
+npx expo start              # tekan 'w' utk web; .env: EXPO_PUBLIC_API_URL=http://localhost:4000/api
 ```
+
+> Catatan: perubahan file **`.env`** perlu restart manual (Ctrl+C lalu jalankan lagi
+> `--clear` untuk Expo). Perubahan **kode** tidak perlu.
