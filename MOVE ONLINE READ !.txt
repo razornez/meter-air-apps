@@ -1,0 +1,2 @@
+ubah window.location.pathname == '/kasir_new/transaksi'
+menjadi window.location.pathname == '/transaksi'

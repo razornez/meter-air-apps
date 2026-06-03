@@ -1,0 +1,16 @@
+import { MeterInfo } from '../types';
+
+export type RootStackParamList = {
+  Login: undefined;
+  Home: undefined;
+  Scan: undefined;
+  Reading: { meterInfo: MeterInfo };
+  // Fase 2
+  CustomersList: undefined;
+  CustomerDetail: { id: number };
+  FakturList: { customerId?: number } | undefined;
+  FakturDetail: { noFaktur: string };
+  // Sprint 4
+  Reports: undefined;
+  MasterData: undefined;
+};

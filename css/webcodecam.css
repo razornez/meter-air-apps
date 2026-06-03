@@ -1,0 +1,77 @@
+#webcodecam-canvas, #scanned-img {
+    background-color: #2d2d2d;
+}
+
+/*#camera-select {
+    display: inline-block;
+    width: auto;
+}*/
+
+.controls {
+    float: right;
+    display: inline-block;
+}
+
+.well {
+    position: relative;
+    display: inline-block;
+}
+
+.scanner-laser {
+    position: absolute;
+    margin: 40px;
+    height: 30px;
+    width: 30px;
+    opacity: 0.5;
+}
+
+.laser-leftTop {
+    top: 0;
+    left: 0;
+    border-top: solid red 5px;
+    border-left: solid red 5px;
+}
+
+.laser-leftBottom {
+    bottom: 0;
+    left: 0;
+    border-bottom: solid red 5px;
+    border-left: solid red 5px;
+}
+
+.laser-rightTop {
+    top: 0;
+    right: 0;
+    border-top: solid red 5px;
+    border-right: solid red 5px;
+}
+
+.laser-rightBottom {
+    bottom: 0;
+    right: 0;
+    border-bottom: solid red 5px;
+    border-right: solid red 5px;
+}
+
+#webcodecam-canvas {
+    background-color: #000000;
+}
+#scanned-QR{
+    word-break: break-word;
+}
+
+.transparent_bg{
+  background: #ffffffba;margin-top: 10px;
+}
+
+.date_list{
+    color: #b1b1b1;
+}
+
+.list_title{
+    margin-bottom: 0px;
+}
+
+.right_list{
+    text-align: right;
+}
