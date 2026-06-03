@@ -2,7 +2,7 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: ['babel-preset-expo'],
-    // Reanimated 4 uses the worklets plugin — MUST be listed last.
-    plugins: ['react-native-worklets/plugin'],
+    // Reanimated v3: plugin WAJIB di posisi terakhir.
+    plugins: ['react-native-reanimated/plugin'],
   };
 };

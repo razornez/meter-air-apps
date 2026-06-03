@@ -7,9 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bumdes.meterair"
     },
     "android": {
+      "package": "com.bumdes.meterair",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -29,7 +31,6 @@
           "cameraPermission": "Aplikasi memerlukan kamera untuk memindai QR meter dan memotret angka meter."
         }
       ],
-      "expo-sharing",
       [
         "expo-location",
         {
