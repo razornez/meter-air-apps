@@ -10,6 +10,7 @@ Development): dokumentasi berlapis dari **PRD → Epic → Story**, dikerjakan
 ```
 docs/
 ├── product/prd.md              # Visi, persona, epic, metrik sukses (SUMBER KEBENARAN produk)
+├── ENHANCEMENTS.md             # Brainstorm enhancement (performance & killer features) + ICE
 ├── architecture/architecture.md# Arsitektur teknis + keputusan (ADR)
 ├── standards/                  # GUARDRAIL — wajib dipatuhi setiap story
 │   ├── coding-standards.md     # SOLID, DRY, KISS, konvensi
