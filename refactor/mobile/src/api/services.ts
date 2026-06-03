@@ -4,6 +4,7 @@ import {
   AppConfig,
   CustomerDetail,
   CustomerListItem,
+  CustomerMarker,
   FakturDetail,
   FakturListItem,
   LoginResponse,
@@ -164,6 +165,26 @@ export async function apiListSupplier(params: {
   const { data } = await api.get<Paginated<SupplierItem>>('/supplier', {
     params,
   });
+  return data;
+}
+
+// ---- E8 (peta) ----
+
+export async function apiCustomersMap() {
+  const { data } = await api.get<CustomerMarker[]>('/customers/map');
+  return data;
+}
+
+export async function apiUpdateLocation(
+  id: number,
+  latitude: number,
+  longitude: number,
+) {
+  const { data } = await api.patch<{
+    id: number;
+    latitude: number;
+    longitude: number;
+  }>(`/customers/${id}/location`, { latitude, longitude });
   return data;
 }
 

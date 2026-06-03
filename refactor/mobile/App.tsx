@@ -18,6 +18,8 @@ import FakturListScreen from './src/screens/FakturListScreen';
 import FakturDetailScreen from './src/screens/FakturDetailScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
 import MasterDataScreen from './src/screens/MasterDataScreen';
+import MapScreen from './src/screens/MapScreen';
+import SetLocationScreen from './src/screens/SetLocationScreen';
 import { colors } from './src/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -87,6 +89,16 @@ function RootNavigator() {
             name="MasterData"
             component={MasterDataScreen}
             options={{ title: 'Master Data' }}
+          />
+          <Stack.Screen
+            name="Map"
+            component={MapScreen}
+            options={{ title: 'Peta Konsumen' }}
+          />
+          <Stack.Screen
+            name="SetLocation"
+            component={SetLocationScreen}
+            options={{ title: 'Atur Lokasi' }}
           />
         </>
       ) : (

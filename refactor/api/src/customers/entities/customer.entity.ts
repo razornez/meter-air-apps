@@ -45,4 +45,23 @@ export class Customer {
 
   @Column({ type: 'int', width: 1, default: 1 })
   status: number;
+
+  // Koordinat untuk peta (DECIMAL dikembalikan sbg number via transformer).
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 7,
+    nullable: true,
+    transformer: { to: (v) => v, from: (v) => (v == null ? null : Number(v)) },
+  })
+  latitude: number | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 7,
+    nullable: true,
+    transformer: { to: (v) => v, from: (v) => (v == null ? null : Number(v)) },
+  })
+  longitude: number | null;
 }

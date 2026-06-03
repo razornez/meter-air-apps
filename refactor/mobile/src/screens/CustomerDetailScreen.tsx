@@ -94,6 +94,22 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
         </Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.lokasiBtn}
+        onPress={() =>
+          navigation.navigate('SetLocation', {
+            id: detail.id,
+            nama: detail.nama,
+            lat: detail.latitude,
+            lng: detail.longitude,
+          })
+        }
+      >
+        <Text style={styles.lokasiText}>
+          📍 {detail.latitude != null ? 'Ubah Lokasi' : 'Atur Lokasi'}
+        </Text>
+      </TouchableOpacity>
+
       <Text style={styles.sectionTitle}>Riwayat Pemakaian</Text>
       {history.length === 0 ? (
         <Text style={styles.empty}>Belum ada riwayat catatan meter.</Text>
@@ -149,6 +165,17 @@ const styles = StyleSheet.create({
   },
   catatDisabled: { backgroundColor: colors.muted },
   catatText: { color: '#fff', fontWeight: '700' },
+  lokasiBtn: {
+    marginHorizontal: 14,
+    marginTop: -4,
+    marginBottom: 6,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  lokasiText: { color: colors.primary, fontWeight: '700' },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '700',

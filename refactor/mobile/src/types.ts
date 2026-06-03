@@ -82,6 +82,17 @@ export interface CustomerDetail {
   barcode: string | null;
   lastMeter: number;
   alreadyRecordedThisMonth: boolean;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface CustomerMarker {
+  id: number;
+  nama: string | null;
+  alamat: string | null;
+  lat: number;
+  lng: number;
+  status: 'lunas' | 'belum' | 'none';
 }
 
 export interface MeterHistoryItem {

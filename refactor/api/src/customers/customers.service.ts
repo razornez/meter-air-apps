@@ -7,6 +7,7 @@ import { Faktur } from '../meter/entities/faktur.entity';
 import { ListCustomersDto } from './dto/list-customers.dto';
 import { mapUsageHistory, RawReading } from './meter-history.util';
 import { normalizeSnapshotRow, RawSnapshotRow } from './snapshot.util';
+import { mapCustomerMarkerRow, RawMarkerRow } from './map.util';
 
 const MAX_LIMIT = 100;
 const MAX_SNAPSHOT_LIMIT = 1000;
@@ -80,6 +81,8 @@ export class CustomersService {
       barcode: c.barcode,
       lastMeter,
       alreadyRecordedThisMonth: alreadyRecorded,
+      latitude: c.latitude,
+      longitude: c.longitude,
     };
   }
 
@@ -112,6 +115,34 @@ export class CustomersService {
       page,
       limit: take,
     };
+  }
+
+  // S7-01 — titik pelanggan ber-koordinat + status bayar (faktur terakhir).
+  async mapMarkers() {
+    const rows = (await this.customers
+      .createQueryBuilder('c')
+      .leftJoin(
+        'faktur',
+        'f',
+        'f.id = (SELECT MAX(f2.id) FROM faktur f2 WHERE f2.customer = c.id)',
+      )
+      .select('c.id', 'id')
+      .addSelect('c.nama', 'nama')
+      .addSelect('c.alamat', 'alamat')
+      .addSelect('c.latitude', 'lat')
+      .addSelect('c.longitude', 'lng')
+      .addSelect('f.is_lunas', 'isLunas')
+      .addSelect('f.no_faktur', 'noFaktur')
+      .where('c.latitude IS NOT NULL AND c.longitude IS NOT NULL')
+      .getRawMany()) as RawMarkerRow[];
+    return rows.map(mapCustomerMarkerRow);
+  }
+
+  // S7-01 — perbarui koordinat pelanggan.
+  async updateLocation(id: number, latitude: number, longitude: number) {
+    await this.findById(id); // 404 bila tak ada
+    await this.customers.update({ id }, { latitude, longitude });
+    return { id, latitude, longitude };
   }
 
   // S2-02 — riwayat catatan meter + pemakaian antar pembacaan.

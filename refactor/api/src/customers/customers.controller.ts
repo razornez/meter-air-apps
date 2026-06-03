@@ -1,14 +1,17 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ListCustomersDto } from './dto/list-customers.dto';
+import { UpdateLocationDto } from './dto/update-location.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('customers')
@@ -42,6 +45,21 @@ export class CustomersController {
       page ? parseInt(page, 10) : 1,
       limit ? parseInt(limit, 10) : 200,
     );
+  }
+
+  // S7-01 — titik pelanggan + status bayar untuk peta (sebelum ':id').
+  @Get('map')
+  map() {
+    return this.customers.mapMarkers();
+  }
+
+  // S7-01 — perbarui koordinat pelanggan.
+  @Patch(':id/location')
+  updateLocation(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateLocationDto,
+  ) {
+    return this.customers.updateLocation(id, dto.latitude, dto.longitude);
   }
 
   @Get(':id/last-meter')

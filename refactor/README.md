@@ -101,7 +101,11 @@ pemakaian melimpah ke level berikutnya; level terakhir menampung semua sisa.
 - [x] **E7b** — Lookup pelanggan offline (cache) — **SELESAI & TERUJI**
   - API `GET /customers/snapshot` + cache mobile (AsyncStorage) + fallback scan/cari
     saat offline. 37 test backend, 24 test mobile.
-- [ ] **Backlog** — E6b iterasi admin web · hardening security lanjutan
+- [x] **E8** — Peta Konsumen (Leaflet + OSM) — **SELESAI & TERUJI**
+  - Marker pelanggan berwarna status bayar (hijau=lunas/merah=belum/abu=tanpa tagihan),
+    admin atur titik via peta. `GET /customers/map` + `PATCH /:id/location`.
+  - 41 test backend, 28 test mobile. Lintas-platform (web iframe / native webview).
+- [ ] **Backlog** — E8b (GPS petugas + impor koordinat) · pembayaran digital · OCR meter
 
 ## Test (guardrail)
 

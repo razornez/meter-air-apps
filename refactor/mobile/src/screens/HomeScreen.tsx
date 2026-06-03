@@ -168,6 +168,15 @@ export default function HomeScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
+      <TouchableOpacity
+        style={styles.mapCard}
+        onPress={() => navigation.navigate('Map')}
+      >
+        <Text style={styles.menuIcon}>🗺️</Text>
+        <Text style={styles.mapLabel}>Peta Konsumen</Text>
+        <Text style={styles.mapSub}>Sebaran pelanggan & status bayar</Text>
+      </TouchableOpacity>
+
       <View style={styles.cacheRow}>
         <Text style={styles.cacheText}>
           📇 Cache: {cacheCount} pelanggan · {formatSyncedAt(cacheSyncedAt)}
@@ -298,6 +307,15 @@ const styles = StyleSheet.create({
   },
   menuIcon: { fontSize: 30 },
   menuLabel: { marginTop: 8, fontWeight: '600', color: colors.text },
+  mapCard: {
+    backgroundColor: colors.accent,
+    borderRadius: 14,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  mapLabel: { marginTop: 6, fontWeight: '700', color: '#fff', fontSize: 16 },
+  mapSub: { color: '#E0F7FA', fontSize: 12, marginTop: 2 },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
