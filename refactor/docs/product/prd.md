@@ -35,7 +35,8 @@ MySQL `pdam` yang sama. Tujuan: pencatatan meter lebih cepat, akurat, dan andal
 | **E5** | Pembayaran & cetak/kirim faktur (PDF) | ✅ Selesai (Sprint 3) |
 | **E6** | Master data + laporan/rekap (di mobile) | ✅ Selesai (Sprint 4) |
 | **E6b** | Panel admin **web** (frontend web terpisah) | ⏳ Backlog (inisiatif tersendiri) |
-| **E7** | Mode offline + sinkronisasi (lapangan tanpa sinyal) | ⏳ Backlog |
+| **E7** | Mode offline + sinkronisasi (antrian tulis) | ✅ Selesai (Sprint 5) |
+| **E7b** | Cache unduh data pelanggan untuk lookup offline | ⏳ Backlog |
 
 ## 5. Ruang lingkup Sprint 2 (E3 + E4)
 

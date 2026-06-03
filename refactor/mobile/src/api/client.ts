@@ -21,6 +21,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Error jaringan = tidak ada respons dari server (offline / timeout).
+export function isNetworkError(err: unknown): boolean {
+  return axios.isAxiosError(err) && !err.response;
+}
+
+// 409 = catatan sudah tercatat di server (mis. retry / dobel).
+export function isAlreadyRecorded(err: unknown): boolean {
+  return axios.isAxiosError(err) && err.response?.status === 409;
+}
+
+// Error permanen (validasi 400/422) → tak akan pernah sukses bila diulang.
+export function isPermanentError(err: unknown): boolean {
+  const s = axios.isAxiosError(err) ? err.response?.status : undefined;
+  return s === 400 || s === 422;
+}
+
 // Ubah error axios jadi pesan yang ramah untuk ditampilkan.
 export function apiErrorMessage(err: unknown, fallback = 'Terjadi kesalahan'): string {
   if (axios.isAxiosError(err)) {

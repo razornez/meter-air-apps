@@ -10,6 +10,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
+import { useOffline } from '../offline/OfflineContext';
 import { apiResolveCustomer } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { colors } from '../theme';
@@ -18,8 +19,20 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
+  const { isOnline, pendingCount, syncing, sync } = useOffline();
   const [manualCode, setManualCode] = useState('');
   const [loading, setLoading] = useState(false);
+
+  async function onSync() {
+    const res = await sync();
+    if (res) {
+      Alert.alert(
+        'Sinkronisasi',
+        `${res.synced} terkirim` +
+          (res.remaining > 0 ? `, ${res.remaining} masih menunggu` : ''),
+      );
+    }
+  }
 
   async function openManual() {
     if (!manualCode.trim()) return;
@@ -46,6 +59,34 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.logoutText}>Keluar</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Status koneksi + antrian offline */}
+      {(!isOnline || pendingCount > 0) && (
+        <View
+          style={[
+            styles.statusBar,
+            !isOnline ? styles.statusOffline : styles.statusPending,
+          ]}
+        >
+          <Text style={styles.statusText}>
+            {!isOnline ? '⚠ Mode offline' : `📥 ${pendingCount} catatan menunggu`}
+          </Text>
+          {pendingCount > 0 && (
+            <TouchableOpacity
+              onPress={onSync}
+              disabled={syncing || !isOnline}
+              style={[
+                styles.syncBtn,
+                (syncing || !isOnline) && { opacity: 0.5 },
+              ]}
+            >
+              <Text style={styles.syncBtnText}>
+                {syncing ? 'Menyinkronkan…' : 'Sinkronkan'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       <TouchableOpacity
         style={styles.scanCard}
@@ -139,6 +180,25 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   logoutText: { color: colors.danger, fontWeight: '600' },
+  statusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 14,
+  },
+  statusOffline: { backgroundColor: '#FFF3E0', borderWidth: 1, borderColor: '#FFCC80' },
+  statusPending: { backgroundColor: '#E3F2FD', borderWidth: 1, borderColor: '#90CAF9' },
+  statusText: { color: colors.text, fontWeight: '600', fontSize: 13, flex: 1 },
+  syncBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  syncBtnText: { color: '#fff', fontWeight: '700', fontSize: 12 },
   scanCard: {
     backgroundColor: colors.primary,
     borderRadius: 18,

@@ -19,7 +19,8 @@ import {
   apiSaveReading,
   apiUploadPhoto,
 } from '../api/services';
-import { apiErrorMessage } from '../api/client';
+import { apiErrorMessage, isNetworkError } from '../api/client';
+import { useOffline } from '../offline/OfflineContext';
 import { ReadingResult, TariffResult } from '../types';
 import { colors, formatRupiah } from '../theme';
 
@@ -39,7 +40,9 @@ export default function ReadingScreen({ route, navigation }: Props) {
   const [cameraOpen, setCameraOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<ReadingResult | null>(null);
+  const [offlineSaved, setOfflineSaved] = useState(false);
 
+  const { enqueueReading } = useOffline();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
 
@@ -110,10 +113,49 @@ export default function ReadingScreen({ route, navigation }: Props) {
       }
       setResult(saved);
     } catch (e) {
-      Alert.alert('Gagal menyimpan', apiErrorMessage(e));
+      // Offline / tidak ada respons server → simpan ke antrian lokal.
+      if (isNetworkError(e)) {
+        await enqueueReading({
+          customerId: customer.id,
+          customerNama: customer.nama,
+          meterBaru,
+          catatan: catatan || undefined,
+          photoUri: photoUri ?? null,
+        });
+        setOfflineSaved(true);
+      } else {
+        Alert.alert('Gagal menyimpan', apiErrorMessage(e));
+      }
     } finally {
       setSaving(false);
     }
+  }
+
+  // ---- Tampilan tersimpan offline (masuk antrian) ----
+  if (offlineSaved) {
+    return (
+      <ScrollView contentContainerStyle={styles.successWrap}>
+        <Text style={styles.successIcon}>📥</Text>
+        <Text style={[styles.successTitle, { color: colors.warning }]}>
+          Tersimpan Offline
+        </Text>
+        <View style={styles.card}>
+          <Row label="Pelanggan" value={customer.nama ?? '-'} />
+          <Row label="Meter Baru" value={String(meterBaru)} />
+          <Row label="Pemakaian" value={`${pemakaian} m³`} />
+          <Text style={[styles.custMeta, { marginTop: 10 }]}>
+            Catatan disimpan di perangkat & akan dikirim otomatis saat ada
+            koneksi internet.
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.primaryBtn}
+          onPress={() => navigation.popToTop()}
+        >
+          <Text style={styles.primaryBtnText}>Selesai</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
   }
 
   // ---- Tampilan sukses ----

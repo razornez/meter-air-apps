@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import { OfflineProvider } from './src/offline/OfflineContext';
 import { RootStackParamList } from './src/navigation/types';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -103,10 +104,12 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="light" />
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
+        <OfflineProvider>
+          <StatusBar style="light" />
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </OfflineProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

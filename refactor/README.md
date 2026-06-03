@@ -94,14 +94,17 @@ pemakaian melimpah ke level berikutnya; level terakhir menampung semua sisa.
   **TD-5** tabel `pembayaran` (entity + migrasi + recording best-effort + endpoint
   `GET /faktur/payments`) ✅ — **jalankan migrasi untuk mengaktifkan**:
   `mysql -u root pdam < refactor/api/migrations/001_create_pembayaran.sql`
-- [ ] **Fase 5 (E6b)** — Panel admin web sudah ada; integrasi/iterasi lanjut bila perlu
-- [ ] **Backlog (E7)** — Mode offline + sinkronisasi
+- [x] **Fase 5 (E7)** — Mode offline + sinkronisasi pencatatan meter — **SELESAI & TERUJI**
+  - Antrian lokal (AsyncStorage) + auto-enqueue saat offline + auto-sync saat online
+    (NetInfo); idempoten via guard 409. Tabel `pembayaran` (TD-5) **sudah dimigrasi & live**.
+  - 17 unit test mobile; bundle 859 modul. Detail di `docs/sprints/sprint-05-review.md`.
+- [ ] **Backlog** — E6b iterasi admin web · **E7b** cache unduh pelanggan (lookup offline)
 
 ## Test (guardrail)
 
 ```bash
 cd refactor/api    && npm test   # 35 unit test (logika bisnis backend)
-cd refactor/mobile && npm test   # 7 unit test (util murni: rupiah, faktur HTML)
+cd refactor/mobile && npm test   # 17 unit test (util murni + antrian/sync offline)
 ```
 
 > **Proses kerja & standar** ada di `refactor/docs/` (PRD, arsitektur, coding/testing
