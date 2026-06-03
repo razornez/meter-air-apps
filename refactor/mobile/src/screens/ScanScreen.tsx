@@ -1,7 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -21,49 +20,44 @@ import { ScanIcon } from '../components/ui/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 
+// State machine scan: ready → scanning → result/error → ready
+type ScanState = 'ready' | 'scanning' | 'error';
+
 export default function ScanScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
   const [permission, requestPermission] = useCameraPermissions();
   const { resolveOffline } = useOffline();
-  const [busy, setBusy] = useState(false);
+
+  const [scanState, setScanState] = useState<ScanState>('ready');
+  const [errorMsg, setErrorMsg] = useState('');
   const [manualCode, setManualCode] = useState('');
-  const handledAt = useRef(0); // timestamp-based debounce (lebih robust dari boolean)
 
   async function processCode(code: string) {
     const trimmed = code.trim();
-    if (!trimmed) return;
+    if (!trimmed || scanState !== 'ready') return;
 
-    // Debounce 2 detik per scan agar tidak double-fire
-    const now = Date.now();
-    if (now - handledAt.current < 2000) return;
-    handledAt.current = now;
+    setScanState('scanning');
+    setErrorMsg('');
 
-    setBusy(true);
     try {
       const info = await apiResolveCustomer(trimmed);
+      // Sukses → navigasi, tidak perlu reset state
       navigation.replace('Reading', { meterInfo: info });
     } catch (e) {
+      let msg = '';
       if (isNetworkError(e)) {
         const offline = await resolveOffline(trimmed);
         if (offline) {
           navigation.replace('Reading', { meterInfo: offline });
           return;
         }
-        Alert.alert(
-          'Offline',
-          'Tidak ada koneksi & pelanggan tidak ada di cache.\nSinkronkan data saat ada koneksi, atau input manual.',
-        );
+        msg = 'Tidak ada koneksi & pelanggan tidak ada di cache lokal.';
       } else {
-        Alert.alert(
-          'Pelanggan tidak ditemukan',
-          `Kode "${trimmed}" tidak cocok dengan pelanggan mana pun.\n\n${apiErrorMessage(e)}`,
-        );
+        msg = `Kode "${trimmed}" tidak ditemukan.\n${apiErrorMessage(e)}`;
       }
-      // Reset debounce setelah error agar bisa scan ulang
-      handledAt.current = 0;
-    } finally {
-      setBusy(false);
+      setErrorMsg(msg);
+      setScanState('error');
     }
   }
 
@@ -74,6 +68,11 @@ export default function ScanScreen({ navigation }: Props) {
   function onManualSubmit() {
     processCode(manualCode);
     setManualCode('');
+  }
+
+  function resetScan() {
+    setScanState('ready');
+    setErrorMsg('');
   }
 
   if (!permission) {
@@ -109,16 +108,17 @@ export default function ScanScreen({ navigation }: Props) {
 
   return (
     <View style={s.container}>
-      {/* Camera layer */}
+      {/* Camera: aktif hanya saat state 'ready' */}
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"
         barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'ean13', 'code39'] }}
-        onBarcodeScanned={busy ? undefined : onScanned}
+        onBarcodeScanned={scanState === 'ready' ? onScanned : undefined}
       />
 
-      {/* Overlay */}
+      {/* Overlay tengah */}
       <View style={s.overlay}>
+
         {/* Bingkai scan */}
         <View style={s.frame}>
           <View style={[s.corner, s.tl]} />
@@ -127,24 +127,37 @@ export default function ScanScreen({ navigation }: Props) {
           <View style={[s.corner, s.br]} />
         </View>
 
-        {/* Keterangan */}
-        <View style={s.hintPill}>
-          <ScanIcon size={16} color={palette.white} />
-          <Text style={s.hint}>Arahkan ke QR / barcode meter</Text>
-        </View>
+        {/* State: ready — instruksi */}
+        {scanState === 'ready' && (
+          <View style={s.hintPill}>
+            <ScanIcon size={16} color={palette.white} />
+            <Text style={s.hint}>Arahkan ke QR / barcode meter</Text>
+          </View>
+        )}
 
-        {/* Loading state */}
-        {busy && (
-          <View style={s.busy}>
-            <ActivityIndicator color="#fff" />
-            <Text style={s.busyText}>Mencari pelanggan…</Text>
+        {/* State: scanning — loading */}
+        {scanState === 'scanning' && (
+          <View style={s.statusBox}>
+            <ActivityIndicator color="#fff" size="small" />
+            <Text style={s.statusText}>Mencari pelanggan…</Text>
+          </View>
+        )}
+
+        {/* State: error — pesan + tombol coba lagi */}
+        {scanState === 'error' && (
+          <View style={s.errorBox}>
+            <Text style={s.errorTitle}>Tidak ditemukan</Text>
+            <Text style={s.errorMsg}>{errorMsg}</Text>
+            <TouchableOpacity style={s.retryBtn} onPress={resetScan}>
+              <Text style={s.retryText}>🔄 Scan ulang</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
 
-      {/* Input manual — di bagian bawah layar kamera */}
+      {/* Input manual di bawah — selalu tersedia */}
       <View style={s.manualBar}>
-        <Text style={s.manualLabel}>Atau ketik ID manual:</Text>
+        <Text style={s.manualLabel}>Atau ketik ID pelanggan manual:</Text>
         <View style={s.manualRow}>
           <TextInput
             style={s.manualInput}
@@ -157,9 +170,9 @@ export default function ScanScreen({ navigation }: Props) {
             returnKeyType="search"
           />
           <TouchableOpacity
-            style={[s.manualBtn, (!manualCode.trim() || busy) && { opacity: 0.4 }]}
+            style={[s.manualBtn, (!manualCode.trim() || scanState === 'scanning') && { opacity: 0.4 }]}
             onPress={onManualSubmit}
-            disabled={!manualCode.trim() || busy}
+            disabled={!manualCode.trim() || scanState === 'scanning'}
           >
             <Text style={s.manualBtnText}>Cari</Text>
           </TouchableOpacity>
@@ -181,31 +194,19 @@ const createStyles = (t: Theme) =>
       backgroundColor: t.bg,
     },
     permIcon: {
-      width: 76,
-      height: 76,
-      borderRadius: 24,
+      width: 76, height: 76, borderRadius: 24,
       backgroundColor: t.badgeBg,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 16,
+      alignItems: 'center', justifyContent: 'center', marginBottom: 16,
     },
     permText: {
-      textAlign: 'center',
-      color: t.text,
-      marginBottom: 18,
-      fontFamily: fonts.medium,
-      fontSize: 14,
+      textAlign: 'center', color: t.text, marginBottom: 18,
+      fontFamily: fonts.medium, fontSize: 14,
     },
     permBtn: { paddingHorizontal: 24, paddingVertical: 13, borderRadius: radius.md },
     permBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
     overlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 120, // ruang untuk manual input bar
-      justifyContent: 'center',
-      alignItems: 'center',
+      position: 'absolute', top: 0, left: 0, right: 0, bottom: 120,
+      justifyContent: 'center', alignItems: 'center',
     },
     frame: { width: 248, height: 248, borderRadius: 28 },
     corner: { position: 'absolute', width: C, height: C, borderColor: palette.aquaLight },
@@ -214,52 +215,60 @@ const createStyles = (t: Theme) =>
     bl: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4, borderBottomLeftRadius: 24 },
     br: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4, borderBottomRightRadius: 24 },
     hintPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginTop: 26,
+      flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 26,
       backgroundColor: 'rgba(6,40,46,0.7)',
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: radius.pill,
+      paddingHorizontal: 16, paddingVertical: 10, borderRadius: radius.pill,
     },
     hint: { color: '#fff', fontSize: 13.5, fontFamily: fonts.semibold },
-    busy: { flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 8 },
-    busyText: { color: '#fff', fontFamily: fonts.medium },
-    // Manual input bar di bawah
+    statusBox: {
+      flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 26,
+      backgroundColor: 'rgba(6,40,46,0.85)',
+      paddingHorizontal: 18, paddingVertical: 12, borderRadius: radius.md,
+    },
+    statusText: { color: '#fff', fontFamily: fonts.medium, fontSize: 14 },
+    errorBox: {
+      marginTop: 26, alignItems: 'center',
+      backgroundColor: 'rgba(30,0,0,0.88)',
+      paddingHorizontal: 20, paddingVertical: 16,
+      borderRadius: radius.lg, marginHorizontal: 24,
+      borderWidth: 1, borderColor: 'rgba(255,80,80,0.4)',
+    },
+    errorTitle: {
+      color: '#FF6B6B', fontFamily: fonts.bold,
+      fontSize: 15, marginBottom: 6,
+    },
+    errorMsg: {
+      color: 'rgba(255,255,255,0.8)', fontFamily: fonts.regular,
+      fontSize: 13, textAlign: 'center', marginBottom: 14, lineHeight: 18,
+    },
+    retryBtn: {
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      paddingHorizontal: 20, paddingVertical: 10,
+      borderRadius: radius.pill, borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.3)',
+    },
+    retryText: { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
     manualBar: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
+      position: 'absolute', bottom: 0, left: 0, right: 0,
       backgroundColor: 'rgba(6,20,30,0.92)',
-      padding: 16,
-      paddingBottom: 32,
+      padding: 16, paddingBottom: 32,
     },
     manualLabel: {
       color: 'rgba(255,255,255,0.6)',
-      fontFamily: fonts.medium,
-      fontSize: 12,
-      marginBottom: 8,
+      fontFamily: fonts.medium, fontSize: 12, marginBottom: 8,
     },
     manualRow: { flexDirection: 'row', gap: 10 },
     manualInput: {
-      flex: 1,
-      borderWidth: 1,
+      flex: 1, borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.25)',
       borderRadius: radius.sm,
-      paddingHorizontal: 14,
-      paddingVertical: 11,
-      color: '#fff',
-      fontFamily: fonts.medium,
-      fontSize: 15,
+      paddingHorizontal: 14, paddingVertical: 11,
+      color: '#fff', fontFamily: fonts.medium, fontSize: 15,
       backgroundColor: 'rgba(255,255,255,0.08)',
     },
     manualBtn: {
-      backgroundColor: palette.teal,
-      borderRadius: radius.sm,
-      paddingHorizontal: 18,
-      justifyContent: 'center',
+      backgroundColor: palette.teal, borderRadius: radius.sm,
+      paddingHorizontal: 18, justifyContent: 'center',
     },
     manualBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 14 },
   });
