@@ -29,7 +29,13 @@
           "cameraPermission": "Aplikasi memerlukan kamera untuk memindai QR meter dan memotret angka meter."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Aplikasi memerlukan GPS untuk mencatat koordinat lokasi pelanggan saat pencatatan meter."
+        }
+      ]
     ]
   }
 }

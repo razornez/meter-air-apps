@@ -12,11 +12,13 @@ import {
   View,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as Location from 'expo-location';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import {
   apiCalculate,
   apiSaveReading,
+  apiUpdateLocation,
   apiUploadPhoto,
 } from '../api/services';
 import { apiErrorMessage, isNetworkError } from '../api/client';
@@ -41,6 +43,9 @@ export default function ReadingScreen({ route, navigation }: Props) {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<ReadingResult | null>(null);
   const [offlineSaved, setOfflineSaved] = useState(false);
+  // GPS: pelanggan belum punya koordinat → tawarkan tandai saat catat.
+  const noCoords = meterInfo.latitude == null && meterInfo.longitude == null;
+  const [gpsTagged, setGpsTagged] = useState(false);
 
   const { enqueueReading } = useOffline();
   const [permission, requestPermission] = useCameraPermissions();
@@ -216,6 +221,52 @@ export default function ReadingScreen({ route, navigation }: Props) {
         </View>
       )}
 
+      {/* GPS banner: tawarkan tandai lokasi bila belum ada koordinat */}
+      {noCoords && !gpsTagged && (
+        <TouchableOpacity
+          style={styles.gpsBanner}
+          onPress={async () => {
+            try {
+              if (typeof window !== 'undefined' && navigator?.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  async (pos) => {
+                    await apiUpdateLocation(
+                      customer.id,
+                      pos.coords.latitude,
+                      pos.coords.longitude,
+                    ).catch(() => {/* best-effort */});
+                    setGpsTagged(true);
+                  },
+                  () => {/* abaikan gagal */},
+                  { timeout: 8000 },
+                );
+              } else {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') return;
+                const loc = await Location.getCurrentPositionAsync({
+                  accuracy: Location.Accuracy.High,
+                });
+                await apiUpdateLocation(
+                  customer.id,
+                  loc.coords.latitude,
+                  loc.coords.longitude,
+                ).catch(() => {/* best-effort */});
+                setGpsTagged(true);
+              }
+            } catch {
+              /* tidak blok alur catat bila GPS gagal */
+            }
+          }}
+        >
+          <Text style={styles.gpsBannerText}>
+            📍 Tandai lokasi pelanggan saat ini? (ketuk)
+          </Text>
+        </TouchableOpacity>
+      )}
+      {gpsTagged && (
+        <Text style={styles.gpsOk}>✓ Lokasi GPS dicatat</Text>
+      )}
+
       <Text style={styles.label}>Angka Meter Baru</Text>
       <TextInput
         style={styles.meterInput}
@@ -370,6 +421,16 @@ const styles = StyleSheet.create({
   },
   badgeAlt: { backgroundColor: '#E0F7FA' },
   badgeText: { color: colors.primaryDark, fontSize: 12, fontWeight: '600' },
+  gpsBanner: {
+    backgroundColor: '#E0F7FA',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#80DEEA',
+  },
+  gpsBannerText: { color: '#00838F', fontWeight: '600', fontSize: 13 },
+  gpsOk: { color: colors.success, fontSize: 12, marginBottom: 6 },
   warnBox: {
     backgroundColor: '#FFF3E0',
     borderRadius: 10,

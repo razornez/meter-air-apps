@@ -22,6 +22,7 @@ import MapScreen from './src/screens/MapScreen';
 import SetLocationScreen from './src/screens/SetLocationScreen';
 import AnomalyScreen from './src/screens/AnomalyScreen';
 import WorklistScreen from './src/screens/WorklistScreen';
+import TunggakanScreen from './src/screens/TunggakanScreen';
 import { colors } from './src/theme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -111,6 +112,11 @@ function RootNavigator() {
             name="Worklist"
             component={WorklistScreen}
             options={{ title: 'Worklist Pencatatan' }}
+          />
+          <Stack.Screen
+            name="Tunggakan"
+            component={TunggakanScreen}
+            options={{ title: 'Tunggakan & Denda' }}
           />
         </>
       ) : (

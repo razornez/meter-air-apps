@@ -60,6 +60,8 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
       },
       lastMeter: detail.lastMeter,
       alreadyRecordedThisMonth: detail.alreadyRecordedThisMonth,
+      latitude: detail.latitude,
+      longitude: detail.longitude,
     };
     navigation.navigate('Reading', { meterInfo: info });
   }

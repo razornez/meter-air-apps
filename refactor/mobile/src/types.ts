@@ -24,6 +24,9 @@ export interface MeterInfo {
   customer: CustomerInfo;
   lastMeter: number;
   alreadyRecordedThisMonth: boolean;
+  // Opsional: diisi dari CustomerDetail (untuk hint GPS di ReadingScreen).
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface TariffItem {
@@ -93,6 +96,27 @@ export interface CustomerMarker {
   lat: number;
   lng: number;
   status: 'lunas' | 'belum' | 'none';
+}
+
+export interface TunggakanItem {
+  customerId: number;
+  nama: string | null;
+  alamat: string | null;
+  jumlahFaktur: number;
+  totalTagihan: number;
+  totalDenda: number;
+  grandTotal: number;
+  hariTelatMax: number;
+}
+
+export interface TunggakanResponse {
+  data: TunggakanItem[];
+  total: number;
+  totalTagihan: number;
+  totalDenda: number;
+  grandTotal: number;
+  page: number;
+  limit: number;
 }
 
 export interface WorklistItem {

@@ -19,6 +19,7 @@ import {
   SupplierItem,
   TariffResult,
   UserProfile,
+  TunggakanResponse,
   Worklist,
 } from '../types';
 
@@ -159,6 +160,13 @@ export async function apiAnomalies(limit = 100) {
 
 export async function apiWorklist() {
   const { data } = await api.get<Worklist>('/reports/worklist');
+  return data;
+}
+
+export async function apiTunggakan(page = 1, limit = 50) {
+  const { data } = await api.get<TunggakanResponse>('/reports/tunggakan', {
+    params: { page, limit },
+  });
   return data;
 }
 

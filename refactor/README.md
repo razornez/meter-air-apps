@@ -111,7 +111,11 @@ pemakaian melimpah ke level berikutnya; level terakhir menampung semua sisa.
 - [x] **E10** — Worklist Pencatatan (alat harian petugas) — **SELESAI & TERUJI**
   - `GET /reports/worklist` progres (done/total) + daftar belum dicatat; tap → langsung catat.
   - 51 test backend, 28 mobile. Latensi 9ms.
-- [ ] **Backlog (untuk PETUGAS)** — Tunggakan+denda · GPS otomatis saat catat · rekap kinerja · pembayaran QRIS · WhatsApp · OCR
+- [x] **E11 + E8b** — Tunggakan+Denda + GPS Otomatis — **SELESAI & TERUJI** *(Sprint 10)*
+  - `GET /reports/tunggakan` (600 pelanggan, Rp93,9jt tagihan + Rp10,6jt denda, 9ms).
+  - GPS: tombol GPS di SetLocation + banner GPS saat catat (best-effort, tidak blok).
+  - 55 test backend, 28 mobile. Semua endpoint < 1s.
+- [ ] **Backlog (untuk PETUGAS)** — Rekap kinerja pencatatan · pembayaran QRIS · WhatsApp · OCR meter
 
 ## Test (guardrail)
 

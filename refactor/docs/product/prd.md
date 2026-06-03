@@ -40,6 +40,8 @@ MySQL `pdam` yang sama. Tujuan: pencatatan meter lebih cepat, akurat, dan andal
 | **E8** | Peta konsumen (titik + status bayar + atur lokasi) | ✅ Selesai (Sprint 7) |
 | **E9** | Deteksi anomali konsumsi (bocor/meter rusak) | ✅ Selesai (Sprint 8) |
 | **E10** | Worklist pencatatan (progres + belum dicatat) | ✅ Selesai (Sprint 9) |
+| **E11** | Tunggakan + denda (alat penagihan petugas) | ✅ Selesai (Sprint 10) |
+| **E8b** | GPS otomatis saat catat + SetLocation GPS | ✅ Selesai (Sprint 10) |
 
 ## 5. Ruang lingkup Sprint 2 (E3 + E4)
 

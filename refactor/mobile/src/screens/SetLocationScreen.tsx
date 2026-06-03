@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiUpdateLocation } from '../api/services';
@@ -24,6 +26,50 @@ export default function SetLocationScreen({ route, navigation }: Props) {
     lat != null && lng != null ? { lat, lng } : null;
   const [picked, setPicked] = useState<PickedPoint | null>(initial);
   const [saving, setSaving] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+
+  async function onUseGps() {
+    // Web tidak punya expo-location native — fallback ke browser Geolocation.
+    if (Platform.OS === 'web') {
+      if (!navigator.geolocation) {
+        Alert.alert('GPS tidak tersedia', 'Browser tidak mendukung geolocation.');
+        return;
+      }
+      setGpsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setPicked({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setGpsLoading(false);
+        },
+        () => {
+          Alert.alert('GPS gagal', 'Tidak dapat mengambil posisi dari browser.');
+          setGpsLoading(false);
+        },
+        { timeout: 10000 },
+      );
+      return;
+    }
+
+    setGpsLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Izin GPS ditolak',
+          'Aktifkan izin lokasi di pengaturan untuk menggunakan fitur ini.',
+        );
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      setPicked({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+    } catch {
+      Alert.alert('GPS gagal', 'Tidak dapat mengambil posisi GPS.');
+    } finally {
+      setGpsLoading(false);
+    }
+  }
 
   async function onSave() {
     if (!picked) {
@@ -49,7 +95,18 @@ export default function SetLocationScreen({ route, navigation }: Props) {
         <Text style={styles.title} numberOfLines={1}>
           {nama ?? `Pelanggan ${id}`}
         </Text>
-        <Text style={styles.hint}>Tekan peta untuk menaruh titik</Text>
+        <Text style={styles.hint}>Tekan peta untuk menaruh titik — atau:</Text>
+        <TouchableOpacity
+          style={[styles.gpsBtn, gpsLoading && { opacity: 0.6 }]}
+          onPress={onUseGps}
+          disabled={gpsLoading}
+        >
+          {gpsLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.gpsBtnText}>📍 Gunakan GPS saat ini</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.mapWrap}>
@@ -90,6 +147,14 @@ const styles = StyleSheet.create({
   bar: { padding: 12, backgroundColor: colors.card },
   title: { fontWeight: '700', color: colors.text, fontSize: 16 },
   hint: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  gpsBtn: {
+    backgroundColor: colors.accent,
+    borderRadius: 8,
+    paddingVertical: 9,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  gpsBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   mapWrap: { flex: 1 },
   footer: {
     padding: 12,

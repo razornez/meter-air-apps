@@ -28,4 +28,16 @@ export class ReportsController {
   worklist() {
     return this.reports.worklist();
   }
+
+  // S10-00 — tunggakan + denda per pelanggan.
+  @Get('tunggakan')
+  tunggakan(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.reports.tunggakan(
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 50,
+    );
+  }
 }

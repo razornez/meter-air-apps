@@ -25,4 +25,6 @@ export type RootStackParamList = {
   Anomaly: undefined;
   // Sprint 9 (worklist)
   Worklist: undefined;
+  // Sprint 10
+  Tunggakan: undefined;
 };

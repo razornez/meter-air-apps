@@ -193,6 +193,15 @@ export default function HomeScreen({ navigation }: Props) {
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={styles.tunggakanCard}
+        onPress={() => navigation.navigate('Tunggakan')}
+      >
+        <Text style={styles.menuIcon}>💸</Text>
+        <Text style={styles.mapLabel}>Tunggakan & Denda</Text>
+        <Text style={styles.mapSub}>Daftar pelanggan menunggak</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.anomalyCard}
         onPress={() => navigation.navigate('Anomaly')}
       >
@@ -353,6 +362,13 @@ const styles = StyleSheet.create({
   },
   mapLabel: { marginTop: 6, fontWeight: '700', color: '#fff', fontSize: 16 },
   mapSub: { color: '#E0F7FA', fontSize: 12, marginTop: 2 },
+  tunggakanCard: {
+    backgroundColor: colors.danger,
+    borderRadius: 14,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginTop: 12,
+  },
   anomalyCard: {
     backgroundColor: colors.warning,
     borderRadius: 14,

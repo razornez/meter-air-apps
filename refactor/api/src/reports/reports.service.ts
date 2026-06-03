@@ -8,6 +8,7 @@ import { HistoryMeter } from '../meter/entities/history-meter.entity';
 import { normalizeMonthlyRow, RawMonthlyRow } from './reports.util';
 import { AnomalyType, detectUsageAnomaly } from './anomaly.util';
 import { partitionWorklist } from './worklist.util';
+import { groupTunggakan, RawTunggakanRow } from './tunggakan.util';
 
 const MAX_MONTHS = 24;
 
@@ -36,6 +37,41 @@ export class ReportsService {
     @InjectRepository(HistoryMeter)
     private readonly history: Repository<HistoryMeter>,
   ) {}
+
+  // S10-00 — tunggakan + denda: daftar pelanggan menunggak dikelompokkan per pelanggan.
+  async tunggakan(page = 1, limit = 50) {
+    const take = Math.min(Math.max(limit, 1), 200);
+
+    // Satu query: semua faktur belum lunas + lewat jatuh tempo.
+    const rows = (await this.faktur
+      .createQueryBuilder('f')
+      .leftJoin(Customer, 'c', 'c.id = f.customer')
+      .select('f.customer', 'customerId')
+      .addSelect('c.nama', 'nama')
+      .addSelect('c.alamat', 'alamat')
+      .addSelect('f.total', 'total')
+      .addSelect('COALESCE(f.denda, 0)', 'denda')
+      .addSelect('DATEDIFF(NOW(), f.tgl_jatuh_tempo)', 'hariTelat')
+      .where('f.is_lunas = 0')
+      .andWhere('f.tgl_jatuh_tempo IS NOT NULL')
+      .andWhere('f.tgl_jatuh_tempo < NOW()')
+      .getRawMany()) as RawTunggakanRow[];
+
+    const all = groupTunggakan(rows);
+    const totalTagihan = all.reduce((s, r) => s + r.totalTagihan, 0);
+    const totalDenda = all.reduce((s, r) => s + r.totalDenda, 0);
+    const paged = all.slice((page - 1) * take, page * take);
+
+    return {
+      data: paged,
+      total: all.length,
+      totalTagihan,
+      totalDenda,
+      grandTotal: totalTagihan + totalDenda,
+      page,
+      limit: take,
+    };
+  }
 
   // S9-00 — worklist pencatatan: progres + daftar pelanggan belum dicatat bulan ini.
   async worklist() {
