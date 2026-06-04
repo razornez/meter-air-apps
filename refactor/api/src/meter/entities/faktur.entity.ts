@@ -1,16 +1,24 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-// Map ke tabel `faktur` (tagihan).
 @Entity({ name: 'faktur' })
 export class Faktur {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
+
+  @Column({ name: 'tenant_id', type: 'int', unsigned: true, default: 1 })
+  tenantId: number;
 
   @Column({ name: 'no_faktur', type: 'varchar', length: 25, nullable: true })
   noFaktur: string | null;
 
   @Column({ type: 'datetime', nullable: true })
   tanggal: Date | null;
+
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  periode: string | null;
+
+  @Column({ type: 'varchar', length: 10, default: 'pos' })
+  jenis: string;
 
   @Column({ type: 'int', nullable: true })
   kasir: number | null;
@@ -39,7 +47,6 @@ export class Faktur {
   @Column({ name: 'diskon_tipe', type: 'varchar', length: 5, nullable: true })
   diskonTipe: string | null;
 
-  // Di skema lama bertipe varchar; berisi customer.id.
   @Column({ type: 'varchar', length: 50, nullable: true })
   customer: string | null;
 
@@ -49,10 +56,10 @@ export class Faktur {
   @Column({ name: 'foto_meter', type: 'varchar', length: 100, nullable: true })
   fotoMeter: string | null;
 
-  @Column({ name: 'is_done', type: 'int', nullable: true })
+  @Column({ name: 'is_done', type: 'tinyint', nullable: true })
   isDone: number | null;
 
-  @Column({ name: 'is_lunas', type: 'int', width: 1, default: 0 })
+  @Column({ name: 'is_lunas', type: 'tinyint', width: 1, default: 0 })
   isLunas: number;
 
   @Column({ type: 'text', nullable: true })

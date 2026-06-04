@@ -1,4 +1,4 @@
-export interface UserProfile {
+﻿export interface UserProfile {
   id: number;
   username: string;
   fullname: string;
@@ -7,9 +7,18 @@ export interface UserProfile {
   lastLogin: string | null;
 }
 
+export interface TenantInfo {
+  id: number;
+  nama: string;
+  kode: string;
+  expired_at: string | null;
+  sisa_hari: number | null;
+  dalam_grace_period: boolean;
+}
 export interface LoginResponse {
   access_token: string;
   user: UserProfile;
+  tenant: TenantInfo;
 }
 
 export interface CustomerInfo {
@@ -288,3 +297,4 @@ export interface FakturDetail {
   }[];
   meter: { meter: number; tanggal: string }[];
 }
+

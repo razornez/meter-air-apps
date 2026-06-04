@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppConfig } from './app-config.entity';
@@ -10,15 +10,18 @@ export class ConfigAppService {
     private readonly config: Repository<AppConfig>,
   ) {}
 
-  // Identitas perusahaan untuk kop faktur. Default aman bila tabel kosong.
-  async get() {
-    const row = await this.config.find({ order: { id: 'ASC' }, take: 1 });
-    const c = row[0];
+  async get(tenantId = 1) {
+    let row = await this.config.findOne({ where: { tenantId }, order: { id: 'ASC' } });
+    if (!row) {
+      row = await this.config.save(
+        this.config.create({ tenantId, perusahaan: 'Meter Air', telp: '', alamat: '' }),
+      );
+    }
     return {
-      perusahaan: c?.perusahaan ?? '',
-      alamat: c?.alamat ?? '',
-      telp: c?.telp ?? '',
-      logo: c?.logo ?? '',
+      perusahaan: row.perusahaan ?? '',
+      alamat: row.alamat ?? '',
+      telp: row.telp ?? '',
+      logo: row.logo ?? '',
     };
   }
 }

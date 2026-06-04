@@ -1,23 +1,22 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-// Map ke tabel `level_pemakaian` (tarif berjenjang/blok per jenis pelanggan).
 @Entity({ name: 'level_pemakaian' })
 export class LevelPemakaian {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
 
-  // Cocok dengan customer.tipe (B/N/S).
-  @Column({ length: 55 })
+  @Column({ name: 'tenant_id', type: 'int', unsigned: true, default: 1 })
+  tenantId: number;
+
+  @Column({ type: 'varchar', length: 55 })
   jenis: string;
 
   @Column({ type: 'int' })
   level: number;
 
-  // Harga per m3 pada blok ini.
   @Column({ type: 'int' })
   harga: number;
 
-  // Kapasitas blok (m3) yang ditampung pada level ini.
   @Column({ name: 'per_pemakaian', type: 'int' })
   perPemakaian: number;
 

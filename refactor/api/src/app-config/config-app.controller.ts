@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+﻿import { Controller, Get, Request, UseGuards } from '@nestjs/common';
 import { ConfigAppService } from './config-app.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -8,7 +8,7 @@ export class ConfigAppController {
   constructor(private readonly config: ConfigAppService) {}
 
   @Get()
-  get() {
-    return this.config.get();
+  get(@Request() req) {
+    return this.config.get(req.tenantId);
   }
 }

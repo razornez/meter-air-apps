@@ -12,11 +12,10 @@ import {
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  // Lebih ketat dari global: maksimum 10 percobaan login / menit / IP.
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   login(@Body() dto: LoginDto) {
-    return this.auth.login(dto.username, dto.password);
+    return this.auth.login(dto);
   }
 
   @UseGuards(JwtAuthGuard)

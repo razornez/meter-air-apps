@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+﻿import { ConflictException } from '@nestjs/common';
 import { MeterService } from './meter.service';
 
 function makeService(meterInfo: any) {
@@ -25,10 +25,12 @@ describe('MeterService.saveReading', () => {
       alreadyRecordedThisMonth: true,
     });
 
-    await expect(service.saveReading(1, 1, 125)).rejects.toBeInstanceOf(
+    await expect(service.saveReading(1, 1, 125, undefined, 1)).rejects.toBeInstanceOf(
       ConflictException,
     );
     // Tidak boleh menyentuh DB bila ditolak guard.
     expect(dataSource.transaction).not.toHaveBeenCalled();
   });
 });
+
+

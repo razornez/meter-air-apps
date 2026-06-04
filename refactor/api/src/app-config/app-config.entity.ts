@@ -1,20 +1,22 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-// Map ke tabel `config` (identitas perusahaan). Hanya kolom yang dipakai.
 @Entity({ name: 'config' })
 export class AppConfig {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
 
-  @Column({ length: 50, default: '' })
-  perusahaan: string;
+  @Column({ name: 'tenant_id', type: 'int', unsigned: true, default: 1 })
+  tenantId: number;
 
-  @Column({ length: 100, default: '' })
-  logo: string;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  perusahaan: string | null;
 
-  @Column({ length: 15, default: '' })
-  telp: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  logo: string | null;
 
-  @Column({ type: 'text' })
-  alamat: string;
+  @Column({ type: 'varchar', length: 25, nullable: true })
+  telp: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  alamat: string | null;
 }

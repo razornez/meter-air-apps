@@ -2,16 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { TenantInterceptor } from './common/tenant.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
-  // Header keamanan HTTP (XSS, sniffing, dll).
   app.use(helmet());
 
-  // CORS: produksi sebaiknya batasi origin via env CORS_ORIGIN (pisahkan koma).
-  // Dev (kosong) → izinkan semua agar mobile/emulator mudah terhubung.
   const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
     origin: corsOrigin
@@ -29,7 +27,9 @@ async function bootstrap() {
     }),
   );
 
-  // Cegah jalan di produksi dengan secret default.
+  // Inject req.tenantId dari JWT payload setelah guard berjalan.
+  app.useGlobalInterceptors(new TenantInterceptor());
+
   const secret = process.env.JWT_SECRET ?? '';
   const weakSecret =
     !secret || secret.includes('dev-secret') || secret.includes('ganti');

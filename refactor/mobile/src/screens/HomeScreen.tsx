@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -45,7 +45,7 @@ export default function HomeScreen({ navigation }: Props) {
   const s = useMemo(() => createStyles(t), [t]);
   const { mode, toggle } = useThemeMode();
   const insets = useSafeAreaInsets();
-  const { user, logout } = useAuth();
+  const { user, tenant, logout } = useAuth();
   const {
     isOnline,
     pendingCount,
@@ -58,6 +58,19 @@ export default function HomeScreen({ navigation }: Props) {
     refreshCustomerCache,
   } = useOffline();
   const [manualCode, setManualCode] = useState('');
+  function renderGraceBanner() {
+    if (!tenant?.dalam_grace_period) return null;
+    const days = Math.abs(tenant.sisa_hari ?? 0);
+    return (
+      <View style={s.graceBanner}>
+        <Text style={s.graceBannerText}>
+          Masa langganan berakhir {days} hari lalu. Segera hubungi administrator.
+        </Text>
+      </View>
+    );
+  }
+
+  const graceDays = tenant?.dalam_grace_period ? Math.abs(tenant.sisa_hari ?? 0) : null;
   const [loading, setLoading] = useState(false);
   const [wl, setWl] = useState<{ done: number; total: number; pending: number } | null>(null);
 
@@ -159,6 +172,8 @@ export default function HomeScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       </WaveBackground>
+
+      {renderGraceBanner()}
 
       <View style={s.body}>
         {(!isOnline || pendingCount > 0) && (
@@ -314,7 +329,20 @@ const createStyles = (t: Theme) =>
 
     body: { paddingHorizontal: 20, marginTop: 18 },
 
-    statusBar: {
+    graceBanner: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F59E0B',
+  },
+  graceBannerText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontFamily: 'SpaceGrotesk-Medium',
+    textAlign: 'center',
+  },
+  statusBar: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 10,
@@ -399,3 +427,5 @@ const createStyles = (t: Theme) =>
     cacheBtn: { backgroundColor: t.accent, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
     cacheBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 11 },
   });
+
+

@@ -1,4 +1,4 @@
-import { api } from './client';
+﻿import { api } from './client';
 import { CachedCustomer } from '../offline/customerCache';
 import {
   Anomaly,
@@ -26,10 +26,11 @@ import {
   Worklist,
 } from '../types';
 
-export async function apiLogin(username: string, password: string) {
+export async function apiLogin(username: string, password: string, kode: string) {
   const { data } = await api.post<LoginResponse>('/auth/login', {
     username,
     password,
+    kode,
   });
   return data;
 }
@@ -277,3 +278,4 @@ export async function apiUploadPhoto(noFaktur: string, photoUri: string) {
   );
   return data as { filename: string; path: string };
 }
+

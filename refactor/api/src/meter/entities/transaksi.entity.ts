@@ -1,26 +1,27 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-// Map ke tabel `transaksi` (baris item dari sebuah faktur).
 @Entity({ name: 'transaksi' })
 export class Transaksi {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
 
-  @Column({ length: 25 })
+  @Column({ name: 'tenant_id', type: 'int', unsigned: true, default: 1 })
+  tenantId: number;
+
+  @Column({ type: 'varchar', length: 25 })
   barcode: string;
 
-  @Column({ type: 'varchar', length: 25, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   produk: string | null;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', default: 0 })
   harga: number;
 
-  // Di skema lama bertipe varchar(5).
-  @Column({ type: 'varchar', length: 5, nullable: true })
-  quantity: string | null;
+  @Column({ type: 'int', nullable: true })
+  quantity: number | null;
 
-  @Column({ length: 25, default: '0' })
-  diskon: string;
+  @Column({ type: 'int', nullable: true })
+  diskon: number | null;
 
   @Column({ type: 'int', nullable: true })
   total: number | null;

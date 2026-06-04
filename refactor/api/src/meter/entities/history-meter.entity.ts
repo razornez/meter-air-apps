@@ -1,23 +1,25 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-// Map ke tabel `history_meter` (riwayat angka meter per pelanggan).
 @Entity({ name: 'history_meter' })
 export class HistoryMeter {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
 
-  @Column({ name: 'id_pelanggan', type: 'int' })
+  @Column({ name: 'tenant_id', type: 'int', unsigned: true, default: 1 })
+  tenantId: number;
+
+  @Column({ name: 'id_pelanggan', type: 'int', unsigned: true })
   idPelanggan: number;
 
-  @Column({ name: 'no_faktur', length: 50 })
+  @Column({ name: 'no_faktur', type: 'varchar', length: 50 })
   noFaktur: string;
 
   @Column({ type: 'int' })
   meter: number;
 
-  @Column({ name: 'tanggal_catat', type: 'date' })
-  tanggalCatat: string;
+  @Column({ name: 'tanggal_catat', type: 'date', nullable: true })
+  tanggalCatat: string | null;
 
-  @Column({ name: 'jam_catat', type: 'time' })
-  jamCatat: string;
+  @Column({ name: 'jam_catat', type: 'time', nullable: true })
+  jamCatat: string | null;
 }

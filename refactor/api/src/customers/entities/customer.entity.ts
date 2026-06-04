@@ -1,21 +1,22 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-// Map ke tabel `customer` (pelanggan air).
 @Entity({ name: 'customer' })
 export class Customer {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
+
+  @Column({ name: 'tenant_id', type: 'int', unsigned: true, default: 1 })
+  tenantId: number;
 
   @Column({ type: 'int', nullable: true })
   urut: number | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   nama: string | null;
 
   @Column({ type: 'text', nullable: true })
   alamat: string | null;
 
-  // B / N / S — menentukan jenis tarif (level_pemakaian.jenis).
   @Column({ type: 'varchar', length: 50, nullable: true })
   tipe: string | null;
 
@@ -43,10 +44,9 @@ export class Customer {
   @Column({ name: 'tgl_daftar', type: 'datetime', nullable: true })
   tglDaftar: Date | null;
 
-  @Column({ type: 'int', width: 1, default: 1 })
+  @Column({ type: 'tinyint', width: 1, default: 1 })
   status: number;
 
-  // Koordinat untuk peta (DECIMAL dikembalikan sbg number via transformer).
   @Column({
     type: 'decimal',
     precision: 10,

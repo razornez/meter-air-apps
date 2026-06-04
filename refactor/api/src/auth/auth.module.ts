@@ -7,19 +7,18 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { User } from './entities/user.entity';
+import { Tenant } from './entities/tenant.entity';
 import { ActivityLog } from './entities/activity-log.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, ActivityLog]),
+    TypeOrmModule.forFeature([User, Tenant, ActivityLog]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'dev-secret'),
-        // @nestjs/jwt v11 mengetatkan tipe expiresIn (StringValue dari `ms`);
-        // string env seperti '7d' valid saat runtime → cast aman.
         signOptions: {
           expiresIn: config.get<string>('JWT_EXPIRES_IN', '7d') as `${number}d`,
         },

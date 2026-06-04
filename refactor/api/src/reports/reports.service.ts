@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Faktur } from '../meter/entities/faktur.entity';
@@ -40,21 +40,21 @@ export class ReportsService {
   ) {}
 
   // S11-03 — rekap kinerja pencatatan per petugas.
-  async kinerja(month?: number, year?: number) {
+  async kinerja(tenantId = 1, month?: number, year?: number) {
     const now = new Date();
     const m = month ?? now.getMonth() + 1;
     const y = year ?? now.getFullYear();
 
     const rows = await this.faktur
       .createQueryBuilder('f')
-      .leftJoin(User, 'u', 'u.id_user = f.kasir')
+      .leftJoin(User, 'u', 'u.id = f.kasir')
       .select('f.kasir', 'kasirId')
-      .addSelect('COALESCE(u.fullname, u.username, "Tidak dikenal")', 'nama')
+      .addSelect('COALESCE(u.name, u.username, "Tidak dikenal")', 'nama')
       .addSelect('COUNT(f.id)', 'jumlah')
       .where('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
       .andWhere('f.kasir IS NOT NULL')
       .groupBy('f.kasir')
-      .addGroupBy('u.fullname')
+      .addGroupBy('u.name')
       .addGroupBy('u.username')
       .orderBy('jumlah', 'DESC')
       .getRawMany<{
@@ -80,7 +80,7 @@ export class ReportsService {
   }
 
   // S10-00 — tunggakan + denda: daftar pelanggan menunggak dikelompokkan per pelanggan.
-  async tunggakan(page = 1, limit = 50) {
+  async tunggakan(tenantId = 1, page = 1, limit = 50) {
     const take = Math.min(Math.max(limit, 1), 200);
 
     // Satu query: semua faktur belum lunas + lewat jatuh tempo.
@@ -116,7 +116,7 @@ export class ReportsService {
   }
 
   // S9-00 — worklist pencatatan: progres + daftar pelanggan belum dicatat bulan ini.
-  async worklist() {
+  async worklist(tenantId = 1) {
     const now = new Date();
     const m = now.getMonth() + 1;
     const y = now.getFullYear();
@@ -182,7 +182,7 @@ export class ReportsService {
   }
 
   // S8-01 — daftar pelanggan dengan pemakaian janggal (deteksi rule-based).
-  async anomalies(limit = 100) {
+  async anomalies(tenantId = 1, limit = 100) {
     const rows = await this.history
       .createQueryBuilder('h')
       .select('h.id_pelanggan', 'idPelanggan')
@@ -247,12 +247,12 @@ export class ReportsService {
   }
 
   // S4-00 — ringkasan KPI bulan & tahun berjalan.
-  async summary() {
+  async summary(tenantId = 1) {
     const now = new Date();
     const m = now.getMonth() + 1;
     const y = now.getFullYear();
 
-    const totalPelanggan = await this.customers.count();
+    const totalPelanggan = await this.customers.count({ where: { tenantId } });
 
     const agg = await this.faktur
       .createQueryBuilder('f')
@@ -293,7 +293,7 @@ export class ReportsService {
   }
 
   // S4-00 — rekap per bulan (terbaru dulu).
-  async monthly(months = 6) {
+  async monthly(tenantId = 1, months = 6) {
     const take = Math.min(Math.max(months, 1), MAX_MONTHS);
     const rows = await this.faktur
       .createQueryBuilder('f')
@@ -304,7 +304,7 @@ export class ReportsService {
         'COALESCE(SUM(CASE WHEN f.is_lunas=1 THEN f.total ELSE 0 END),0)',
         'totalTerbayar',
       )
-      .where('f.tanggal IS NOT NULL')
+      .where('f.tenantId = :tid AND f.tanggal IS NOT NULL', { tid: tenantId })
       .groupBy('periode')
       .orderBy('periode', 'DESC')
       .limit(take)
@@ -313,3 +313,5 @@ export class ReportsService {
     return rows.map(normalizeMonthlyRow);
   }
 }
+
+

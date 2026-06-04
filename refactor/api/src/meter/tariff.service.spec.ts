@@ -1,16 +1,14 @@
-import { TariffService } from './tariff.service';
+﻿import { TariffService } from './tariff.service';
 import { LevelPemakaian } from './entities/level-pemakaian.entity';
 
 // Data tarif tipe B (sesuai DB `pdam`): 7 level, tiap blok 10 m3.
 function levelsB(): LevelPemakaian[] {
   const harga = [2000, 2500, 3000, 3500, 4000, 4500, 5000];
   return harga.map((h, i) => ({
-    id: i + 1,
+    id: i + 1, tenantId: 1,
     jenis: 'B',
-    level: i + 1,
-    harga: h,
-    perPemakaian: 10,
-    perPemakaianMax: null,
+    level: i + 1, harga: h,
+    perPemakaian: 10, perPemakaianMax: null,
   }));
 }
 
@@ -71,3 +69,7 @@ describe('TariffService (tarif berjenjang)', () => {
     expect(r.totalBiaya).toBe(10000); // diperlakukan sebagai 5 m3
   });
 });
+
+
+
+

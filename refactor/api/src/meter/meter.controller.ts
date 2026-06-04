@@ -1,12 +1,6 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Param,
-  Post,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
+﻿import {
+  BadRequestException, Body, Controller, Param, Post, Request,
+  UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
@@ -17,10 +11,7 @@ import { OcrService } from './ocr.service';
 import { CalculateDto } from './dto/calculate.dto';
 import { CreateReadingDto } from './dto/create-reading.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import {
-  AuthUser,
-  CurrentUser,
-} from '../common/decorators/current-user.decorator';
+import { AuthUser, CurrentUser } from '../common/decorators/current-user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('meter')
@@ -32,41 +23,25 @@ export class MeterController {
     private readonly ocr: OcrService,
     private readonly config: ConfigService,
   ) {
-    this.uploadDir = this.config.get<string>(
-      'UPLOAD_DIR',
-      'uploads/foto_meter',
-    );
+    this.uploadDir = this.config.get<string>('UPLOAD_DIR', 'uploads/foto_meter');
   }
 
-  // Preview rincian tarif (tanpa menyimpan).
   @Post('calculate')
-  calculate(@Body() dto: CalculateDto) {
+  calculate(@CurrentUser() user: AuthUser, @Body() dto: CalculateDto) {
     return this.meter.calculate(dto.tipe, dto.pemakaian);
   }
 
-  // Simpan catatan meter → buat faktur + history + transaksi.
   @Post('readings')
-  create(@CurrentUser() user: AuthUser, @Body() dto: CreateReadingDto) {
-    return this.meter.saveReading(
-      user.id,
-      dto.customerId,
-      dto.meterBaru,
-      dto.catatan,
-    );
+  create(@CurrentUser() user: AuthUser, @Request() req, @Body() dto: CreateReadingDto) {
+    return this.meter.saveReading(user.id, dto.customerId, dto.meterBaru, dto.catatan, req.tenantId);
   }
 
-  /**
-   * OCR angka meter dari foto (Tesseract.js, gratis, self-hosted).
-   * Kembalikan kandidat angka + best guess → mobile prefill input (editable).
-   */
   @Post('ocr')
   @UseInterceptors(
     FileInterceptor('photo', {
       limits: { fileSize: 8 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
-        if (!/^image\//.test(file.mimetype)) {
-          return cb(new BadRequestException('File harus berupa gambar'), false);
-        }
+        if (!/^image\//.test(file.mimetype)) return cb(new BadRequestException('File harus berupa gambar'), false);
         cb(null, true);
       },
     }),
@@ -76,32 +51,23 @@ export class MeterController {
     return this.ocr.recognizeMeter(file.buffer);
   }
 
-  // Upload foto meter untuk faktur tertentu (maks 8MB, hanya gambar).
   @Post('readings/:noFaktur/photo')
   @UseInterceptors(
     FileInterceptor('photo', {
       limits: { fileSize: 8 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
-        if (!/^image\//.test(file.mimetype)) {
-          return cb(new BadRequestException('File harus berupa gambar'), false);
-        }
+        if (!/^image\//.test(file.mimetype)) return cb(new BadRequestException('File harus berupa gambar'), false);
         cb(null, true);
       },
     }),
   )
-  async uploadPhoto(
-    @Param('noFaktur') noFaktur: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+  async uploadPhoto(@Request() req, @Param('noFaktur') noFaktur: string, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('File foto wajib diunggah');
-
     const decoded = decodeURIComponent(noFaktur);
-    const faktur = await this.meter.attachPhotoFilename(decoded);
-
+    const faktur = await this.meter.attachPhotoFilename(decoded, req.tenantId);
     await fs.mkdir(this.uploadDir, { recursive: true });
     const filename = faktur.fotoMeter ?? `pic_${faktur.id}.jpeg`;
     await fs.writeFile(join(this.uploadDir, filename), file.buffer);
-
     return { filename, path: `/${this.uploadDir}/${filename}` };
   }
 }

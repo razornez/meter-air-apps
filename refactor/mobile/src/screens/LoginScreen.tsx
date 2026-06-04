@@ -1,15 +1,7 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform,
+  ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,20 +19,21 @@ export default function LoginScreen() {
   const s = useMemo(() => createStyles(t), [t]);
   const { mode, toggle } = useThemeMode();
   const { login } = useAuth();
+  const [kode, setKode] = useState('BUMDES-KRK');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const usernameRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   async function onSubmit() {
-    if (!username || !password) {
-      setError('Username dan password wajib diisi');
-      return;
-    }
+    if (!kode.trim()) { setError('Kode perusahaan wajib diisi'); return; }
+    if (!username || !password) { setError('Username dan password wajib diisi'); return; }
     setError(null);
     setLoading(true);
     try {
-      await login(username.trim(), password);
+      await login(username.trim(), password, kode.trim().toUpperCase());
     } catch (e) {
       setError(apiErrorMessage(e, 'Login gagal'));
     } finally {
@@ -58,15 +51,10 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={{ flex: 1 }}
-          >
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
             <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
               <View style={s.brandWrap}>
-                <View style={s.mark}>
-                  <DropMark size={46} color={palette.white} />
-                </View>
+                <View style={s.mark}><DropMark size={46} color={palette.white} /></View>
                 <Text style={s.title}>Meter Air</Text>
                 <Text style={s.subtitle}>Aplikasi Petugas Pencatat Meter</Text>
               </View>
@@ -78,8 +66,22 @@ export default function LoginScreen() {
                   </View>
                 )}
 
+                <Text style={s.label}>Kode Perusahaan</Text>
+                <TextInput
+                  style={s.input}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  value={kode}
+                  onChangeText={(t) => setKode(t.toUpperCase())}
+                  placeholder="Contoh: BUMDES-KRK"
+                  placeholderTextColor={t.muted}
+                  returnKeyType="next"
+                  onSubmitEditing={() => usernameRef.current?.focus()}
+                />
+
                 <Text style={s.label}>Username</Text>
                 <TextInput
+                  ref={usernameRef}
                   style={s.input}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -87,16 +89,20 @@ export default function LoginScreen() {
                   onChangeText={setUsername}
                   placeholder="username"
                   placeholderTextColor={t.muted}
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordRef.current?.focus()}
                 />
 
                 <Text style={s.label}>Password</Text>
                 <TextInput
+                  ref={passwordRef}
                   style={s.input}
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
                   placeholder="••••••"
                   placeholderTextColor={t.muted}
+                  returnKeyType="done"
                   onSubmitEditing={onSubmit}
                 />
 
@@ -125,48 +131,30 @@ const createStyles = (t: Theme) =>
   StyleSheet.create({
     topBar: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 18, paddingTop: 6 },
     toggle: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 40, height: 40, borderRadius: 20,
       backgroundColor: 'rgba(255,255,255,0.18)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.35)',
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+      alignItems: 'center', justifyContent: 'center',
     },
     scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
     brandWrap: { alignItems: 'center', marginBottom: 26 },
     mark: {
-      width: 86,
-      height: 86,
-      borderRadius: 28,
+      width: 86, height: 86, borderRadius: 28,
       backgroundColor: 'rgba(255,255,255,0.16)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.4)',
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
+      alignItems: 'center', justifyContent: 'center',
     },
     title: { fontSize: 40, fontFamily: fonts.displayBlack, color: palette.white, marginTop: 16, letterSpacing: -1 },
     subtitle: { fontSize: 12.5, color: palette.foam, marginTop: 5, fontFamily: fonts.medium, letterSpacing: 0.3 },
     card: {
-      backgroundColor: t.surface,
-      borderRadius: radius.xl,
-      padding: 22,
-      borderWidth: 1,
-      borderColor: t.border,
-      ...shadow.float,
+      backgroundColor: t.surface, borderRadius: radius.xl, padding: 22,
+      borderWidth: 1, borderColor: t.border, ...shadow.float,
     },
     label: { fontSize: 13, color: t.muted, marginBottom: 7, marginTop: 14, fontFamily: fonts.semibold },
     input: {
-      borderWidth: 1,
-      borderColor: t.border,
-      borderRadius: radius.sm,
-      paddingHorizontal: 14,
-      paddingVertical: 13,
-      fontSize: 16,
-      color: t.text,
-      backgroundColor: t.surfaceAlt,
-      fontFamily: fonts.medium,
+      borderWidth: 1, borderColor: t.border, borderRadius: radius.sm,
+      paddingHorizontal: 14, paddingVertical: 13,
+      fontSize: 16, color: t.text, backgroundColor: t.surfaceAlt, fontFamily: fonts.medium,
     },
     button: { borderRadius: radius.md, paddingVertical: 15, alignItems: 'center' },
     buttonText: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
