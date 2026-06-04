@@ -12,13 +12,16 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const webviewRef = useRef<WebView>(null);
 
-  // Pakai snapUrl dari backend (redirectUrl) bila ada — formatnya sudah benar.
-  // Fallback: bangun dari token (untuk backward compat).
+  // Pakai snapUrl (redirectUrl) dari backend bila ada — sudah pasti benar.
+  // Fallback ke v4/redirection bila tidak ada.
   const isProduction = process.env.EXPO_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
   const snapUrl = snapUrlFromParam
     ?? (isProduction
       ? `https://app.midtrans.com/snap/v4/redirection/${snapToken}`
       : `https://app.sandbox.midtrans.com/snap/v4/redirection/${snapToken}`);
+
+  // Debug: log URL agar mudah diverifikasi
+  console.log('[Midtrans] Loading URL:', snapUrl);
 
   function onNavigationChange(state: WebViewNavigation) {
     const url = state.url;
@@ -61,10 +64,19 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         onNavigationStateChange={onNavigationChange}
+        onError={(e) => {
+          console.error('[Midtrans] WebView error:', e.nativeEvent);
+          Alert.alert('Koneksi gagal', `Tidak dapat membuka halaman pembayaran.\n${e.nativeEvent.description}`, [
+            { text: 'OK', onPress: () => navigation.goBack() },
+          ]);
+        }}
         style={styles.webview}
         javaScriptEnabled
         domStorageEnabled
         startInLoadingState
+        mixedContentMode="compatibility"
+        allowsBackForwardNavigationGestures
+        userAgent="Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15"
       />
     </View>
   );

@@ -64,9 +64,8 @@ export default function PaymentSelectScreen({ route, navigation }: Props) {
     } else if (method.type === 'ewallet' || method.type === 'bank_static') {
       navigation.navigate('AccountPayment', { noFaktur, amount, method });
     } else {
-      // midtrans: buka snap
-      navigation.navigate('PaymentWebView', { noFaktur, snapToken: '' });
-      // Note: snap token dibuat dulu lalu navigate — dihandle di AccountPayment yg punya logic sama
+      // midtrans: lewat AccountPaymentScreen yg buat snap token → buka WebView
+      navigation.navigate('AccountPayment', { noFaktur, amount, method });
     }
   }
 
