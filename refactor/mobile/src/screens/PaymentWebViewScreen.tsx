@@ -7,25 +7,17 @@ import { colors } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentWebView'>;
 
-// URL yang menandakan pembayaran selesai/dibatalkan di Midtrans Snap.
-const FINISH_URLS = [
-  'https://app.midtrans.com/snap/v2/vtweb',
-  '/finish',
-  '/unfinish',
-  '/error',
-];
-
-function isFinishUrl(url: string): boolean {
-  return FINISH_URLS.some((p) => url.includes(p));
-}
-
 export default function PaymentWebViewScreen({ route, navigation }: Props) {
   const { noFaktur, snapToken } = route.params;
   const [loading, setLoading] = useState(true);
   const webviewRef = useRef<WebView>(null);
 
-  // Snap payment URL
-  const snapUrl = `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapToken}`;
+  // Gunakan redirect_url dari Midtrans (backend sudah tentukan sandbox/production).
+  // Format: https://app[.sandbox].midtrans.com/snap/v2/vtweb/<token>
+  const isProduction = process.env.EXPO_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
+  const snapUrl = isProduction
+    ? `https://app.midtrans.com/snap/v2/vtweb/${snapToken}`
+    : `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapToken}`;
 
   function onNavigationChange(state: WebViewNavigation) {
     const url = state.url;

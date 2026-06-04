@@ -46,7 +46,14 @@ export class PaymentService {
       ? await this.customers.findOne({ where: { id: customerId } })
       : null;
 
-    const total = f.total ?? 0;
+    // Midtrans: gross_amount WAJIB sama persis dengan sum(item_details).
+    // Kolom `denda` di DB tidak selalu masuk ke `total` (sistem lama),
+    // sehingga subtotal+beban+denda ≠ total. Pakai 1 item = total agar selalu cocok.
+    const total = Math.round(f.total ?? 0); // Midtrans butuh integer
+    if (total <= 0) {
+      throw new Error(`Total faktur tidak valid: ${total}`);
+    }
+
     const orderId = `${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
 
     const parameter = {
@@ -55,30 +62,31 @@ export class PaymentService {
         gross_amount: total,
       },
       customer_details: {
-        first_name: cust?.nama ?? 'Pelanggan',
-        phone: cust?.telp ?? '',
+        first_name: (cust?.nama ?? 'Pelanggan').slice(0, 255),
+        phone: (cust?.telp ?? '').replace(/[^0-9+]/g, '').slice(0, 19) || undefined,
       },
       item_details: [
         {
           id: 'tagihan-air',
-          price: f.subtotal ?? 0,
+          price: total,
           quantity: 1,
-          name: 'Tagihan Air',
+          name: `Tagihan Air - ${noFaktur}`,
         },
-        ...(f.beban
-          ? [{ id: 'beban', price: f.beban, quantity: 1, name: 'Biaya Beban' }]
-          : []),
-        ...(f.denda && f.denda > 0
-          ? [{ id: 'denda', price: f.denda, quantity: 1, name: 'Denda Keterlambatan' }]
-          : []),
       ],
-      // Simpan metadata agar webhook tahu faktur mana
+      // Metadata agar webhook tahu faktur mana yang dilunasi
       custom_field1: noFaktur,
       custom_field2: String(kasirId),
     };
 
-    this.logger.log(`Membuat Snap token untuk ${noFaktur} (Rp ${total})`);
-    const transaction = await this.snap.createTransaction(parameter);
+    this.logger.log(`Snap token request: ${noFaktur} gross_amount=${total}`);
+    let transaction: { token: string; redirect_url: string };
+    try {
+      transaction = await this.snap.createTransaction(parameter);
+    } catch (err: any) {
+      const detail = err?.ApiResponse ?? err?.message ?? String(err);
+      this.logger.error(`Midtrans error (${noFaktur}): ${JSON.stringify(detail)}`);
+      throw new Error(`Midtrans: ${JSON.stringify(detail)}`);
+    }
 
     return {
       alreadyPaid: false,

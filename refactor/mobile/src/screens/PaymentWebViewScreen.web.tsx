@@ -13,7 +13,10 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
   const [opened, setOpened] = useState(false);
 
   useEffect(() => {
-    const url = `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapToken}`;
+    const isProduction = process.env.EXPO_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
+    const url = isProduction
+      ? `https://app.midtrans.com/snap/v2/vtweb/${snapToken}`
+      : `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapToken}`;
     window.open(url, '_blank');
     setOpened(true);
     // Kembali setelah 2 detik
