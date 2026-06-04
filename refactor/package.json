@@ -1,0 +1,19 @@
+{
+  "name": "meter-air-dev",
+  "private": true,
+  "scripts": {
+    "dev":     "concurrently --names \"API,WEB\" --prefix-colors \"cyan,magenta\" \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd api && npm run start:dev",
+    "dev:web": "cd mobile && cross-env EXPO_PUBLIC_API_URL=http://localhost:4000/api npx expo start --web --clear",
+    "dev:iphone": "concurrently --names \"API,EXPO\" --prefix-colors \"cyan,magenta\" \"npm run dev:api\" \"npm run dev:iphone:only\"",
+    "dev:iphone:only": "node -e \"const os=require('os');const ip=Object.values(os.networkInterfaces()).flat().find(i=>i.family==='IPv4'&&!i.internal)?.address||'192.168.1.12';process.env.EXPO_PUBLIC_API_URL='http://'+ip+':4000/api';\" && cd mobile && npx expo start --clear",
+    "stop":    "pm2 stop all 2>/dev/null || echo done",
+    "pm2:start": "pm2 start ecosystem.config.js && pm2 save",
+    "pm2:stop":  "pm2 stop all",
+    "pm2:logs":  "pm2 logs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3"
+  }
+}
