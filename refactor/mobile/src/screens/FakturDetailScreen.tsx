@@ -44,6 +44,12 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     load();
   }, [load]);
 
+  // Reload data setiap kali layar kembali ke-focus (mis. balik dari layar bayar)
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', load);
+    return unsub;
+  }, [navigation, load]);
+
   function onToggleLunas() {
     if (!data) return;
     const toLunas = !data.isLunas;
