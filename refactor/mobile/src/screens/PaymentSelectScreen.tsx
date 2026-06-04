@@ -62,7 +62,7 @@ export default function PaymentSelectScreen({ route, navigation }: Props) {
     if (method.type === 'cash') {
       navigation.navigate('CashPayment', { noFaktur, amount });
     } else if (method.type === 'ewallet' || method.type === 'bank_static') {
-      navigation.navigate('AccountPayment', { noFaktur, method });
+      navigation.navigate('AccountPayment', { noFaktur, amount, method });
     } else {
       // midtrans: buka snap
       navigation.navigate('PaymentWebView', { noFaktur, snapToken: '' });

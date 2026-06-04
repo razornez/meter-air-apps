@@ -36,5 +36,5 @@ export type RootStackParamList = {
   // Multi-payment screens
   PaymentSelect: { noFaktur: string; amount: number; customerName: string | null };
   CashPayment: { noFaktur: string; amount: number };
-  AccountPayment: { noFaktur: string; method: import('../types').PaymentMethod };
+  AccountPayment: { noFaktur: string; amount: number; method: import('../types').PaymentMethod };
 };

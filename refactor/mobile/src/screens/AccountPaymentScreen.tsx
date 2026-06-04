@@ -19,7 +19,7 @@ import { colors } from '../theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'AccountPayment'>;
 
 export default function AccountPaymentScreen({ route, navigation }: Props) {
-  const { noFaktur, method } = route.params;
+  const { noFaktur, amount, method } = route.params;
   const [confirming, setConfirming] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -96,7 +96,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
       {/* Jumlah */}
       <View style={s.amountCard}>
         <Text style={s.amountLabel}>JUMLAH YANG DITRANSFER</Text>
-        <Text style={s.amountValue}>Rp {(route.params as any).amount?.toLocaleString('id-ID') ?? '—'}</Text>
+        <Text style={s.amountValue}>Rp {amount.toLocaleString('id-ID')}</Text>
       </View>
 
       {/* Info rekening (bila ada) */}
