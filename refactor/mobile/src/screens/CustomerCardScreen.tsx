@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
-import ViewShot, { type ViewShotRef } from 'react-native-view-shot';
+import ViewShot from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -30,7 +30,8 @@ export default function CustomerCardScreen({ route }: Props) {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const cardRef = useRef<ViewShotRef>(null);
+  // ViewShot v4: ref type adalah instance dari komponen itu sendiri
+  const cardRef = useRef<InstanceType<typeof ViewShot>>(null);
 
   const load = useCallback(async () => {
     try {
