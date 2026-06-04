@@ -38,7 +38,13 @@
           "locationAlwaysAndWhenInUsePermission": "Aplikasi memerlukan GPS untuk mencatat koordinat lokasi pelanggan saat pencatatan meter."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Aplikasi memerlukan akses galeri untuk menyimpan kartu pelanggan."
+        }
+      ]
     ]
   }
 }

@@ -179,6 +179,17 @@ export async function apiKinerja(month?: number, year?: number) {
   return data;
 }
 
+// ---- Sprint 12: Midtrans Payment ----
+export async function apiSnapToken(noFaktur: string) {
+  const { data } = await api.get<{
+    alreadyPaid: boolean;
+    token: string | null;
+    redirectUrl: string | null;
+    orderId?: string;
+  }>('/payment/snap-token', { params: { noFaktur } });
+  return data;
+}
+
 export async function apiOcrMeter(photoUri: string) {
   const form = new FormData();
   form.append('photo', {

@@ -30,4 +30,7 @@ export type RootStackParamList = {
   Tunggakan: undefined;
   // Sprint 11
   Kinerja: undefined;
+  // Sprint 12
+  PaymentWebView: { noFaktur: string; snapToken: string };
+  CustomerCard: { id: number };
 };

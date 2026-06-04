@@ -43,6 +43,8 @@ import TunggakanScreen from './src/screens/TunggakanScreen';
 import KinerjaScreen from './src/screens/KinerjaScreen';
 import FakturListScreen from './src/screens/FakturListScreen';
 import CustomersListScreen from './src/screens/CustomersListScreen';
+import PaymentWebViewScreen from './src/screens/PaymentWebViewScreen';
+import CustomerCardScreen from './src/screens/CustomerCardScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -83,6 +85,8 @@ function RootNavigator() {
           {/* Layar yang bisa diakses dari mana saja (termasuk dari Tunggakan, Anomali dll) */}
           <Stack.Screen name="FakturList" component={FakturListScreen} options={{ title: 'Tagihan' }} />
           <Stack.Screen name="CustomersList" component={CustomersListScreen} options={{ title: 'Pelanggan' }} />
+          <Stack.Screen name="PaymentWebView" component={PaymentWebViewScreen} options={{ title: 'Pembayaran' }} />
+          <Stack.Screen name="CustomerCard" component={CustomerCardScreen} options={{ title: 'Kartu Pelanggan' }} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

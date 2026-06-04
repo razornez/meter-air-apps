@@ -10,6 +10,7 @@ import { FakturModule } from './faktur/faktur.module';
 import { ConfigAppModule } from './app-config/config-app.module';
 import { ReportsModule } from './reports/reports.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { CatalogModule } from './catalog/catalog.module';
     ConfigAppModule,
     ReportsModule,
     CatalogModule,
+    PaymentModule,
   ],
   providers: [
     // Terapkan rate limit ke seluruh endpoint.
