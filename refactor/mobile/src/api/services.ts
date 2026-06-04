@@ -181,12 +181,13 @@ export async function apiKinerja(month?: number, year?: number) {
 
 // ---- Sprint 12: Midtrans Payment ----
 export async function apiSnapToken(noFaktur: string) {
-  const { data } = await api.get<{
+  // POST+body: hindari masalah double-encoding '/' di query string
+  const { data } = await api.post<{
     alreadyPaid: boolean;
     token: string | null;
     redirectUrl: string | null;
     orderId?: string;
-  }>('/payment/snap-token', { params: { noFaktur } });
+  }>('/payment/snap-token', { noFaktur });
   return data;
 }
 

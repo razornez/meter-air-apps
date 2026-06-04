@@ -14,11 +14,11 @@ import { CurrentUser, AuthUser } from '../common/decorators/current-user.decorat
 export class PaymentController {
   constructor(private readonly payment: PaymentService) {}
 
-  // Buat Snap token (requires login — petugas yang menginisiasi pembayaran).
+  // Buat Snap token — pakai POST+body agar noFaktur dengan '/' tidak double-encoded.
   @UseGuards(JwtAuthGuard)
-  @Get('snap-token')
+  @Post('snap-token')
   snapToken(
-    @Query('noFaktur') noFaktur: string,
+    @Body('noFaktur') noFaktur: string,
     @CurrentUser() user: AuthUser,
   ) {
     return this.payment.createSnapToken(noFaktur, user.id);
