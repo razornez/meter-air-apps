@@ -7,10 +7,11 @@ import { Transaksi } from '../meter/entities/transaksi.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
 import { Pembayaran } from '../faktur/entities/pembayaran.entity';
+import { PaymentMethod } from './entities/payment-method.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Faktur, Transaksi, Customer, ActivityLog, Pembayaran]),
+    TypeOrmModule.forFeature([Faktur, Transaksi, Customer, ActivityLog, Pembayaran, PaymentMethod]),
   ],
   controllers: [PaymentController],
   providers: [PaymentService],

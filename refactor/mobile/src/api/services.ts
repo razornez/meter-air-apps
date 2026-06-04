@@ -3,6 +3,8 @@ import { CachedCustomer } from '../offline/customerCache';
 import {
   Anomaly,
   AppConfig,
+  PaymentMethod,
+  PayResponse,
   CustomerDetail,
   CustomerListItem,
   CustomerMarker,
@@ -180,8 +182,18 @@ export async function apiKinerja(month?: number, year?: number) {
 }
 
 // ---- Sprint 12: Midtrans Payment ----
+export async function apiPaymentMethods() {
+  const { data } = await api.get<PaymentMethod[]>('/payment/methods');
+  return data;
+}
+
+export async function apiPay(noFaktur: string, methodCode: string) {
+  const { data } = await api.post<PayResponse>('/payment/pay', { noFaktur, methodCode });
+  return data;
+}
+
+// Legacy (masih dipakai sebagai fallback)
 export async function apiSnapToken(noFaktur: string) {
-  // POST+body: hindari masalah double-encoding '/' di query string
   const { data } = await api.post<{
     alreadyPaid: boolean;
     token: string | null;

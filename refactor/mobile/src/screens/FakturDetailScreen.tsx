@@ -5,7 +5,8 @@ import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { apiFakturDetail, apiGetConfig, apiSetFakturLunas, apiSnapToken } from '../api/services';
+import { apiFakturDetail, apiGetConfig, apiSetFakturLunas } from '../api/services';
+import PaymentMethodSheet from '../components/PaymentMethodSheet';
 import { apiErrorMessage } from '../api/client';
 import { AppConfig, FakturDetail } from '../types';
 import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
@@ -25,6 +26,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
+  const [showPaySheet, setShowPaySheet] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,28 +68,25 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     ]);
   }
 
-  async function onPayNow() {
-    if (!data || !data.noFaktur) return;
-    setActing(true);
-    try {
-      const res = await apiSnapToken(data.noFaktur);
-      if (res.alreadyPaid) {
-        Alert.alert('Sudah Lunas', 'Faktur ini sudah terbayar.');
-        await load();
-        return;
-      }
-      if (!res.token) {
-        Alert.alert('Gagal', 'Tidak dapat membuat sesi pembayaran.');
-        return;
-      }
+  function handlePayResult(res: { type: string; token?: string; accountNumber?: string; accountName?: string; instructions?: string; amount?: number }) {
+    if (res.type === 'cash') {
+      Alert.alert('✅ Pembayaran Tunai', 'Faktur berhasil ditandai lunas.', [
+        { text: 'OK', onPress: () => load() },
+      ]);
+    } else if (res.type === 'midtrans' && res.token) {
       navigation.navigate('PaymentWebView', {
-        noFaktur: data.noFaktur,
+        noFaktur: data?.noFaktur ?? '',
         snapToken: res.token,
       });
-    } catch (e) {
-      Alert.alert('Gagal', apiErrorMessage(e));
-    } finally {
-      setActing(false);
+    } else if (res.type === 'transfer') {
+      Alert.alert(
+        '🔀 Info Transfer',
+        `Nomor Rekening: ${res.accountNumber ?? '-'}\n` +
+        `Atas Nama: ${res.accountName ?? '-'}\n` +
+        `Jumlah: Rp ${(res.amount ?? 0).toLocaleString('id-ID')}\n\n` +
+        `${res.instructions ?? 'Konfirmasi ke petugas setelah transfer.'}`,
+        [{ text: 'Mengerti' }],
+      );
     }
   }
 
@@ -166,16 +165,25 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
           <Text style={s.actionGhostText}>📤 Bagikan</Text>
         </TouchableOpacity>
       </View>
-      {/* Tombol Bayar Sekarang via Midtrans — hanya bila belum lunas */}
+      {/* Tombol Pilih Metode Bayar — hanya bila belum lunas */}
       {!data.isLunas && (
         <TouchableOpacity
           style={[s.payBtn, acting && { opacity: 0.5 }]}
-          onPress={onPayNow}
+          onPress={() => setShowPaySheet(true)}
           disabled={acting}
         >
-          <Text style={s.payBtnText}>💳 Bayar Sekarang (QRIS / Transfer)</Text>
+          <Text style={s.payBtnText}>💳 Bayar Sekarang</Text>
         </TouchableOpacity>
       )}
+
+      {/* Bottom sheet pilih metode */}
+      <PaymentMethodSheet
+        visible={showPaySheet}
+        noFaktur={data.noFaktur}
+        totalAmount={data.total ?? 0}
+        onClose={() => setShowPaySheet(false)}
+        onResult={handlePayResult}
+      />
 
       {/* Tombol WA — hanya tampil bila belum lunas (reminder tagihan) */}
       {!data.isLunas && (

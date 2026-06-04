@@ -98,6 +98,36 @@ export interface CustomerMarker {
   status: 'lunas' | 'belum' | 'none';
 }
 
+export interface PaymentMethod {
+  id: number;
+  code: string;
+  name: string;
+  type: 'cash' | 'midtrans' | 'transfer';
+  isActive: number;
+  icon: string;
+  instructions: string | null;
+  accountNumber: string | null;
+  accountName: string | null;
+  sortOrder: number;
+}
+
+export interface PayResponse {
+  type: string;
+  // cash
+  success?: boolean;
+  jumlah?: number;
+  // midtrans
+  alreadyPaid?: boolean;
+  token?: string;
+  redirectUrl?: string;
+  orderId?: string;
+  // transfer
+  accountNumber?: string;
+  accountName?: string;
+  amount?: number;
+  instructions?: string;
+}
+
 export interface TunggakanItem {
   customerId: number;
   nama: string | null;

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -8,6 +8,18 @@ import { Transaksi } from '../meter/entities/transaksi.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
 import { Pembayaran } from '../faktur/entities/pembayaran.entity';
 import { Customer } from '../customers/entities/customer.entity';
+import { PaymentMethod } from './entities/payment-method.entity';
+
+// Midtrans `enabled_payments` per kode metode.
+const MIDTRANS_ENABLED: Record<string, string[]> = {
+  midtrans_qris:  ['other_qris', 'qris'],
+  midtrans_gopay: ['gopay'],
+  midtrans_ovo:   ['shopeepay'],           // OVO via Midtrans
+  midtrans_dana:  ['dana'],
+  midtrans_bni:   ['bni_va'],
+  midtrans_bca:   ['bca_va'],
+  // kosong = semua metode Midtrans tampil
+};
 
 @Injectable()
 export class PaymentService {
@@ -23,6 +35,7 @@ export class PaymentService {
     @InjectRepository(Customer) private readonly customers: Repository<Customer>,
     @InjectRepository(ActivityLog) private readonly logs: Repository<ActivityLog>,
     @InjectRepository(Pembayaran) private readonly pembayaran: Repository<Pembayaran>,
+    @InjectRepository(PaymentMethod) private readonly methods: Repository<PaymentMethod>,
   ) {
     const isProduction = config.get('MIDTRANS_IS_PRODUCTION', 'false') === 'true';
     this.serverKey = config.get('MIDTRANS_SERVER_KEY', '');
@@ -33,8 +46,71 @@ export class PaymentService {
     });
   }
 
+  // Daftar metode pembayaran aktif dari DB master.
+  async getMethods() {
+    return this.methods.find({
+      where: { isActive: 1 },
+      order: { sortOrder: 'ASC' },
+    });
+  }
+
+  // Proses pembayaran sesuai metode yang dipilih.
+  async pay(noFaktur: string, methodCode: string, kasirId: number) {
+    const method = await this.methods.findOne({ where: { code: methodCode } });
+    if (!method) throw new BadRequestException(`Metode "${methodCode}" tidak ditemukan di master data`);
+    if (!method.isActive) throw new BadRequestException(`Metode "${method.name}" tidak aktif`);
+
+    switch (method.type) {
+      case 'cash':
+        return this.payCash(noFaktur, method, kasirId);
+      case 'midtrans':
+        return this.payMidtrans(noFaktur, method, kasirId);
+      case 'transfer':
+        return this.payTransfer(noFaktur, method, kasirId);
+      default:
+        throw new BadRequestException(`Tipe metode tidak dikenal: ${method.type}`);
+    }
+  }
+
+  // Cash: langsung tandai lunas.
+  private async payCash(noFaktur: string, method: PaymentMethod, kasirId: number) {
+    const f = await this.faktur.findOne({ where: { noFaktur } });
+    if (!f) throw new NotFoundException('Faktur tidak ditemukan');
+    if (f.isLunas === 1) return { type: 'cash', alreadyPaid: true };
+
+    const dibayar = f.total ?? 0;
+    await this.dataSource.transaction(async (mgr) => {
+      await mgr.update(Faktur, { id: f.id }, { isLunas: 1 });
+      await mgr.update(Transaksi, { faktur: noFaktur }, { dibayar });
+    });
+    await this.logs.insert({ idUser: kasirId, aktivitas: `Bayar tunai: ${noFaktur}`, jenis: 'pembayaran', waktu: new Date() }).catch(() => {});
+    await this.pembayaran.insert({ noFaktur, jumlah: dibayar, tipe: method.code, idUser: kasirId, waktu: new Date() }).catch(() => {});
+    return { type: 'cash', success: true, noFaktur, jumlah: dibayar };
+  }
+
+  // Midtrans: buat Snap token dengan enabled_payments sesuai metode.
+  private async payMidtrans(noFaktur: string, method: PaymentMethod, kasirId: number) {
+    const result = await this.createSnapToken(noFaktur, kasirId, method.code);
+    return { type: 'midtrans', ...result };
+  }
+
+  // Transfer manual: kembalikan info rekening, petugas tandai lunas setelah konfirmasi.
+  private async payTransfer(noFaktur: string, method: PaymentMethod, kasirId: number) {
+    const f = await this.faktur.findOne({ where: { noFaktur } });
+    if (!f) throw new NotFoundException('Faktur tidak ditemukan');
+    if (f.isLunas === 1) return { type: 'transfer', alreadyPaid: true };
+    return {
+      type: 'transfer',
+      instructions: method.instructions,
+      accountNumber: method.accountNumber,
+      accountName: method.accountName,
+      amount: f.total ?? 0,
+      noFaktur,
+    };
+  }
+
   // Buat Snap transaction token untuk sebuah faktur.
-  async createSnapToken(noFaktur: string, kasirId: number) {
+  async createSnapToken(noFaktur: string, kasirId: number, methodCode?: string) {
     const f = await this.faktur.findOne({ where: { noFaktur } });
     if (!f) throw new NotFoundException('Faktur tidak ditemukan');
     if (f.isLunas === 1) {
@@ -56,7 +132,10 @@ export class PaymentService {
 
     const orderId = `${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
 
-    const parameter = {
+    // Filter metode pembayaran di Snap sesuai pilihan (opsional)
+    const enabledPayments = methodCode ? (MIDTRANS_ENABLED[methodCode] ?? []) : [];
+
+    const parameter: Record<string, unknown> = {
       transaction_details: {
         order_id: orderId,
         gross_amount: total,
@@ -73,6 +152,8 @@ export class PaymentService {
           name: `Tagihan Air - ${noFaktur}`,
         },
       ],
+      // Filter tampilan metode di Snap
+      ...(enabledPayments.length > 0 && { enabled_payments: enabledPayments }),
       // Metadata agar webhook tahu faktur mana yang dilunasi
       custom_field1: noFaktur,
       custom_field2: String(kasirId),
