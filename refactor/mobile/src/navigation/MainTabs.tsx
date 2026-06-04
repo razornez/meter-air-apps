@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FloatingTabBar, { TAB_BAR_SPACE } from '../components/ui/FloatingTabBar';
-import { fonts } from '../theme';
+import AppHeader from '../components/ui/AppHeader';
 import { useTheme } from '../ThemeContext';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -26,11 +26,8 @@ export default function MainTabs() {
     <Tab.Navigator
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
-        headerStyle: { backgroundColor: t.primaryDark },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontFamily: fonts.displayBold },
-        headerShadowVisible: false,
-        sceneStyle: { backgroundColor: 'transparent', paddingBottom: TAB_BAR_SPACE },
+        header: (props) => <AppHeader {...props} />,
+        sceneStyle: { backgroundColor: t.bg, paddingBottom: TAB_BAR_SPACE },
       }}
     >
       <Tab.Screen

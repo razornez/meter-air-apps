@@ -9,7 +9,7 @@ import { ChartIcon, DropletIcon, IconProps, InvoiceIcon, MapPinIcon, UsersIcon }
 import { fonts, palette, radius, shadow } from '../../theme';
 import { useTheme } from '../../ThemeContext';
 
-export const TAB_BAR_SPACE = 104; // bottom padding screens should reserve
+export const TAB_BAR_SPACE = 132; // bottom padding screens reserve (bar + lifted FAB)
 
 const ICONS: Record<string, (p: IconProps) => React.JSX.Element> = {
   Home: DropletIcon,
@@ -88,9 +88,6 @@ export default function FloatingTabBar({ state, descriptors, navigation }: Botto
         <Pressable onPress={() => go(centerRoute.key, centerRoute.name, centerFocused)}>
           <CenterFab Icon={CenterIcon} colors={t.scan} active={centerFocused} />
         </Pressable>
-        <Text style={[styles.fabLabel, { color: centerFocused ? t.primary : t.muted }]}>
-          {(descriptors[centerRoute.key].options.tabBarLabel as string) ?? centerRoute.name}
-        </Text>
       </View>
     </View>
   );
@@ -159,5 +156,4 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'rgba(255,255,255,0.85)',
   },
-  fabLabel: { fontFamily: fonts.semibold, fontSize: 10.5, marginTop: 2 },
 });

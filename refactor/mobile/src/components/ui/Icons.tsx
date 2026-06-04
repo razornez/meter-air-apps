@@ -166,6 +166,15 @@ export function ChevronIcon({ size, color, strokeWidth }: IconProps) {
   );
 }
 
+export function ArrowLeftIcon({ size, color, strokeWidth }: IconProps) {
+  return (
+    <Svg {...base(size)}>
+      <Path d="M15 5l-7 7 7 7" {...stroke(color, strokeWidth)} />
+      <Path d="M8 12h12" {...stroke(color, strokeWidth)} />
+    </Svg>
+  );
+}
+
 export function CheckIcon({ size, color, strokeWidth }: IconProps) {
   return (
     <Svg {...base(size)}>

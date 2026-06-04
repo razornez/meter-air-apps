@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>QR Code Pelanggan — Demo</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+  h1 { color: #0277BD; text-align: center; }
+  p.info { background: #E3F2FD; padding: 12px; border-radius: 8px; color: #01579B; }
+  .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.1); width: 200px; }
+  .card img { width: 160px; height: 160px; }
+  .card .id { font-size: 12px; color: #666; margin-top: 4px; font-family: monospace; }
+  .card .nama { font-size: 14px; font-weight: bold; color: #333; margin-top: 6px; }
+  .card .alamat { font-size: 12px; color: #999; }
+  .note { background: #FFF9C4; padding: 12px; border-radius: 8px; margin-top: 20px; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>📱 QR Code Pelanggan — Demo</h1>
+<p class="info">
+  Scan QR di bawah menggunakan aplikasi <strong>Meter Air</strong> (layar Scan QR Meter)
+  untuk langsung membuka form catat meter pelanggan tersebut.
+</p>
+
+<div class="grid">
+  <div class="card">
+    <img src="QR_200212011_DENI_FARSITO.png" alt="QR DENI FARSITO">
+    <div class="nama">DENI FARSITO</div>
+    <div class="id">200212011</div>
+    <div class="alamat">Kiangroke</div>
+  </div>
+  <div class="card">
+    <img src="QR_200212012_H_D_WASMANA.png" alt="QR H.D WASMANA">
+    <div class="nama">H.D WASMANA</div>
+    <div class="id">200212012</div>
+    <div class="alamat">Kiangroke</div>
+  </div>
+  <div class="card">
+    <img src="QR_200212013_AGUS_DEDI.png" alt="QR AGUS DEDI">
+    <div class="nama">AGUS DEDI</div>
+    <div class="id">200212013</div>
+    <div class="alamat">Kiangroke</div>
+  </div>
+  <div class="card">
+    <img src="QR_200212014_ROMAULI.png" alt="QR ROMAULI">
+    <div class="nama">ROMAULI</div>
+    <div class="id">200212014</div>
+    <div class="alamat">Kiangroke</div>
+  </div>
+  <div class="card">
+    <img src="QR_200212015_HJ__DINI.png" alt="QR HJ. DINI">
+    <div class="nama">HJ. DINI</div>
+    <div class="id">200212015</div>
+    <div class="alamat">Kiangroke</div>
+  </div>
+</div>
+
+<div class="note">
+  💡 <strong>QR ini berisi ID pelanggan</strong> (contoh: <code>200212011</code>).<br>
+  Aplikasi akan mencari pelanggan berdasarkan ID tersebut, lalu buka langsung ke layar catat meter.<br><br>
+  Untuk pelanggan lain, gunakan <strong>input manual</strong> di halaman utama — ketik nomor ID pelanggan.
+</div>
+</body>
+</html>
