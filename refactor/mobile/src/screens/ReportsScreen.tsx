@@ -6,9 +6,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { apiReportMonthly, apiReportSummary } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { MonthlyReport, ReportSummary } from '../types';
-import { fonts, formatRupiah, palette, radius, shadow, tracking, Theme } from '../theme';
+import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
+import { DonutChart, MiniBars } from '../components/ui/Charts';
+import { ChartIcon, ChevronIcon, ListCheckIcon, UsersIcon } from '../components/ui/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reports'>;
 
@@ -42,96 +44,114 @@ export default function ReportsScreen({ navigation }: Props) {
   if (error || !summary) return <ErrorState message={error ?? 'Data tidak tersedia'} onRetry={load} />;
 
   const b = summary.bulanIni;
+  const paidRatio = b.totalTagihan > 0 ? b.totalTerbayar / b.totalTagihan : 0;
+  const chrono = [...monthly].reverse(); // oldest → newest (newest on the right)
+  const barData = chrono.map((m) => m.totalTagihan);
+  const barLabels = chrono.map((m) => m.periode.slice(5));
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ padding: 16 }}>
-      {/* headline revenue */}
-      <LinearGradient
-        colors={t.hero}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[s.headline, shadow.glow]}
-      >
-        <Text style={s.headlineLabel}>Total Tagihan · {b.periode}</Text>
-        <Text style={s.headlineValue}>{formatRupiah(b.totalTagihan)}</Text>
-        <View style={s.headlineRow}>
-          <View style={s.hPill}>
-            <Text style={s.hPillLabel}>Terbayar</Text>
-            <Text style={s.hPillValue}>{formatRupiah(b.totalTerbayar)}</Text>
-          </View>
-          <View style={s.hPill}>
-            <Text style={s.hPillLabel}>Belum</Text>
-            <Text style={s.hPillValue}>{formatRupiah(b.totalBelum)}</Text>
+    <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 16 }}>
+      {/* Hero: donut paid-ratio + totals */}
+      <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
+        <Text style={s.heroLabel}>RINGKASAN · {b.periode}</Text>
+        <View style={s.heroRow}>
+          <DonutChart value={paidRatio} size={116} stroke={13} color="#fff" track="rgba(255,255,255,0.25)">
+            <Text style={s.donutPct}>{Math.round(paidRatio * 100)}%</Text>
+            <Text style={s.donutSub}>terbayar</Text>
+          </DonutChart>
+          <View style={s.heroRight}>
+            <Text style={s.heroTotalLabel}>Total Tagihan</Text>
+            <Text style={s.heroTotal}>{formatRupiah(b.totalTagihan)}</Text>
+            <View style={s.legendRow}>
+              <View style={[s.dot, { backgroundColor: '#BFF5E2' }]} />
+              <Text style={s.legendText}>Terbayar {formatRupiah(b.totalTerbayar)}</Text>
+            </View>
+            <View style={s.legendRow}>
+              <View style={[s.dot, { backgroundColor: '#FFC2CF' }]} />
+              <Text style={s.legendText}>Belum {formatRupiah(b.totalBelum)}</Text>
+            </View>
           </View>
         </View>
       </LinearGradient>
 
-      <Text style={s.section}>Ringkasan Bulan Ini</Text>
+      {/* KPI grid with icon chips */}
       <View style={s.kpiGrid}>
-        <Kpi t={t} s={s} label="Pelanggan" value={String(summary.totalPelanggan)} />
-        <Kpi t={t} s={s} label="Faktur" value={String(b.jumlahFaktur)} />
-        <Kpi t={t} s={s} label="Pemakaian" value={`${b.pemakaianM3} m³`} />
-        <Kpi t={t} s={s} label="Rata/Faktur" value={b.jumlahFaktur ? formatRupiah(Math.round(b.totalTagihan / b.jumlahFaktur)) : '-'} />
+        <Kpi s={s} t={t} Icon={UsersIcon} tint="#3DA0E3" bg="#DEEFFF" label="Pelanggan" value={String(summary.totalPelanggan)} />
+        <Kpi s={s} t={t} Icon={ListCheckIcon} tint="#23B58A" bg="#DCF5EA" label="Faktur" value={String(b.jumlahFaktur)} />
+        <Kpi s={s} t={t} Icon={ChartIcon} tint="#7A6CF0" bg="#ECE9FF" label="Pemakaian" value={`${b.pemakaianM3} m³`} />
+        <Kpi s={s} t={t} Icon={ChartIcon} tint="#FF8E63" bg="#FFE7DC" label="Rata/Faktur" value={b.jumlahFaktur ? formatRupiah(Math.round(b.totalTagihan / b.jumlahFaktur)) : '-'} />
       </View>
 
-      <TouchableOpacity
-        style={s.kinerjaCard}
-        onPress={() => navigation.navigate('Kinerja')}
-        activeOpacity={0.85}
-      >
-        <Text style={s.kinerjaIcon}>👷</Text>
+      <TouchableOpacity style={s.kinerjaCard} onPress={() => navigation.navigate('Kinerja')} activeOpacity={0.85}>
+        <View style={s.kinerjaIcon}><UsersIcon size={22} color={t.primary} /></View>
         <View style={{ flex: 1 }}>
           <Text style={s.kinerjaTitle}>Rekap Kinerja Petugas</Text>
           <Text style={s.kinerjaSubtitle}>Jumlah catatan per petugas per periode</Text>
         </View>
-        <Text style={s.kinerjaChevron}>›</Text>
+        <ChevronIcon size={20} color={t.muted} />
       </TouchableOpacity>
 
-      <Text style={s.section}>Rekap 6 Bulan</Text>
-      {monthly.length === 0 ? (
+      {/* 6-month trend bar chart */}
+      <Text style={s.section}>Tren Tagihan 6 Bulan</Text>
+      {chrono.length === 0 ? (
         <Text style={s.muted}>Belum ada data.</Text>
       ) : (
-        monthly.map((m) => (
-          <View key={m.periode} style={s.monthCard}>
-            <View style={s.monthHead}>
-              <Text style={s.periode}>{m.periode}</Text>
-              <Text style={s.muted}>{m.jumlahFaktur} faktur</Text>
-            </View>
-            <Bar t={t} s={s} paid={m.totalTerbayar} total={m.totalTagihan} />
-            <View style={s.monthRow}>
-              <Text style={s.muted}>Tagihan</Text>
-              <Text style={s.val}>{formatRupiah(m.totalTagihan)}</Text>
-            </View>
-            <View style={s.monthRow}>
-              <Text style={s.muted}>Terbayar</Text>
-              <Text style={[s.val, { color: t.success }]}>{formatRupiah(m.totalTerbayar)}</Text>
-            </View>
-            <View style={s.monthRow}>
-              <Text style={s.muted}>Belum</Text>
-              <Text style={[s.val, { color: t.danger }]}>{formatRupiah(m.totalBelum)}</Text>
-            </View>
+        <>
+          <View style={s.chartCard}>
+            <MiniBars data={barData} labels={barLabels} color={t.accent} height={104} highlightLast highlightColor={t.primary} />
           </View>
-        ))
+          {chrono
+            .slice()
+            .reverse()
+            .map((m) => {
+              const pct = m.totalTagihan > 0 ? Math.max(0, Math.min(1, m.totalTerbayar / m.totalTagihan)) : 0;
+              return (
+                <View key={m.periode} style={s.monthCard}>
+                  <View style={s.monthHead}>
+                    <Text style={s.periode}>{m.periode}</Text>
+                    <Text style={s.monthTotal}>{formatRupiah(m.totalTagihan)}</Text>
+                  </View>
+                  <View style={s.barTrack}>
+                    <View style={[s.barFill, { width: `${pct * 100}%`, backgroundColor: t.success }]} />
+                  </View>
+                  <View style={s.monthMetaRow}>
+                    <Text style={s.muted}>{m.jumlahFaktur} faktur</Text>
+                    <Text style={s.muted}>Terbayar {Math.round(pct * 100)}%</Text>
+                  </View>
+                </View>
+              );
+            })}
+        </>
       )}
       <View style={{ height: 24 }} />
     </ScrollView>
   );
 }
 
-function Kpi({ t, s, label, value }: { t: Theme; s: ReturnType<typeof createStyles>; label: string; value: string }) {
+function Kpi({
+  s,
+  t,
+  Icon,
+  tint,
+  bg,
+  label,
+  value,
+}: {
+  s: ReturnType<typeof createStyles>;
+  t: Theme;
+  Icon: (p: { size?: number; color?: string; strokeWidth?: number }) => React.JSX.Element;
+  tint: string;
+  bg: string;
+  label: string;
+  value: string;
+}) {
   return (
     <View style={s.kpi}>
-      <Text style={s.kpiLabel}>{label}</Text>
+      <View style={[s.kpiIcon, { backgroundColor: t.isDark ? tint + '26' : bg }]}>
+        <Icon size={18} color={tint} strokeWidth={2.1} />
+      </View>
       <Text style={s.kpiValue}>{value}</Text>
-    </View>
-  );
-}
-
-function Bar({ t, s, paid, total }: { t: Theme; s: ReturnType<typeof createStyles>; paid: number; total: number }) {
-  const pct = total > 0 ? Math.max(0, Math.min(1, paid / total)) : 0;
-  return (
-    <View style={s.barTrack}>
-      <View style={[s.barFill, { width: `${pct * 100}%`, backgroundColor: t.success }]} />
+      <Text style={s.kpiLabel}>{label}</Text>
     </View>
   );
 }
@@ -139,57 +159,38 @@ function Bar({ t, s, paid, total }: { t: Theme; s: ReturnType<typeof createStyle
 const createStyles = (t: Theme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: 'transparent' },
-    headline: { borderRadius: radius.xl, padding: 20, marginBottom: 8 },
-    headlineLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.semibold, fontSize: 11.5, letterSpacing: tracking.overline, textTransform: 'uppercase' },
-    headlineValue: { color: palette.white, fontFamily: fonts.displayBlack, fontSize: 34, marginTop: 6, letterSpacing: tracking.display },
-    headlineRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
-    hPill: { flex: 1, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: radius.md, padding: 12 },
-    hPillLabel: { color: 'rgba(255,255,255,0.8)', fontFamily: fonts.medium, fontSize: 11 },
-    hPillValue: { color: palette.white, fontFamily: fonts.bold, fontSize: 14, marginTop: 3 },
-    section: { fontSize: 19, fontFamily: fonts.display, color: t.text, marginTop: 22, marginBottom: 13, letterSpacing: tracking.tight },
+    hero: { borderRadius: radius.xl, padding: 20, marginBottom: 16 },
+    heroLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.semibold, fontSize: 11.5, letterSpacing: tracking.overline },
+    heroRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 16 },
+    donutPct: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 26, letterSpacing: -0.5 },
+    donutSub: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.medium, fontSize: 11, marginTop: -2 },
+    heroRight: { flex: 1 },
+    heroTotalLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.medium, fontSize: 12 },
+    heroTotal: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 24, marginTop: 2, marginBottom: 10, letterSpacing: tracking.tight },
+    legendRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 4 },
+    dot: { width: 9, height: 9, borderRadius: 5 },
+    legendText: { color: '#fff', fontFamily: fonts.medium, fontSize: 11.5 },
+
     kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-    kpi: {
-      width: '47.5%',
-      flexGrow: 1,
-      backgroundColor: t.surface,
-      borderRadius: radius.lg,
-      padding: 15,
-      borderWidth: 1,
-      borderColor: t.border,
-      ...shadow.soft,
-    },
-    kpiLabel: { color: t.muted, fontSize: 12, fontFamily: fonts.medium },
-    kpiValue: { color: t.text, fontSize: 21, fontFamily: fonts.displayBold, marginTop: 6, letterSpacing: tracking.tight },
-    monthCard: {
-      backgroundColor: t.surface,
-      borderRadius: radius.lg,
-      padding: 15,
-      marginBottom: 10,
-      borderWidth: 1,
-      borderColor: t.border,
-      ...shadow.soft,
-    },
+    kpi: { width: '47.5%', flexGrow: 1, backgroundColor: t.surface, borderRadius: radius.lg, padding: 15, borderWidth: 1, borderColor: t.border, ...shadow.soft },
+    kpiIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+    kpiValue: { color: t.text, fontSize: 20, fontFamily: fonts.displayBold, letterSpacing: tracking.tight },
+    kpiLabel: { color: t.muted, fontSize: 12, fontFamily: fonts.medium, marginTop: 2 },
+
+    section: { fontSize: 19, fontFamily: fonts.display, color: t.text, marginTop: 22, marginBottom: 13, letterSpacing: tracking.tight },
+    chartCard: { backgroundColor: t.surface, borderRadius: radius.lg, padding: 16, borderWidth: 1, borderColor: t.border, marginBottom: 12, ...shadow.soft },
+
+    monthCard: { backgroundColor: t.surface, borderRadius: radius.lg, padding: 15, marginBottom: 10, borderWidth: 1, borderColor: t.border, ...shadow.soft },
     monthHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, alignItems: 'center' },
-    periode: { fontFamily: fonts.displayBold, color: t.text, fontSize: 17, letterSpacing: tracking.tight },
-    barTrack: { height: 8, borderRadius: 4, backgroundColor: t.surfaceAlt, overflow: 'hidden', marginBottom: 12 },
+    periode: { fontFamily: fonts.displayBold, color: t.text, fontSize: 16, letterSpacing: tracking.tight },
+    monthTotal: { fontFamily: fonts.displayBold, color: t.text, fontSize: 15 },
+    barTrack: { height: 8, borderRadius: 4, backgroundColor: t.surfaceAlt, overflow: 'hidden', marginBottom: 8 },
     barFill: { height: '100%', borderRadius: 4 },
-    monthRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-    val: { fontFamily: fonts.semibold, color: t.text },
-    muted: { color: t.muted, fontFamily: fonts.regular },
-    kinerjaCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.surface,
-      borderRadius: radius.lg,
-      padding: 14,
-      marginBottom: 8,
-      borderWidth: 1,
-      borderColor: t.border,
-      gap: 10,
-      ...shadow.soft,
-    },
-    kinerjaIcon: { fontSize: 26 },
+    monthMetaRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    muted: { color: t.muted, fontFamily: fonts.regular, fontSize: 12 },
+
+    kinerjaCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: t.surface, borderRadius: radius.lg, padding: 14, marginTop: 14, borderWidth: 1, borderColor: t.border, gap: 12, ...shadow.soft },
+    kinerjaIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: t.badgeBg, alignItems: 'center', justifyContent: 'center' },
     kinerjaTitle: { fontFamily: fonts.bold, color: t.text, fontSize: 15 },
     kinerjaSubtitle: { color: t.muted, fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },
-    kinerjaChevron: { fontSize: 22, color: t.muted },
   });

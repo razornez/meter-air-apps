@@ -75,7 +75,7 @@ export default function MasterDataScreen() {
       ) : error ? (
         <ErrorState message={error} onRetry={() => load(tab, search)} />
       ) : (
-        <FlatList
+        <FlatList keyboardShouldPersistTaps="handled"
           data={items}
           keyExtractor={(it) => `${tab}-${it.id}`}
           contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}

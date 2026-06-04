@@ -53,7 +53,7 @@ export default function KinerjaScreen() {
   const pct = data.totalPelanggan > 0 ? Math.round((data.total / data.totalPelanggan) * 100) : 0;
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 16 }}>
       {/* Navigator periode */}
       <View style={s.nav}>
         <TouchableOpacity style={s.navBtn} onPress={prevMonth}>

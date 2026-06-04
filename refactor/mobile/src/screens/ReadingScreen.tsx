@@ -166,7 +166,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
   // ---- Offline saved ----
   if (offlineSaved) {
     return (
-      <ScrollView style={{ backgroundColor: 'transparent' }} contentContainerStyle={s.successWrap}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: 'transparent' }} contentContainerStyle={s.successWrap}>
         <View style={[s.successBadge, { backgroundColor: t.warning + '22' }]}>
           <SyncIcon size={40} color={t.warning} />
         </View>
@@ -189,7 +189,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
   // ---- Success ----
   if (result) {
     return (
-      <ScrollView style={{ backgroundColor: 'transparent' }} contentContainerStyle={s.successWrap}>
+      <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: 'transparent' }} contentContainerStyle={s.successWrap}>
         <View style={[s.successBadge, { backgroundColor: t.success + '22' }]}>
           <CheckIcon size={42} color={t.success} strokeWidth={2.4} />
         </View>
@@ -214,7 +214,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
 
   // ---- Form ----
   return (
-    <ScrollView style={{ backgroundColor: 'transparent' }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: 'transparent' }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.custHero, shadow.glow]}>
         <Text style={s.custHeroLabel}>PELANGGAN</Text>
         <Text style={s.custHeroName} numberOfLines={1}>{customer.nama ?? 'Tanpa nama'}</Text>

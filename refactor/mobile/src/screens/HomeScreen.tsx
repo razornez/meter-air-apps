@@ -115,7 +115,7 @@ export default function HomeScreen({ navigation }: Props) {
   const progress = wl && wl.total > 0 ? wl.done / wl.total : 0;
 
   return (
-    <ScrollView
+    <ScrollView keyboardShouldPersistTaps="handled"
       style={{ backgroundColor: 'transparent' }}
       contentContainerStyle={{ paddingBottom: 28 }}
       showsVerticalScrollIndicator={false}

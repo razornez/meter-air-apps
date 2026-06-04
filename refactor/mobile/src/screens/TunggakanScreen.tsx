@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiTunggakan } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { TunggakanItem, TunggakanResponse } from '../types';
 import { buildWAMessage, formatPhoneWA, openWA } from '../utils/whatsapp';
-import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
+import { fonts, formatRupiah, gradients, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
 
@@ -49,27 +50,26 @@ export default function TunggakanScreen({ navigation }: Props) {
 
   return (
     <View style={s.container}>
-      <View style={s.summary}>
-        <Text style={s.summaryTitle}>Ringkasan Tunggakan</Text>
-        <View style={s.summaryRow}>
-          <Text style={s.summaryLabel}>Pelanggan menunggak</Text>
-          <Text style={s.summaryValue}>{res.total} orang</Text>
+      <LinearGradient colors={gradients.coral} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
+        <Text style={s.heroLabel}>GRAND TOTAL TUNGGAKAN</Text>
+        <Text style={s.heroTotal}>{formatRupiah(res.grandTotal)}</Text>
+        <View style={s.heroPills}>
+          <View style={s.heroPill}>
+            <Text style={s.heroPillValue}>{res.total}</Text>
+            <Text style={s.heroPillLabel}>menunggak</Text>
+          </View>
+          <View style={s.heroPill}>
+            <Text style={s.heroPillValue}>{formatRupiah(res.totalTagihan)}</Text>
+            <Text style={s.heroPillLabel}>tagihan</Text>
+          </View>
+          <View style={s.heroPill}>
+            <Text style={s.heroPillValue}>{formatRupiah(res.totalDenda)}</Text>
+            <Text style={s.heroPillLabel}>denda</Text>
+          </View>
         </View>
-        <View style={s.summaryRow}>
-          <Text style={s.summaryLabel}>Total tagihan</Text>
-          <Text style={s.summaryValue}>{formatRupiah(res.totalTagihan)}</Text>
-        </View>
-        <View style={s.summaryRow}>
-          <Text style={s.summaryLabel}>Total denda</Text>
-          <Text style={[s.summaryValue, { color: t.danger }]}>{formatRupiah(res.totalDenda)}</Text>
-        </View>
-        <View style={[s.summaryRow, s.grandRow]}>
-          <Text style={s.grandLabel}>Grand total</Text>
-          <Text style={s.grandValue}>{formatRupiah(res.grandTotal)}</Text>
-        </View>
-      </View>
+      </LinearGradient>
 
-      <FlatList
+      <FlatList keyboardShouldPersistTaps="handled"
         data={items}
         keyExtractor={(it) => String(it.customerId)}
         contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
@@ -122,22 +122,13 @@ export default function TunggakanScreen({ navigation }: Props) {
 const createStyles = (t: Theme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: 'transparent' },
-    summary: {
-      backgroundColor: t.surface,
-      margin: 14,
-      padding: 18,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: t.border,
-      ...shadow.soft,
-    },
-    summaryTitle: { fontFamily: fonts.displayBold, color: t.text, fontSize: 17, marginBottom: 8, letterSpacing: tracking.tight },
-    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-    summaryLabel: { color: t.muted, fontSize: 13, fontFamily: fonts.regular },
-    summaryValue: { color: t.text, fontFamily: fonts.bold, fontSize: 13 },
-    grandRow: { borderTopWidth: 1, borderTopColor: t.border, marginTop: 8, paddingTop: 10 },
-    grandLabel: { color: t.text, fontFamily: fonts.bold, fontSize: 15 },
-    grandValue: { color: t.danger, fontFamily: fonts.displayBold, fontSize: 17 },
+    hero: { margin: 14, padding: 20, borderRadius: radius.xl },
+    heroLabel: { color: 'rgba(255,255,255,0.9)', fontFamily: fonts.semibold, fontSize: 11.5, letterSpacing: tracking.overline },
+    heroTotal: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 32, marginTop: 6, letterSpacing: tracking.display },
+    heroPills: { flexDirection: 'row', gap: 8, marginTop: 16 },
+    heroPill: { flex: 1, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
+    heroPillValue: { color: '#fff', fontFamily: fonts.bold, fontSize: 13 },
+    heroPillLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.medium, fontSize: 10.5, marginTop: 2 },
     row: {
       flexDirection: 'row',
       backgroundColor: t.surface,

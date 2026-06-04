@@ -138,7 +138,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   if (error || !data) return <ErrorState message={error ?? 'Data tidak tersedia'} onRetry={load} />;
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 16 }}>
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
         <Text style={s.heroLabel}>TOTAL TAGIHAN</Text>
         <Text style={s.heroTotal}>{formatRupiah(data.total ?? 0)}</Text>

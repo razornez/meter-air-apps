@@ -70,7 +70,7 @@ export default function CustomersListScreen({ navigation }: Props) {
         {total > 0 && <Text style={s.count}>{total} pelanggan terdaftar</Text>}
       </View>
 
-      <FlatList
+      <FlatList keyboardShouldPersistTaps="handled"
         data={items}
         keyExtractor={(it) => String(it.id)}
         contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}

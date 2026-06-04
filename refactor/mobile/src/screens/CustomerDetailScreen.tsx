@@ -64,7 +64,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
   const maxUsage = usageVals.length ? Math.max(...usageVals) : 0;
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ padding: 14 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 14 }}>
       {/* gradient identity hero with stat strip */}
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
         <View style={s.heroTop}>

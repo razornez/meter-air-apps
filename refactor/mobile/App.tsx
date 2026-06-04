@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
@@ -103,12 +103,15 @@ function ThemedApp() {
     colors: { ...base.colors, background: t.bg, card: t.surface, text: t.text, primary: t.primary, border: t.border },
   };
   return (
-    <>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <StatusBar style="light" />
       <NavigationContainer theme={navTheme}>
         <RootNavigator />
       </NavigationContainer>
-    </>
+    </KeyboardAvoidingView>
   );
 }
 

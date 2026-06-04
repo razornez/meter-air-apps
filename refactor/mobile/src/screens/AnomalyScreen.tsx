@@ -49,7 +49,7 @@ export default function AnomalyScreen({ navigation }: Props) {
   return (
     <View style={s.container}>
       <Text style={s.summary}>{items.length} pelanggan perlu diverifikasi</Text>
-      <FlatList
+      <FlatList keyboardShouldPersistTaps="handled"
         data={items}
         keyExtractor={(it) => String(it.customerId)}
         contentContainerStyle={{ padding: 14, gap: 10 }}
