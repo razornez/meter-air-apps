@@ -1,0 +1,4 @@
+dist/
+uploads/
+*.log
+eng.traineddata
