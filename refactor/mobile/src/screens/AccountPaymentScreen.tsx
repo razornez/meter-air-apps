@@ -44,7 +44,12 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
           return;
         }
         if (res.token) {
-          navigation.replace('PaymentWebView', { noFaktur, snapToken: res.token });
+          // Gunakan redirectUrl dari Midtrans (format URL sudah benar: /snap/v4/redirection/...)
+          navigation.replace('PaymentWebView', {
+            noFaktur,
+            snapToken: res.token ?? '',
+            snapUrl: res.redirectUrl ?? undefined,
+          });
         }
       } else {
         // E-wallet / bank: konfirmasi manual → tandai lunas

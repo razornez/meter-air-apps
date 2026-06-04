@@ -31,7 +31,8 @@ export type RootStackParamList = {
   // Sprint 11
   Kinerja: undefined;
   // Sprint 12
-  PaymentWebView: { noFaktur: string; snapToken: string };
+  // snapUrl = redirectUrl dari Midtrans API (sudah termasuk environment sandbox/production)
+  PaymentWebView: { noFaktur: string; snapToken: string; snapUrl?: string };
   CustomerCard: { id: number };
   // Multi-payment screens
   PaymentSelect: { noFaktur: string; amount: number; customerName: string | null };

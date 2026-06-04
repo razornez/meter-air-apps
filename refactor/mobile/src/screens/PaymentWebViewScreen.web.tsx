@@ -14,9 +14,11 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     const isProduction = process.env.EXPO_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
-    const url = isProduction
-      ? `https://app.midtrans.com/snap/v2/vtweb/${snapToken}`
-      : `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapToken}`;
+    // Pakai snapUrl (redirectUrl dari backend) bila ada — sudah benar formatnya
+    const url = route.params.snapUrl
+      ?? (isProduction
+        ? `https://app.midtrans.com/snap/v4/redirection/${snapToken}`
+        : `https://app.sandbox.midtrans.com/snap/v4/redirection/${snapToken}`);
     window.open(url, '_blank');
     setOpened(true);
     // Kembali setelah 2 detik

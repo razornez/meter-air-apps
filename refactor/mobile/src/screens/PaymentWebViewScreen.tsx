@@ -8,16 +8,17 @@ import { colors } from '../theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentWebView'>;
 
 export default function PaymentWebViewScreen({ route, navigation }: Props) {
-  const { noFaktur, snapToken } = route.params;
+  const { noFaktur, snapToken, snapUrl: snapUrlFromParam } = route.params;
   const [loading, setLoading] = useState(true);
   const webviewRef = useRef<WebView>(null);
 
-  // Gunakan redirect_url dari Midtrans (backend sudah tentukan sandbox/production).
-  // Format: https://app[.sandbox].midtrans.com/snap/v2/vtweb/<token>
+  // Pakai snapUrl dari backend (redirectUrl) bila ada — formatnya sudah benar.
+  // Fallback: bangun dari token (untuk backward compat).
   const isProduction = process.env.EXPO_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true';
-  const snapUrl = isProduction
-    ? `https://app.midtrans.com/snap/v2/vtweb/${snapToken}`
-    : `https://app.sandbox.midtrans.com/snap/v2/vtweb/${snapToken}`;
+  const snapUrl = snapUrlFromParam
+    ?? (isProduction
+      ? `https://app.midtrans.com/snap/v4/redirection/${snapToken}`
+      : `https://app.sandbox.midtrans.com/snap/v4/redirection/${snapToken}`);
 
   function onNavigationChange(state: WebViewNavigation) {
     const url = state.url;
