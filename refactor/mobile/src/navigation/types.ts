@@ -33,4 +33,8 @@ export type RootStackParamList = {
   // Sprint 12
   PaymentWebView: { noFaktur: string; snapToken: string };
   CustomerCard: { id: number };
+  // Multi-payment screens
+  PaymentSelect: { noFaktur: string; amount: number; customerName: string | null };
+  CashPayment: { noFaktur: string; amount: number };
+  AccountPayment: { noFaktur: string; method: import('../types').PaymentMethod };
 };

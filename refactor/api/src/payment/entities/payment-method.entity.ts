@@ -12,9 +12,9 @@ export class PaymentMethod {
   @Column({ length: 100 })
   name: string;
 
-  // cash = tunai manual; midtrans = via Snap API; transfer = info rekening manual
-  @Column({ type: 'enum', enum: ['cash', 'midtrans', 'transfer'] })
-  type: 'cash' | 'midtrans' | 'transfer';
+  // cash = tunai; ewallet = dompet digital manual; bank_static = bank manual; midtrans = gateway
+  @Column({ type: 'varchar', length: 20 })
+  type: 'cash' | 'ewallet' | 'bank_static' | 'midtrans';
 
   @Column({ name: 'is_active', type: 'tinyint', width: 1, default: 1 })
   isActive: number;
@@ -24,6 +24,15 @@ export class PaymentMethod {
 
   @Column({ type: 'text', nullable: true })
   instructions: string | null;
+
+  @Column({ name: 'logo_bg', type: 'varchar', length: 12, default: '#607D8B' })
+  logoBg: string;
+
+  @Column({ name: 'logo_text', type: 'varchar', length: 12, default: '' })
+  logoText: string;
+
+  @Column({ name: 'logo_url', type: 'varchar', length: 255, nullable: true })
+  logoUrl: string | null;
 
   @Column({ name: 'account_number', type: 'varchar', length: 50, nullable: true })
   accountNumber: string | null;

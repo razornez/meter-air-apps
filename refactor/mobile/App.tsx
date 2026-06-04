@@ -45,6 +45,9 @@ import FakturListScreen from './src/screens/FakturListScreen';
 import CustomersListScreen from './src/screens/CustomersListScreen';
 import PaymentWebViewScreen from './src/screens/PaymentWebViewScreen';
 import CustomerCardScreen from './src/screens/CustomerCardScreen';
+import PaymentSelectScreen from './src/screens/PaymentSelectScreen';
+import CashPaymentScreen from './src/screens/CashPaymentScreen';
+import AccountPaymentScreen from './src/screens/AccountPaymentScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -87,6 +90,9 @@ function RootNavigator() {
           <Stack.Screen name="CustomersList" component={CustomersListScreen} options={{ title: 'Pelanggan' }} />
           <Stack.Screen name="PaymentWebView" component={PaymentWebViewScreen} options={{ title: 'Pembayaran' }} />
           <Stack.Screen name="CustomerCard" component={CustomerCardScreen} options={{ title: 'Kartu Pelanggan' }} />
+          <Stack.Screen name="PaymentSelect" component={PaymentSelectScreen} options={{ title: 'Pilih Metode Bayar' }} />
+          <Stack.Screen name="CashPayment" component={CashPaymentScreen} options={{ title: 'Pembayaran Tunai' }} />
+          <Stack.Screen name="AccountPayment" component={AccountPaymentScreen} options={({ route }) => ({ title: route.params.method.name })} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

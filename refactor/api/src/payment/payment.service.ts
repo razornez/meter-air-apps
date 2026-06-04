@@ -13,11 +13,7 @@ import { PaymentMethod } from './entities/payment-method.entity';
 // Midtrans `enabled_payments` per kode metode.
 const MIDTRANS_ENABLED: Record<string, string[]> = {
   midtrans_qris:  ['other_qris', 'qris'],
-  midtrans_gopay: ['gopay'],
-  midtrans_ovo:   ['shopeepay'],           // OVO via Midtrans
-  midtrans_dana:  ['dana'],
-  midtrans_bni:   ['bni_va'],
-  midtrans_bca:   ['bca_va'],
+  midtrans_card:  ['credit_card'],
   // kosong = semua metode Midtrans tampil
 };
 
@@ -65,7 +61,8 @@ export class PaymentService {
         return this.payCash(noFaktur, method, kasirId);
       case 'midtrans':
         return this.payMidtrans(noFaktur, method, kasirId);
-      case 'transfer':
+      case 'ewallet':
+      case 'bank_static':
         return this.payTransfer(noFaktur, method, kasirId);
       default:
         throw new BadRequestException(`Tipe metode tidak dikenal: ${method.type}`);

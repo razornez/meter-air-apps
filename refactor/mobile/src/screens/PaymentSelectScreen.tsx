@@ -1,0 +1,151 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import { apiPaymentMethods } from '../api/services';
+import { apiErrorMessage } from '../api/client';
+import { PaymentMethod } from '../types';
+import { BrandLogo } from '../components/BrandLogo';
+import { colors } from '../theme';
+import { ErrorState, Loading } from '../components/ScreenStates';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'PaymentSelect'>;
+
+const GROUP_ORDER = ['cash', 'ewallet', 'bank_static', 'midtrans'];
+const GROUP_LABEL: Record<string, string> = {
+  cash: '💵  Tunai',
+  ewallet: '📲  Dompet Digital',
+  bank_static: '🏦  Transfer Bank',
+  midtrans: '🔐  Bayar via Gateway',
+};
+const GROUP_DESC: Record<string, string> = {
+  cash: 'Terima langsung, hitung kembalian',
+  ewallet: 'Kirim ke nomor e-wallet perusahaan',
+  bank_static: 'Transfer ke rekening bank perusahaan',
+  midtrans: 'QRIS dinamis atau kartu kredit',
+};
+
+export default function PaymentSelectScreen({ route, navigation }: Props) {
+  const { noFaktur, amount, customerName } = route.params;
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiPaymentMethods()
+      .then(setMethods)
+      .catch((e) => setError(apiErrorMessage(e)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const grouped = useMemo(() => {
+    const g: Record<string, PaymentMethod[]> = {};
+    methods.forEach((m) => {
+      if (!g[m.type]) g[m.type] = [];
+      g[m.type].push(m);
+    });
+    return GROUP_ORDER.filter((k) => g[k]?.length).map((k) => ({
+      type: k,
+      items: g[k],
+    }));
+  }, [methods]);
+
+  function onSelect(method: PaymentMethod) {
+    if (method.type === 'cash') {
+      navigation.navigate('CashPayment', { noFaktur, amount });
+    } else if (method.type === 'ewallet' || method.type === 'bank_static') {
+      navigation.navigate('AccountPayment', { noFaktur, method });
+    } else {
+      // midtrans: buka snap
+      navigation.navigate('PaymentWebView', { noFaktur, snapToken: '' });
+      // Note: snap token dibuat dulu lalu navigate — dihandle di AccountPayment yg punya logic sama
+    }
+  }
+
+  if (loading) return <Loading label="Memuat metode bayar…" />;
+  if (error) return <ErrorState message={error} onRetry={() => { setLoading(true); setError(null); apiPaymentMethods().then(setMethods).catch((e) => setError(apiErrorMessage(e))).finally(() => setLoading(false)); }} />;
+
+  return (
+    <View style={s.container}>
+      {/* Header tagihan */}
+      <LinearGradient colors={['#1565C0', '#0D47A1']} style={s.header}>
+        <Text style={s.headerLabel}>TOTAL TAGIHAN</Text>
+        <Text style={s.headerAmount}>Rp {amount.toLocaleString('id-ID')}</Text>
+        {!!customerName && <Text style={s.headerCustomer}>{customerName}</Text>}
+        <Text style={s.headerFaktur}>{noFaktur}</Text>
+      </LinearGradient>
+
+      <FlatList
+        data={grouped}
+        keyExtractor={(g) => g.type}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        renderItem={({ item: group }) => (
+          <View style={s.group}>
+            <View style={s.groupHeader}>
+              <Text style={s.groupTitle}>{GROUP_LABEL[group.type]}</Text>
+              <Text style={s.groupDesc}>{GROUP_DESC[group.type]}</Text>
+            </View>
+            {group.items.map((method) => (
+              <TouchableOpacity
+                key={method.code}
+                style={s.row}
+                onPress={() => onSelect(method)}
+                activeOpacity={0.75}
+              >
+                <BrandLogo
+                  logoBg={method.logoBg}
+                  logoText={method.logoText}
+                  logoUrl={method.logoUrl}
+                  size={48}
+                />
+                <View style={s.rowText}>
+                  <Text style={s.rowName}>{method.name}</Text>
+                  {!!method.accountNumber && (
+                    <Text style={s.rowSub}>{method.accountNumber}</Text>
+                  )}
+                  {!method.accountNumber && !!method.instructions && (
+                    <Text style={s.rowSub} numberOfLines={1}>{method.instructions}</Text>
+                  )}
+                </View>
+                <Text style={s.chevron}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F1F4F9' },
+  header: { padding: 24, paddingBottom: 28 },
+  headerLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
+  headerAmount: { color: '#fff', fontSize: 34, fontWeight: '900', marginTop: 4, letterSpacing: -0.5 },
+  headerCustomer: { color: 'rgba(255,255,255,0.9)', fontSize: 15, marginTop: 8, fontWeight: '600' },
+  headerFaktur: { color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 2 },
+  group: { marginTop: 20, paddingHorizontal: 16 },
+  groupHeader: { marginBottom: 10 },
+  groupTitle: { fontSize: 13, fontWeight: '800', color: '#374151', letterSpacing: 0.3 },
+  groupDesc: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: '#fff', borderRadius: 14,
+    paddingVertical: 14, paddingHorizontal: 16,
+    marginBottom: 8,
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  rowText: { flex: 1 },
+  rowName: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  rowSub: { fontSize: 12, color: '#6B7280', marginTop: 3 },
+  chevron: { fontSize: 22, color: '#D1D5DB', fontWeight: '300' },
+});

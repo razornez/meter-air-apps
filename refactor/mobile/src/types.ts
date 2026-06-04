@@ -102,9 +102,12 @@ export interface PaymentMethod {
   id: number;
   code: string;
   name: string;
-  type: 'cash' | 'midtrans' | 'transfer';
+  type: 'cash' | 'ewallet' | 'bank_static' | 'midtrans';
   isActive: number;
   icon: string;
+  logoBg: string;
+  logoText: string;
+  logoUrl: string | null;
   instructions: string | null;
   accountNumber: string | null;
   accountName: string | null;
