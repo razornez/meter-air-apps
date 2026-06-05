@@ -3,13 +3,14 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiFakturDetail, apiGetConfig, apiSetFakturLunas } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { AppConfig, FakturDetail } from '../types';
-import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
+import { fonts, formatRupiah, pastels, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
 import { buildFakturHtml } from '../utils/fakturHtml';
@@ -146,43 +147,87 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
         </View>
       </LinearGradient>
 
+      {/* Action bar — 3 pill buttons */}
       <View style={s.actions}>
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.9} onPress={onToggleLunas} disabled={acting}>
-          <LinearGradient
-            colors={(data.isLunas ? [t.warning, t.warning] : [t.success, t.success]) as readonly [string, string]}
-            style={s.actionBtn}
-          >
-            <Text style={s.actionText}>{data.isLunas ? tr('faktur_detail_button_cancel_paid') : tr('faktur_detail_button_mark_paid')}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        <TouchableOpacity style={[s.actionBtn, s.actionGhost]} onPress={() => onPrintOrShare(false)} disabled={acting}>
-          <Text style={s.actionGhostText}>{tr('faktur_detail_button_print')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[s.actionBtn, s.actionGhost]} onPress={() => onPrintOrShare(true)} disabled={acting}>
-          <Text style={s.actionGhostText}>{tr('faktur_detail_button_share')}</Text>
-        </TouchableOpacity>
-      </View>
-      {/* Tombol Pilih Metode Bayar — hanya bila belum lunas */}
-      {!data.isLunas && (
+        {/* Tandai Lunas / Batal Lunas */}
         <TouchableOpacity
-          style={[s.payBtn, acting && { opacity: 0.5 }]}
-          onPress={openPayment}
+          style={[s.pillBtn, data.isLunas ? s.pillAmber : s.pillMint, { flex: 1.6 }, acting && s.dimmed]}
+          activeOpacity={0.85}
+          onPress={onToggleLunas}
           disabled={acting}
         >
-          <Text style={s.payBtnText}>{tr('faktur_detail_button_pay_now')}</Text>
+          <Ionicons
+            name={data.isLunas ? 'close-circle' : 'checkmark-circle'}
+            size={18}
+            color={data.isLunas ? pastels.peach.fg : pastels.mint.fg}
+          />
+          <Text style={[s.pillText, { color: data.isLunas ? pastels.peach.fg : pastels.mint.fg }]}>
+            {data.isLunas ? tr('faktur_detail_button_cancel_paid') : tr('faktur_detail_button_mark_paid')}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Cetak */}
+        <TouchableOpacity
+          style={[s.pillBtn, s.pillLavender, acting && s.dimmed]}
+          activeOpacity={0.85}
+          onPress={() => onPrintOrShare(false)}
+          disabled={acting}
+        >
+          <Ionicons name="print" size={18} color={pastels.lavender.fg} />
+          <Text style={[s.pillText, { color: pastels.lavender.fg }]}>{tr('faktur_detail_button_print')}</Text>
+        </TouchableOpacity>
+
+        {/* Bagikan */}
+        <TouchableOpacity
+          style={[s.pillBtn, s.pillSky, acting && s.dimmed]}
+          activeOpacity={0.85}
+          onPress={() => onPrintOrShare(true)}
+          disabled={acting}
+        >
+          <Ionicons name="share-social" size={18} color={pastels.sky.fg} />
+          <Text style={[s.pillText, { color: pastels.sky.fg }]}>{tr('faktur_detail_button_share')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bayar Sekarang — gradient hero, hanya bila belum lunas */}
+      {!data.isLunas && (
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={openPayment}
+          disabled={acting}
+          style={acting && s.dimmed}
+        >
+          <LinearGradient
+            colors={t.hero}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[s.payBtn, shadow.glow]}
+          >
+            <View style={s.payIconWrap}>
+              <Ionicons name="card" size={22} color="rgba(255,255,255,0.95)" />
+            </View>
+            <Text style={s.payBtnText}>{tr('faktur_detail_button_pay_now')}</Text>
+            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
+          </LinearGradient>
         </TouchableOpacity>
       )}
 
-      {/* Tombol WA — hanya tampil bila belum lunas (reminder tagihan) */}
+      {/* WA Reminder — pastel green, hanya bila belum lunas */}
       {!data.isLunas && (
         <TouchableOpacity
-          style={[s.waBtn, acting && { opacity: 0.5 }]}
+          style={[s.waBtn, acting && s.dimmed]}
+          activeOpacity={0.88}
           onPress={onSendWA}
           disabled={acting}
         >
+          <View style={s.waIconWrap}>
+            <MaterialCommunityIcons name="whatsapp" size={22} color="#22C55E" />
+          </View>
           <Text style={s.waBtnText}>{tr('faktur_detail_button_wa_reminder')}</Text>
+          <Ionicons name="chevron-forward" size={20} color="#86EFAC" />
         </TouchableOpacity>
       )}
+
       {acting && (
         <View style={s.actingRow}>
           <ActivityIndicator color={t.primary} />
@@ -279,28 +324,49 @@ const createStyles = (t: Theme) =>
     heroFaktur: { color: 'rgba(255,255,255,0.92)', fontFamily: fonts.semibold, fontSize: 13, flex: 1 },
     heroBadge: { backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', paddingHorizontal: 11, paddingVertical: 5, borderRadius: radius.pill, marginLeft: 8 },
     heroBadgeText: { color: '#fff', fontFamily: fonts.extrabold, fontSize: 11, letterSpacing: 0.4 },
-    actions: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-    actionBtn: { flex: 1, borderRadius: radius.md, paddingVertical: 13, alignItems: 'center', justifyContent: 'center' },
-    actionText: { color: '#fff', fontFamily: fonts.bold, fontSize: 13 },
-    actionGhost: { borderWidth: 1.5, borderColor: t.primary, backgroundColor: 'transparent' },
-    actionGhostText: { color: t.primary, fontFamily: fonts.bold, fontSize: 13 },
+    // Action pill buttons
+    actions: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+    pillBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: 6, paddingVertical: 12, paddingHorizontal: 10,
+      borderRadius: radius.pill, borderWidth: 1.5,
+    },
+    pillMint:     { backgroundColor: pastels.mint.bg,     borderColor: pastels.mint.fg + '44' },
+    pillAmber:    { backgroundColor: pastels.peach.bg,    borderColor: pastels.peach.fg + '44' },
+    pillLavender: { backgroundColor: pastels.lavender.bg, borderColor: pastels.lavender.fg + '44' },
+    pillSky:      { backgroundColor: pastels.sky.bg,      borderColor: pastels.sky.fg + '44' },
+    pillText: { fontFamily: fonts.bold, fontSize: 13 },
+    dimmed: { opacity: 0.5 },
+
     actingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+
+    // Bayar Sekarang — full-width gradient
     payBtn: {
-      backgroundColor: t.primary,
-      borderRadius: radius.sm,
-      paddingVertical: 15,
-      alignItems: 'center',
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      borderRadius: radius.lg, paddingVertical: 16, paddingHorizontal: 20,
       marginBottom: 10,
     },
-    payBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 16 },
+    payIconWrap: {
+      width: 40, height: 40, borderRadius: 14,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    payBtnText: { flex: 1, color: '#fff', fontFamily: fonts.extrabold, fontSize: 16, letterSpacing: 0.2 },
+
+    // WA Reminder — pastel green card
     waBtn: {
-      backgroundColor: '#25D366', // warna hijau WhatsApp
-      borderRadius: radius.sm,
-      paddingVertical: 14,
-      alignItems: 'center',
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      backgroundColor: '#F0FDF4',
+      borderWidth: 1.5, borderColor: '#86EFAC',
+      borderRadius: radius.lg, paddingVertical: 15, paddingHorizontal: 20,
       marginBottom: 12,
     },
-    waBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
+    waIconWrap: {
+      width: 40, height: 40, borderRadius: 14,
+      backgroundColor: '#DCFCE7',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    waBtnText: { flex: 1, color: '#16A34A', fontFamily: fonts.extrabold, fontSize: 15 },
     card: {
       backgroundColor: t.surface,
       borderRadius: radius.lg,
