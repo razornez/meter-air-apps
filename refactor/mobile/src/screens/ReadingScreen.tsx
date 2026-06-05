@@ -15,6 +15,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiCalculate, apiOcrMeter, apiSaveReading, apiUpdateLocation, apiUploadPhoto } from '../api/services';
 import { preprocessForOcr } from '../utils/imagePreprocess';
@@ -30,6 +31,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Reading'>;
 const BEBAN = 5000; // sinkron dengan konstanta backend (preview saja)
 
 export default function ReadingScreen({ route, navigation }: Props) {
+  const { t: tr } = useTranslation();
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
   const { meterInfo } = route.params;
@@ -64,12 +66,12 @@ export default function ReadingScreen({ route, navigation }: Props) {
         setCalc(null);
       } else {
         Alert.alert(
-          'OCR tidak menemukan angka',
-          'Coba foto dengan pencahayaan lebih baik atau isi manual.',
+          tr('reading_alert_ocr_not_found_title'),
+          tr('reading_alert_ocr_not_found_message'),
         );
       }
     } catch {
-      Alert.alert('OCR gagal', 'Tidak dapat memproses foto. Isi angka secara manual.');
+      Alert.alert(tr('reading_alert_ocr_failed_title'), tr('reading_alert_ocr_failed_message'));
     } finally {
       setOcrLoading(false);
     }
@@ -87,7 +89,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
 
   async function onCalculate() {
     if (Number.isNaN(meterBaru)) {
-      Alert.alert('Input meter belum valid');
+      Alert.alert(tr('reading_alert_invalid_meter'));
       return;
     }
     setCalcLoading(true);
@@ -95,7 +97,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
       const r = await apiCalculate(customer.tipe ?? '', pemakaian);
       setCalc(r);
     } catch (e) {
-      Alert.alert('Gagal menghitung', apiErrorMessage(e));
+      Alert.alert(tr('reading_alert_calc_failed_title'), apiErrorMessage(e));
     } finally {
       setCalcLoading(false);
     }
@@ -117,13 +119,13 @@ export default function ReadingScreen({ route, navigation }: Props) {
 
   async function onSave() {
     if (Number.isNaN(meterBaru)) {
-      Alert.alert('Input meter belum valid');
+      Alert.alert(tr('reading_alert_invalid_meter'));
       return;
     }
     if (meterBaru < lastMeter) {
       Alert.alert(
-        'Perhatian',
-        `Meter baru (${meterBaru}) lebih kecil dari meter lama (${lastMeter}). Pemakaian akan dihitung 0.`,
+        tr('reading_alert_meter_low_title'),
+        tr('reading_alert_meter_low_message', { meterBaru, lastMeter }),
       );
     }
     setSaving(true);
@@ -133,7 +135,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
         try {
           await apiUploadPhoto(saved.noFaktur, photoUri);
         } catch {
-          Alert.alert('Catatan tersimpan', 'Namun foto meter gagal diunggah. Coba unggah ulang nanti.');
+          Alert.alert(tr('reading_alert_photo_upload_title'), tr('reading_alert_photo_upload_message'));
         }
       }
       setResult(saved);
@@ -148,7 +150,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
         });
         setOfflineSaved(true);
       } else {
-        Alert.alert('Gagal menyimpan', apiErrorMessage(e));
+        Alert.alert(tr('reading_alert_save_failed_title'), apiErrorMessage(e));
       }
     } finally {
       setSaving(false);
@@ -170,17 +172,17 @@ export default function ReadingScreen({ route, navigation }: Props) {
         <View style={[s.successBadge, { backgroundColor: t.warning + '22' }]}>
           <SyncIcon size={40} color={t.warning} />
         </View>
-        <Text style={[s.successTitle, { color: t.warning }]}>Tersimpan Offline</Text>
+        <Text style={[s.successTitle, { color: t.warning }]}>{tr('reading_alert_offline_saved_title')}</Text>
         <View style={s.card}>
-          <Row s={s} label="Pelanggan" value={customer.nama ?? '-'} />
-          <Row s={s} label="Meter Baru" value={String(meterBaru)} />
-          <Row s={s} label="Pemakaian" value={`${pemakaian} m³`} />
+          <Row s={s} label={tr('reading_label_customer')} value={customer.nama ?? '-'} />
+          <Row s={s} label={tr('reading_label_new_meter_result')} value={String(meterBaru)} />
+          <Row s={s} label={tr('reading_label_usage')} value={`${pemakaian} m³`} />
           <Text style={[s.custMeta, { marginTop: 10 }]}>
-            Catatan disimpan di perangkat & akan dikirim otomatis saat ada koneksi internet.
+            {tr('reading_alert_offline_saved_detail')}
           </Text>
         </View>
         <View style={{ width: '100%' }}>
-          <PrimaryButton label="Selesai" onPress={() => navigation.popToTop()} />
+          <PrimaryButton label={tr('reading_button_done')} onPress={() => navigation.popToTop()} />
         </View>
       </ScrollView>
     );
@@ -193,20 +195,20 @@ export default function ReadingScreen({ route, navigation }: Props) {
         <View style={[s.successBadge, { backgroundColor: t.success + '22' }]}>
           <CheckIcon size={42} color={t.success} strokeWidth={2.4} />
         </View>
-        <Text style={[s.successTitle, { color: t.success }]}>Catatan Tersimpan</Text>
+        <Text style={[s.successTitle, { color: t.success }]}>{tr('reading_alert_record_saved_title')}</Text>
         <View style={s.card}>
-          <Row s={s} label="No. Faktur" value={result.noFaktur} />
-          <Row s={s} label="Pelanggan" value={customer.nama ?? '-'} />
-          <Row s={s} label="Meter Lama" value={String(result.meterLama)} />
-          <Row s={s} label="Meter Baru" value={String(result.meterBaru)} />
-          <Row s={s} label="Pemakaian" value={`${result.pemakaian} m³`} />
-          <Row s={s} label="Subtotal" value={formatRupiah(result.subtotal)} />
-          <Row s={s} label="Beban" value={formatRupiah(result.beban)} />
-          <Row s={s} label="Total" value={formatRupiah(result.total)} bold />
-          <Row s={s} label="Jatuh Tempo" value={result.tglJatuhTempo} />
+          <Row s={s} label={tr('reading_label_invoice_no')} value={result.noFaktur} />
+          <Row s={s} label={tr('reading_label_customer')} value={customer.nama ?? '-'} />
+          <Row s={s} label={tr('reading_label_old_meter')} value={String(result.meterLama)} />
+          <Row s={s} label={tr('reading_label_new_meter_result')} value={String(result.meterBaru)} />
+          <Row s={s} label={tr('reading_label_usage')} value={`${result.pemakaian} m³`} />
+          <Row s={s} label={tr('reading_label_subtotal')} value={formatRupiah(result.subtotal)} />
+          <Row s={s} label={tr('reading_label_charge')} value={formatRupiah(result.beban)} />
+          <Row s={s} label={tr('reading_label_total')} value={formatRupiah(result.total)} bold />
+          <Row s={s} label={tr('reading_label_due_date')} value={result.tglJatuhTempo} />
         </View>
         <View style={{ width: '100%' }}>
-          <PrimaryButton label="Selesai" onPress={() => navigation.popToTop()} />
+          <PrimaryButton label={tr('reading_button_done')} onPress={() => navigation.popToTop()} />
         </View>
       </ScrollView>
     );
@@ -216,20 +218,20 @@ export default function ReadingScreen({ route, navigation }: Props) {
   return (
     <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: 'transparent' }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.custHero, shadow.glow]}>
-        <Text style={s.custHeroLabel}>PELANGGAN</Text>
-        <Text style={s.custHeroName} numberOfLines={1}>{customer.nama ?? 'Tanpa nama'}</Text>
+        <Text style={s.custHeroLabel}>{tr('reading_label_customer')}</Text>
+        <Text style={s.custHeroName} numberOfLines={1}>{customer.nama ?? tr('reading_customer_no_name')}</Text>
         <Text style={s.custHeroMeta} numberOfLines={1}>
           ID {customer.id}{customer.alamat ? ` · ${customer.alamat}` : ''}
         </Text>
         <View style={s.custHeroBadges}>
-          <View style={s.custHeroBadge}><Text style={s.custHeroBadgeText}>Tipe {customer.tipe ?? '-'}</Text></View>
-          <View style={s.custHeroBadge}><Text style={s.custHeroBadgeText}>Meter lama {lastMeter}</Text></View>
+          <View style={s.custHeroBadge}><Text style={s.custHeroBadgeText}>{tr('reading_badge_type', { type: customer.tipe ?? '-' })}</Text></View>
+          <View style={s.custHeroBadge}><Text style={s.custHeroBadgeText}>{tr('reading_badge_old_meter', { meter: lastMeter })}</Text></View>
         </View>
       </LinearGradient>
 
       {alreadyRecordedThisMonth && (
         <View style={s.warnBox}>
-          <Text style={s.warnText}>⚠️ Pelanggan ini sudah dicatat bulan ini. Penyimpanan akan ditolak server.</Text>
+          <Text style={s.warnText}>{tr('reading_warn_already_recorded')}</Text>
         </View>
       )}
 
@@ -260,25 +262,24 @@ export default function ReadingScreen({ route, navigation }: Props) {
           }}
         >
           <MapPinIcon size={17} color={t.primary} />
-          <Text style={s.gpsBannerText}>Tandai lokasi pelanggan saat ini? (ketuk)</Text>
+          <Text style={s.gpsBannerText}>{tr('reading_gps_banner')}</Text>
         </TouchableOpacity>
       )}
-      {gpsTagged && <Text style={s.gpsOk}>✓ Lokasi GPS dicatat</Text>}
+      {gpsTagged && <Text style={s.gpsOk}>{tr('reading_gps_tagged')}</Text>}
 
       {/* Info periode pencatatan */}
       <View style={s.periodBar}>
         <Text style={s.periodText}>
-          📅 Pencatatan{' '}
-          {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+          {tr('reading_period_label', { month_year: new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) })}
         </Text>
-        <Text style={s.periodSub}>Meter lama: {lastMeter}</Text>
+        <Text style={s.periodSub}>{tr('reading_badge_old_meter', { meter: lastMeter })}</Text>
       </View>
 
       <View style={s.labelRow}>
-        <Text style={s.label}>Angka Meter Baru</Text>
+        <Text style={s.label}>{tr('reading_label_new_meter')}</Text>
         {ocrSource && (
           <View style={s.ocrBadge}>
-            <Text style={s.ocrBadgeText}>🔍 dari OCR · bisa diedit</Text>
+            <Text style={s.ocrBadgeText}>{tr('reading_ocr_badge')}</Text>
           </View>
         )}
       </View>
@@ -295,37 +296,37 @@ export default function ReadingScreen({ route, navigation }: Props) {
         placeholderTextColor={t.muted}
       />
       <Text style={s.pemakaian}>
-        Pemakaian: <Text style={{ fontFamily: fonts.bold, color: t.text }}>{pemakaian} m³</Text>
+        {tr('reading_usage_label')} <Text style={{ fontFamily: fonts.bold, color: t.text }}>{pemakaian} m³</Text>
       </Text>
 
       <TouchableOpacity style={s.secondaryBtn} onPress={onCalculate} disabled={calcLoading}>
-        {calcLoading ? <ActivityIndicator color={t.primary} /> : <Text style={s.secondaryBtnText}>Hitung Tagihan</Text>}
+        {calcLoading ? <ActivityIndicator color={t.primary} /> : <Text style={s.secondaryBtnText}>{tr('reading_button_calculate')}</Text>}
       </TouchableOpacity>
 
       {calc && (
         <View style={s.card}>
-          <Text style={s.cardTitle}>Rincian Tarif Berjenjang</Text>
+          <Text style={s.cardTitle}>{tr('reading_tariff_title')}</Text>
           {calc.posts.map((p) => (
             <Row s={s} key={p.level} label={`Blok ${p.level} • ${p.quantity} m³ × ${formatRupiah(p.harga)}`} value={formatRupiah(p.total)} />
           ))}
           <View style={s.sep} />
-          <Row s={s} label="Subtotal pemakaian" value={formatRupiah(calc.totalBiaya)} />
-          <Row s={s} label="Beban tetap" value={formatRupiah(BEBAN)} />
-          <Row s={s} label="Perkiraan total" value={formatRupiah(calc.totalBiaya + BEBAN)} bold />
+          <Row s={s} label={tr('reading_tariff_subtotal')} value={formatRupiah(calc.totalBiaya)} />
+          <Row s={s} label={tr('reading_tariff_fixed_charge')} value={formatRupiah(BEBAN)} />
+          <Row s={s} label={tr('reading_tariff_estimated_total')} value={formatRupiah(calc.totalBiaya + BEBAN)} bold />
         </View>
       )}
 
-      <Text style={s.label}>Catatan (opsional)</Text>
+      <Text style={s.label}>{tr('reading_label_note')}</Text>
       <TextInput
         style={s.noteInput}
         value={catatan}
         onChangeText={setCatatan}
-        placeholder="mis. meter buram / segel rusak"
+        placeholder={tr('reading_placeholder_note')}
         placeholderTextColor={t.muted}
         multiline
       />
 
-      <Text style={s.label}>Foto Meter</Text>
+      <Text style={s.label}>{tr('reading_label_photo')}</Text>
       {photoUri ? (
         <View>
           <Image source={{ uri: photoUri }} style={s.preview} />
@@ -338,25 +339,25 @@ export default function ReadingScreen({ route, navigation }: Props) {
             {ocrLoading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={s.ocrBtnText}>🔍 Kenali Angka Meter</Text>
+              <Text style={s.ocrBtnText}>{tr('reading_button_recognize')}</Text>
             )}
           </TouchableOpacity>
           {ocrLoading && (
-            <Text style={s.ocrHint}>OCR berjalan… mungkin perlu beberapa detik</Text>
+            <Text style={s.ocrHint}>{tr('reading_ocr_hint')}</Text>
           )}
           <TouchableOpacity style={s.linkBtn} onPress={() => { setOcrSource(false); openCamera(); }}>
-            <Text style={s.linkBtnText}>Ambil ulang foto</Text>
+            <Text style={s.linkBtnText}>{tr('reading_button_retake')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <TouchableOpacity style={s.photoBtn} onPress={openCamera}>
           <CameraIcon size={20} color={t.primary} />
-          <Text style={s.photoBtnText}>Ambil Foto Meter</Text>
+          <Text style={s.photoBtnText}>{tr('reading_button_take_photo')}</Text>
         </TouchableOpacity>
       )}
 
       <View style={{ marginTop: 20 }}>
-        <PrimaryButton label="Simpan Catatan Meter" onPress={onSave} busy={saving} disabled={saving} />
+        <PrimaryButton label={tr('reading_button_save')} onPress={onSave} busy={saving} disabled={saving} />
       </View>
 
       <Modal visible={cameraOpen} animationType="slide">
@@ -364,7 +365,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
           <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back" />
           <View style={s.camControls}>
             <TouchableOpacity style={s.camCancel} onPress={() => setCameraOpen(false)}>
-              <Text style={s.camCancelText}>Batal</Text>
+              <Text style={s.camCancelText}>{tr('reading_camera_button_cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={s.shutter} onPress={capture} />
             <View style={{ width: 60 }} />

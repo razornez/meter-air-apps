@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiPay, apiSnapToken } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -19,6 +20,7 @@ import { colors } from '../theme';
 type Props = NativeStackScreenProps<RootStackParamList, 'AccountPayment'>;
 
 export default function AccountPaymentScreen({ route, navigation }: Props) {
+  const { t: tr } = useTranslation();
   const { noFaktur, amount, method } = route.params;
   const [confirming, setConfirming] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         // Midtrans: buat snap token lalu buka WebView
         const res = await apiSnapToken(noFaktur);
         if (res.alreadyPaid) {
-          Alert.alert('Sudah Lunas', 'Faktur ini sudah terbayar.');
+          Alert.alert(tr('account_payment_alert_already_paid_title'), tr('account_payment_alert_already_paid_message'));
           navigation.pop(2);
           return;
         }
@@ -57,20 +59,20 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         if (res.type === 'transfer' || res.type === 'ewallet' || res.type === 'bank_static') {
           // Transfer belum otomatis lunas — petugas konfirmasi menerima
           Alert.alert(
-            'Tandai Lunas?',
-            `Konfirmasi bahwa Anda sudah menerima transfer dari pelanggan untuk faktur ${noFaktur}.`,
+            tr('account_payment_alert_confirm_title'),
+            tr('account_payment_alert_confirm_message', { noFaktur }),
             [
-              { text: 'Batal', style: 'cancel' },
+              { text: tr('account_payment_alert_confirm_cancel'), style: 'cancel' },
               {
-                text: 'Ya, Sudah Diterima',
+                text: tr('account_payment_alert_confirm_ok'),
                 onPress: async () => {
                   try {
                     await apiPay(noFaktur, 'cash'); // tandai lunas via cash flow
-                    Alert.alert('✅ Lunas', 'Faktur ditandai lunas.', [
+                    Alert.alert(tr('account_payment_alert_paid_title'), tr('account_payment_alert_paid_message'), [
                       { text: 'OK', onPress: () => navigation.pop(2) },
                     ]);
                   } catch (e) {
-                    Alert.alert('Gagal', apiErrorMessage(e));
+                    Alert.alert(tr('account_payment_alert_failed_title'), apiErrorMessage(e));
                   }
                 },
               },
@@ -79,7 +81,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         }
       }
     } catch (e) {
-      Alert.alert('Gagal', apiErrorMessage(e));
+      Alert.alert(tr('account_payment_alert_failed_title'), apiErrorMessage(e));
     } finally {
       setConfirming(false);
     }
@@ -93,33 +95,33 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         <View style={s.brandInfo}>
           <Text style={s.brandName}>{method.name}</Text>
           <Text style={s.brandType}>
-            {method.type === 'ewallet' ? 'Dompet Digital' : method.type === 'bank_static' ? 'Transfer Bank' : 'Gateway'}
+            {method.type === 'ewallet' ? tr('account_payment_brand_type_ewallet') : method.type === 'bank_static' ? tr('account_payment_brand_type_bank') : tr('account_payment_brand_type_gateway')}
           </Text>
         </View>
       </View>
 
       {/* Jumlah */}
       <View style={s.amountCard}>
-        <Text style={s.amountLabel}>JUMLAH YANG DITRANSFER</Text>
+        <Text style={s.amountLabel}>{tr('account_payment_amount_label')}</Text>
         <Text style={s.amountValue}>Rp {amount.toLocaleString('id-ID')}</Text>
       </View>
 
       {/* Info rekening (bila ada) */}
       {hasAccount && (
         <View style={s.accountCard}>
-          <Text style={s.accountTitle}>Informasi Rekening / Nomor</Text>
+          <Text style={s.accountTitle}>{tr('account_payment_account_title')}</Text>
 
           {/* Nomor rekening */}
           <View style={s.fieldRow}>
             <View style={{ flex: 1 }}>
-              <Text style={s.fieldLabel}>Nomor {method.type === 'ewallet' ? 'Akun' : 'Rekening'}</Text>
+              <Text style={s.fieldLabel}>{method.type === 'ewallet' ? tr('account_payment_field_account_number_ewallet') : tr('account_payment_field_account_number_bank')}</Text>
               <Text style={s.fieldValue}>{method.accountNumber}</Text>
             </View>
             <TouchableOpacity
               style={[s.copyBtn, { backgroundColor: method.logoBg }]}
               onPress={() => copyToClipboard(method.accountNumber!, 'nomor')}
             >
-              <Text style={s.copyText}>{copied === 'nomor' ? '✓ Disalin' : 'Salin'}</Text>
+              <Text style={s.copyText}>{copied === 'nomor' ? tr('account_payment_button_copied') : tr('account_payment_button_copy')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -127,14 +129,14 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
           {!!method.accountName && (
             <View style={s.fieldRow}>
               <View style={{ flex: 1 }}>
-                <Text style={s.fieldLabel}>Atas Nama</Text>
+                <Text style={s.fieldLabel}>{tr('account_payment_field_account_name')}</Text>
                 <Text style={s.fieldValue}>{method.accountName}</Text>
               </View>
               <TouchableOpacity
                 style={[s.copyBtn, { backgroundColor: method.logoBg }]}
                 onPress={() => copyToClipboard(method.accountName!, 'nama')}
               >
-                <Text style={s.copyText}>{copied === 'nama' ? '✓ Disalin' : 'Salin'}</Text>
+                <Text style={s.copyText}>{copied === 'nama' ? tr('account_payment_button_copied') : tr('account_payment_button_copy')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -144,7 +146,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
       {/* Petunjuk */}
       {!!method.instructions && (
         <View style={s.instrCard}>
-          <Text style={s.instrTitle}>📋 Petunjuk</Text>
+          <Text style={s.instrTitle}>{tr('account_payment_instructions_title')}</Text>
           <Text style={s.instrText}>{method.instructions}</Text>
         </View>
       )}
@@ -153,8 +155,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
       {!hasAccount && !isMidtrans && (
         <View style={s.warnCard}>
           <Text style={s.warnText}>
-            ⚠️ Nomor {method.type === 'ewallet' ? 'e-wallet' : 'rekening'} perusahaan belum diisi.{'\n'}
-            Isi via tabel `payment_method` di database.
+            {tr('account_payment_warn_no_account', { type: method.type === 'ewallet' ? 'e-wallet' : 'rekening' })}
           </Text>
         </View>
       )}
@@ -169,15 +170,13 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         {confirming
           ? <ActivityIndicator color="#fff" />
           : <Text style={s.actionText}>
-              {isMidtrans ? `Bayar via ${method.name}  →` : '✅  Sudah Transfer — Tandai Lunas'}
+              {isMidtrans ? tr('account_payment_button_pay_via', { name: method.name }) : tr('account_payment_button_confirm_transfer')}
             </Text>
         }
       </TouchableOpacity>
 
       {!isMidtrans && (
-        <Text style={s.footNote}>
-          Ketuk tombol di atas setelah memastikan transfer dari pelanggan sudah diterima.
-        </Text>
+        <Text style={s.footNote}>{tr('account_payment_footnote')}</Text>
       )}
     </ScrollView>
   );

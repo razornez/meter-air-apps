@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { apiKinerja } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { KinerjaResponse } from '../types';
@@ -10,6 +11,7 @@ import { ErrorState, Loading } from '../components/ScreenStates';
 export default function KinerjaScreen() {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: tr } = useTranslation();
 
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -46,7 +48,7 @@ export default function KinerjaScreen() {
     else setMonth(m => m + 1);
   }
 
-  if (loading && !data) return <Loading label="Memuat rekap kinerja…" />;
+  if (loading && !data) return <Loading label={tr('kinerja_loading')} />;
   if (error && !data) return <ErrorState message={error} onRetry={() => load(month, year)} />;
   if (!data) return null;
 
@@ -67,10 +69,10 @@ export default function KinerjaScreen() {
 
       {/* Summary */}
       <View style={s.summary}>
-        <Text style={s.summaryTitle}>Total Faktur Dicatat</Text>
+        <Text style={s.summaryTitle}>{tr('kinerja_summary_title')}</Text>
         <Text style={s.summaryBig}>{data.total}</Text>
         <Text style={s.summaryMeta}>
-          dari {data.totalPelanggan} pelanggan ({pct}% tercatat)
+          {tr('kinerja_summary_meta', { total: data.totalPelanggan, pct })}
         </Text>
         {/* Progress bar */}
         <View style={s.barBg}>
@@ -79,9 +81,9 @@ export default function KinerjaScreen() {
       </View>
 
       {/* Per petugas */}
-      <Text style={s.sectionTitle}>Rincian per Petugas</Text>
+      <Text style={s.sectionTitle}>{tr('kinerja_section_per_officer')}</Text>
       {data.data.length === 0 ? (
-        <Text style={s.empty}>Belum ada catatan di periode ini.</Text>
+        <Text style={s.empty}>{tr('kinerja_empty')}</Text>
       ) : (
         data.data.map((item, i) => (
           <View key={item.kasirId} style={s.row}>

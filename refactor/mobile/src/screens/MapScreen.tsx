@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { apiCustomersMap } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { CustomerMarker } from '../types';
@@ -15,6 +16,7 @@ const DEFAULT_CENTER = { lat: -7.0215, lng: 107.581 };
 export default function MapScreen() {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: tr } = useTranslation();
   const [markers, setMarkers] = useState<CustomerMarker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,18 +50,18 @@ export default function MapScreen() {
     return c;
   }, [markers]);
 
-  if (loading) return <Loading label="Memuat peta…" />;
+  if (loading) return <Loading label={tr('map_loading')} />;
   if (error) return <ErrorState message={error} onRetry={load} />;
   if (markers.length === 0)
-    return <EmptyState label="Belum ada pelanggan dengan koordinat. Atur lokasi dari detail pelanggan." />;
+    return <EmptyState label={tr('map_empty')} />;
 
   return (
     <View style={s.container}>
       <LeafletMap markers={markers} center={center} zoom={15} />
       <View style={s.legend}>
-        <LegendItem s={s} color={STATUS_COLOR.lunas} label={`Lunas (${counts.lunas})`} />
-        <LegendItem s={s} color={STATUS_COLOR.belum} label={`Belum (${counts.belum})`} />
-        <LegendItem s={s} color={STATUS_COLOR.none} label={`Tanpa tagihan (${counts.none})`} />
+        <LegendItem s={s} color={STATUS_COLOR.lunas} label={tr('map_legend_paid', { count: counts.lunas })} />
+        <LegendItem s={s} color={STATUS_COLOR.belum} label={tr('map_legend_unpaid', { count: counts.belum })} />
+        <LegendItem s={s} color={STATUS_COLOR.none} label={tr('map_legend_no_billing', { count: counts.none })} />
       </View>
     </View>
   );

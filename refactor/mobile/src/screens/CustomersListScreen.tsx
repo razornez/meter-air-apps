@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiListCustomers } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -17,6 +18,7 @@ const LIMIT = 20;
 export default function CustomersListScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: tr } = useTranslation();
   const [search, setSearch] = useState('');
   const [items, setItems] = useState<CustomerListItem[]>([]);
   const [page, setPage] = useState(1);
@@ -60,21 +62,21 @@ export default function CustomersListScreen({ navigation }: Props) {
           <SearchIcon size={18} color={t.muted} />
           <TextInput
             style={s.search}
-            placeholder="Cari nama / id / alamat"
+            placeholder={tr('customers_list_placeholder_search')}
             placeholderTextColor={t.muted}
             value={search}
             onChangeText={setSearch}
             autoCapitalize="none"
           />
         </View>
-        {total > 0 && <Text style={s.count}>{total} pelanggan terdaftar</Text>}
+        {total > 0 && <Text style={s.count}>{tr('customers_list_count', { total })}</Text>}
       </View>
 
       <FlatList keyboardShouldPersistTaps="handled"
         data={items}
         keyExtractor={(it) => String(it.id)}
         contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
-        ListEmptyComponent={<EmptyState label="Pelanggan tidak ditemukan" />}
+        ListEmptyComponent={<EmptyState label={tr('customers_list_empty')} />}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={s.row}
@@ -85,7 +87,7 @@ export default function CustomersListScreen({ navigation }: Props) {
               <Text style={s.avatarText}>{item.tipe ?? '?'}</Text>
             </LinearGradient>
             <View style={{ flex: 1 }}>
-              <Text style={s.name} numberOfLines={1}>{item.nama ?? 'Tanpa nama'}</Text>
+              <Text style={s.name} numberOfLines={1}>{item.nama ?? tr('customers_list_no_name')}</Text>
               <Text style={s.meta} numberOfLines={1}>
                 ID {item.id}{item.alamat ? ` · ${item.alamat}` : ''}
               </Text>
@@ -97,7 +99,7 @@ export default function CustomersListScreen({ navigation }: Props) {
         onEndReached={() => {
           if (!loading && canLoadMore) load(page + 1, search);
         }}
-        ListFooterComponent={loading && items.length > 0 ? <Text style={s.footer}>Memuat…</Text> : null}
+        ListFooterComponent={loading && items.length > 0 ? <Text style={s.footer}>{tr('customers_list_loading_more')}</Text> : null}
       />
     </View>
   );

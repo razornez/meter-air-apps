@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiListFaktur } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -17,6 +18,7 @@ type Filter = 'all' | 'thisMonth' | 'unpaid';
 
 export default function FakturListScreen({ route, navigation }: Props) {
   const t = useTheme();
+  const { t: tr } = useTranslation();
   const s = useMemo(() => createStyles(t), [t]);
   const customerId = route.params?.customerId;
   const [filter, setFilter] = useState<Filter>('all');
@@ -73,13 +75,13 @@ export default function FakturListScreen({ route, navigation }: Props) {
         <View style={s.sumIcon}><InvoiceIcon size={22} color="#fff" strokeWidth={2} /></View>
         <View style={{ flex: 1 }}>
           <Text style={s.sumSub}>Total terdaftar</Text>
-          <Text style={s.sumTitle}>{total} faktur</Text>
+          <Text style={s.sumTitle}>{total} {tr('faktur_list_total_suffix')}</Text>
         </View>
       </LinearGradient>
       <View style={s.filters}>
-        <Chip label="Semua" value="all" />
-        <Chip label="Bulan ini" value="thisMonth" />
-        <Chip label="Belum lunas" value="unpaid" />
+        <Chip label={tr('faktur_list_filter_all')} value="all" />
+        <Chip label={tr('faktur_list_filter_this_month')} value="thisMonth" />
+        <Chip label={tr('faktur_list_filter_unpaid')} value="unpaid" />
       </View>
 
       {loading && items.length === 0 ? (
@@ -91,7 +93,7 @@ export default function FakturListScreen({ route, navigation }: Props) {
           data={items}
           keyExtractor={(it, i) => `${it.noFaktur}-${i}`}
           contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
-          ListEmptyComponent={<EmptyState label="Tidak ada tagihan" />}
+          ListEmptyComponent={<EmptyState label={tr('faktur_list_empty')} />}
           renderItem={({ item }) => {
             const color = item.isLunas ? t.success : t.danger;
             return (
@@ -124,7 +126,7 @@ export default function FakturListScreen({ route, navigation }: Props) {
                 <View style={s.stub}>
                   <Text style={s.total}>{formatRupiah(item.total)}</Text>
                   <View style={[s.badge, { backgroundColor: color + '22' }]}>
-                    <Text style={[s.badgeText, { color }]}>{item.isLunas ? 'LUNAS' : 'BELUM'}</Text>
+                    <Text style={[s.badgeText, { color }]}>{item.isLunas ? tr('faktur_list_badge_paid') : tr('faktur_list_badge_unpaid')}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -134,7 +136,7 @@ export default function FakturListScreen({ route, navigation }: Props) {
           onEndReached={() => {
             if (!loading && canLoadMore) load(page + 1, filter);
           }}
-          ListFooterComponent={loading && items.length > 0 ? <Text style={s.footer}>Memuat…</Text> : null}
+          ListFooterComponent={loading && items.length > 0 ? <Text style={s.footer}>{tr('faktur_list_loading_more')}</Text> : null}
         />
       )}
     </View>

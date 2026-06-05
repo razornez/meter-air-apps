@@ -10,10 +10,11 @@ import {
   View,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiPay } from '../api/services';
 import { apiErrorMessage } from '../api/client';
-import { colors } from '../theme';
+import { colors, formatRupiah } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CashPayment'>;
 
@@ -24,6 +25,7 @@ function roundUp(n: number, amount: number): number {
 }
 
 export default function CashPaymentScreen({ route, navigation }: Props) {
+  const { t: tr } = useTranslation();
   const { noFaktur, amount } = route.params;
   const [received, setReceived] = useState('');
   const [saving, setSaving] = useState(false);
@@ -46,14 +48,14 @@ export default function CashPaymentScreen({ route, navigation }: Props) {
     try {
       await apiPay(noFaktur, 'cash');
       Alert.alert(
-        '✅ Pembayaran Diterima',
+        tr('cash_payment_alert_success_title'),
         `Tagihan: Rp ${amount.toLocaleString('id-ID')}\n` +
         `Diterima: Rp ${receivedNum.toLocaleString('id-ID')}\n` +
         `Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`,
-        [{ text: 'Selesai', onPress: () => navigation.pop(2) }],
+        [{ text: tr('cash_payment_alert_done'), onPress: () => navigation.pop(2) }],
       );
     } catch (e) {
-      Alert.alert('Gagal', apiErrorMessage(e));
+      Alert.alert(tr('cash_payment_alert_failed'), apiErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -63,13 +65,13 @@ export default function CashPaymentScreen({ route, navigation }: Props) {
     <ScrollView style={s.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       {/* Tagihan */}
       <View style={s.billCard}>
-        <Text style={s.billLabel}>TOTAL TAGIHAN</Text>
+        <Text style={s.billLabel}>{tr('cash_payment_bill_label')}</Text>
         <Text style={s.billAmount}>Rp {amount.toLocaleString('id-ID')}</Text>
         <Text style={s.billNo}>{noFaktur}</Text>
       </View>
 
       {/* Input uang diterima */}
-      <Text style={s.label}>Uang Diterima</Text>
+      <Text style={s.label}>{tr('cash_payment_input_label')}</Text>
       <View style={s.inputWrap}>
         <Text style={s.inputPrefix}>Rp</Text>
         <TextInput
@@ -99,12 +101,12 @@ export default function CashPaymentScreen({ route, navigation }: Props) {
 
       {/* Kembalian */}
       <View style={[s.kembalianCard, isValid && receivedNum > amount ? s.kembalianOk : !received ? s.kembalianEmpty : s.kembalianErr]}>
-        <Text style={s.kembalianLabel}>Kembalian</Text>
+        <Text style={s.kembalianLabel}>{tr('cash_payment_change_label')}</Text>
         <Text style={s.kembalianAmount}>
           {!received
             ? '—'
             : !isValid
-            ? `Kurang Rp ${(amount - receivedNum).toLocaleString('id-ID')}`
+            ? tr('cash_payment_change_insufficient', { amount: formatRupiah(Math.abs(kembalian)) })
             : `Rp ${kembalian.toLocaleString('id-ID')}`}
         </Text>
       </View>
@@ -117,7 +119,7 @@ export default function CashPaymentScreen({ route, navigation }: Props) {
       >
         {saving
           ? <ActivityIndicator color="#fff" />
-          : <Text style={s.confirmText}>✅  Konfirmasi Lunas</Text>
+          : <Text style={s.confirmText}>{tr('cash_payment_button_confirm')}</Text>
         }
       </TouchableOpacity>
     </ScrollView>

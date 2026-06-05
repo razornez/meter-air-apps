@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiCustomerDetail, apiCustomerHistory } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -17,6 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'CustomerDetail'>;
 export default function CustomerDetailScreen({ route, navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: tr } = useTranslation();
   const { id } = route.params;
   const [detail, setDetail] = useState<CustomerDetail | null>(null);
   const [history, setHistory] = useState<MeterHistoryItem[]>([]);
@@ -42,7 +44,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
   }, [load]);
 
   if (loading) return <Loading />;
-  if (error || !detail) return <ErrorState message={error ?? 'Data tidak tersedia'} onRetry={load} />;
+  if (error || !detail) return <ErrorState message={error ?? tr('customer_detail_error_no_data')} onRetry={load} />;
 
   function goCatat() {
     if (!detail) return;
@@ -78,11 +80,11 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           </View>
         </View>
         <View style={s.statStrip}>
-          <Stat s={s} label="Meter" value={String(detail.lastMeter)} />
+          <Stat s={s} label={tr('customer_detail_stat_meter')} value={String(detail.lastMeter)} />
           <View style={s.statDiv} />
-          <Stat s={s} label="Rata-rata" value={`${avgUsage} m³`} />
+          <Stat s={s} label={tr('customer_detail_stat_average')} value={`${avgUsage} m³`} />
           <View style={s.statDiv} />
-          <Stat s={s} label="Catatan" value={String(history.length)} />
+          <Stat s={s} label={tr('customer_detail_stat_records')} value={String(history.length)} />
         </View>
       </LinearGradient>
 
@@ -94,7 +96,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           style={[s.catatBtn, !detail.alreadyRecordedThisMonth && shadow.glow]}
         >
           {detail.alreadyRecordedThisMonth && <CheckIcon size={18} color="#fff" strokeWidth={2.4} />}
-          <Text style={s.catatText}>{detail.alreadyRecordedThisMonth ? 'Sudah dicatat bulan ini' : '+ Catat Meter'}</Text>
+          <Text style={s.catatText}>{detail.alreadyRecordedThisMonth ? tr('customer_detail_button_already_recorded') : tr('customer_detail_button_record')}</Text>
         </LinearGradient>
       </TouchableOpacity>
 
@@ -104,32 +106,32 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
         onPress={() => navigation.navigate('SetLocation', { id: detail.id, nama: detail.nama, lat: detail.latitude, lng: detail.longitude })}
       >
         <MapPinIcon size={17} color={t.primary} />
-        <Text style={s.lokasiText}>{detail.latitude != null ? 'Ubah Lokasi' : 'Atur Lokasi'}</Text>
+        <Text style={s.lokasiText}>{detail.latitude != null ? tr('customer_detail_button_change_location') : tr('customer_detail_button_set_location')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={s.cardBtn}
         onPress={() => navigation.navigate('CustomerCard', { id: detail.id })}
       >
-        <Text style={s.cardBtnText}>🪪 Kartu Pelanggan (Cetak / Bagikan)</Text>
+        <Text style={s.cardBtnText}>{tr('customer_detail_button_customer_card')}</Text>
       </TouchableOpacity>
 
       {usageData.length > 1 && (
         <>
-          <Text style={s.sectionTitle}>Tren Pemakaian</Text>
+          <Text style={s.sectionTitle}>{tr('customer_detail_section_usage_trend')}</Text>
           <View style={s.chartCard}>
             <View style={s.chartHead}>
-              <Text style={s.chartHint}>m³ per periode</Text>
-              <Text style={s.chartPeak}>puncak {maxUsage} m³</Text>
+              <Text style={s.chartHint}>{tr('customer_detail_chart_unit')}</Text>
+              <Text style={s.chartPeak}>{tr('customer_detail_chart_peak', { max: maxUsage })}</Text>
             </View>
             <MiniBars data={usageData} labels={usageLabels} color={t.accent} height={100} highlightLast highlightColor={t.primary} />
           </View>
         </>
       )}
 
-      <Text style={s.sectionTitle}>Riwayat Pemakaian</Text>
+      <Text style={s.sectionTitle}>{tr('customer_detail_section_history')}</Text>
       {history.length === 0 ? (
-        <Text style={s.empty}>Belum ada riwayat catatan meter.</Text>
+        <Text style={s.empty}>{tr('customer_detail_history_empty')}</Text>
       ) : (
         <View style={{ gap: 10 }}>
           {history.map((h) => (

@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Platform, StyleSheet, Text, TouchableOpacity,
 import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiUpdateLocation } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -16,6 +17,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SetLocation'>;
 const DEFAULT_CENTER = { lat: -7.0215, lng: 107.581 };
 
 export default function SetLocationScreen({ route, navigation }: Props) {
+  const { t: tr } = useTranslation();
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
   const { id, nama, lat, lng } = route.params;
@@ -27,7 +29,7 @@ export default function SetLocationScreen({ route, navigation }: Props) {
   async function onUseGps() {
     if (Platform.OS === 'web') {
       if (!navigator.geolocation) {
-        Alert.alert('GPS tidak tersedia', 'Browser tidak mendukung geolocation.');
+        Alert.alert(tr('set_location_alert_gps_unavailable_title'), tr('set_location_alert_gps_unavailable_message'));
         return;
       }
       setGpsLoading(true);
@@ -37,7 +39,7 @@ export default function SetLocationScreen({ route, navigation }: Props) {
           setGpsLoading(false);
         },
         () => {
-          Alert.alert('GPS gagal', 'Tidak dapat mengambil posisi dari browser.');
+          Alert.alert(tr('set_location_alert_gps_failed_title'), tr('set_location_alert_gps_failed_browser'));
           setGpsLoading(false);
         },
         { timeout: 10000 },
@@ -49,13 +51,13 @@ export default function SetLocationScreen({ route, navigation }: Props) {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Izin GPS ditolak', 'Aktifkan izin lokasi di pengaturan untuk menggunakan fitur ini.');
+        Alert.alert(tr('set_location_alert_gps_denied_title'), tr('set_location_alert_gps_denied_message'));
         return;
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setPicked({ lat: loc.coords.latitude, lng: loc.coords.longitude });
     } catch {
-      Alert.alert('GPS gagal', 'Tidak dapat mengambil posisi GPS.');
+      Alert.alert(tr('set_location_alert_gps_failed_title'), tr('set_location_alert_gps_failed_message'));
     } finally {
       setGpsLoading(false);
     }
@@ -63,15 +65,15 @@ export default function SetLocationScreen({ route, navigation }: Props) {
 
   async function onSave() {
     if (!picked) {
-      Alert.alert('Pilih titik', 'Tekan pada peta untuk menaruh titik dulu.');
+      Alert.alert(tr('set_location_alert_no_point_title'), tr('set_location_alert_no_point_message'));
       return;
     }
     setSaving(true);
     try {
       await apiUpdateLocation(id, picked.lat, picked.lng);
-      Alert.alert('Tersimpan', 'Lokasi pelanggan diperbarui.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+      Alert.alert(tr('set_location_alert_saved_title'), tr('set_location_alert_saved_message'), [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (e) {
-      Alert.alert('Gagal', apiErrorMessage(e));
+      Alert.alert(tr('set_location_alert_failed_title'), apiErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -81,14 +83,14 @@ export default function SetLocationScreen({ route, navigation }: Props) {
     <View style={s.container}>
       <View style={s.bar}>
         <Text style={s.title} numberOfLines={1}>{nama ?? `Pelanggan ${id}`}</Text>
-        <Text style={s.hint}>Tekan peta untuk menaruh titik — atau:</Text>
+        <Text style={s.hint}>{tr('set_location_hint')}</Text>
         <TouchableOpacity style={[s.gpsBtn, gpsLoading && { opacity: 0.6 }]} onPress={onUseGps} disabled={gpsLoading} activeOpacity={0.85}>
           {gpsLoading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <>
               <MapPinIcon size={16} color="#fff" />
-              <Text style={s.gpsBtnText}>Gunakan GPS saat ini</Text>
+              <Text style={s.gpsBtnText}>{tr('set_location_button_use_gps')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -100,7 +102,7 @@ export default function SetLocationScreen({ route, navigation }: Props) {
 
       <View style={s.footer}>
         <Text style={s.coord}>
-          {picked ? `Titik: ${picked.lat.toFixed(6)}, ${picked.lng.toFixed(6)}` : 'Belum ada titik dipilih'}
+          {picked ? tr('set_location_coord_picked', { lat: picked.lat.toFixed(6), lng: picked.lng.toFixed(6) }) : tr('set_location_coord_none')}
         </Text>
         <TouchableOpacity activeOpacity={0.9} onPress={onSave} disabled={!picked || saving}>
           <LinearGradient
@@ -109,7 +111,7 @@ export default function SetLocationScreen({ route, navigation }: Props) {
             end={{ x: 1, y: 1 }}
             style={[s.saveBtn, (!picked || saving) && { opacity: 0.6 }]}
           >
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.saveText}>Simpan Lokasi</Text>}
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.saveText}>{tr('set_location_button_save')}</Text>}
           </LinearGradient>
         </TouchableOpacity>
       </View>

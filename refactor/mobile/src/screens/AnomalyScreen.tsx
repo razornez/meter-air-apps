@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiAnomalies } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -11,15 +12,16 @@ import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Anomaly'>;
 
-const TYPE_LABEL: Record<Anomaly['type'], string> = {
-  lonjakan: '⤴ Lonjakan',
-  nol: '⛔ Nol',
-  turun: '⤵ Turun',
-};
-
 export default function AnomalyScreen({ navigation }: Props) {
   const t = useTheme();
+  const { t: tr } = useTranslation();
   const s = useMemo(() => createStyles(t), [t]);
+
+  const TYPE_LABEL: Record<Anomaly['type'], string> = {
+    lonjakan: tr('anomaly_type_spike'),
+    nol: tr('anomaly_type_zero'),
+    turun: tr('anomaly_type_drop'),
+  };
   const [items, setItems] = useState<Anomaly[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,13 +44,13 @@ export default function AnomalyScreen({ navigation }: Props) {
     load();
   }, [load]);
 
-  if (loading) return <Loading label="Memeriksa anomali…" />;
+  if (loading) return <Loading label={tr('anomaly_loading')} />;
   if (error) return <ErrorState message={error} onRetry={load} />;
-  if (items.length === 0) return <EmptyState label="Tidak ada anomali konsumsi terdeteksi 👍" />;
+  if (items.length === 0) return <EmptyState label={tr('anomaly_empty')} />;
 
   return (
     <View style={s.container}>
-      <Text style={s.summary}>{items.length} pelanggan perlu diverifikasi</Text>
+      <Text style={s.summary}>{tr('anomaly_summary', { count: items.length })}</Text>
       <FlatList keyboardShouldPersistTaps="handled"
         data={items}
         keyExtractor={(it) => String(it.customerId)}
@@ -69,7 +71,7 @@ export default function AnomalyScreen({ navigation }: Props) {
               </View>
               <Text style={s.alasan}>{item.alasan}</Text>
               <Text style={s.meta}>
-                Terakhir <Text style={s.bold}>{item.latest} m³</Text> · rata-rata {item.rata} m³
+                {tr('anomaly_meta', { latest: item.latest, avg: item.rata })}
                 {item.rasio > 0 ? ` · ${item.rasio}×` : ''}
               </Text>
             </View>

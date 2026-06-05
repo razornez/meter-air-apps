@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiTunggakan } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -16,6 +17,7 @@ const LIMIT = 50;
 
 export default function TunggakanScreen({ navigation }: Props) {
   const t = useTheme();
+  const { t: tr } = useTranslation();
   const s = useMemo(() => createStyles(t), [t]);
   const [res, setRes] = useState<TunggakanResponse | null>(null);
   const [items, setItems] = useState<TunggakanItem[]>([]);
@@ -42,7 +44,7 @@ export default function TunggakanScreen({ navigation }: Props) {
     load(1);
   }, [load]);
 
-  if (loading && !res) return <Loading label="Memuat tunggakan…" />;
+  if (loading && !res) return <Loading label={tr('tunggakan_loading')} />;
   if (error && !res) return <ErrorState message={error} onRetry={() => load(1)} />;
   if (!res) return null;
 
@@ -51,20 +53,20 @@ export default function TunggakanScreen({ navigation }: Props) {
   return (
     <View style={s.container}>
       <LinearGradient colors={gradients.coral} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
-        <Text style={s.heroLabel}>GRAND TOTAL TUNGGAKAN</Text>
+        <Text style={s.heroLabel}>{tr('tunggakan_hero_label')}</Text>
         <Text style={s.heroTotal}>{formatRupiah(res.grandTotal)}</Text>
         <View style={s.heroPills}>
           <View style={s.heroPill}>
             <Text style={s.heroPillValue}>{res.total}</Text>
-            <Text style={s.heroPillLabel}>menunggak</Text>
+            <Text style={s.heroPillLabel}>{tr('tunggakan_pill_arrears')}</Text>
           </View>
           <View style={s.heroPill}>
             <Text style={s.heroPillValue}>{formatRupiah(res.totalTagihan)}</Text>
-            <Text style={s.heroPillLabel}>tagihan</Text>
+            <Text style={s.heroPillLabel}>{tr('tunggakan_pill_billing')}</Text>
           </View>
           <View style={s.heroPill}>
             <Text style={s.heroPillValue}>{formatRupiah(res.totalDenda)}</Text>
-            <Text style={s.heroPillLabel}>denda</Text>
+            <Text style={s.heroPillLabel}>{tr('tunggakan_pill_fine')}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -73,7 +75,7 @@ export default function TunggakanScreen({ navigation }: Props) {
         data={items}
         keyExtractor={(it) => String(it.customerId)}
         contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
-        ListEmptyComponent={<EmptyState label="Tidak ada tunggakan 🎉" />}
+        ListEmptyComponent={<EmptyState label={tr('tunggakan_empty')} />}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={s.row}
@@ -82,7 +84,7 @@ export default function TunggakanScreen({ navigation }: Props) {
           >
             <View style={{ flex: 1 }}>
               <Text style={s.nama} numberOfLines={1}>{item.nama ?? `ID ${item.customerId}`}</Text>
-              <Text style={s.meta}>{item.jumlahFaktur} faktur · telat {item.hariTelatMax} hari</Text>
+              <Text style={s.meta}>{tr('tunggakan_item_meta', { count: item.jumlahFaktur, days: item.hariTelatMax })}</Text>
               {!!item.alamat && <Text style={s.alamat} numberOfLines={1}>{item.alamat}</Text>}
             </View>
             <View style={s.right}>
@@ -103,7 +105,7 @@ export default function TunggakanScreen({ navigation }: Props) {
                     await openWA(item.telp, msg);
                   }}
                 >
-                  <Text style={s.waSmallText}>📲 WA</Text>
+                  <Text style={s.waSmallText}>{tr('tunggakan_wa_button')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -113,7 +115,7 @@ export default function TunggakanScreen({ navigation }: Props) {
         onEndReached={() => {
           if (!loading && canLoadMore) load(page + 1);
         }}
-        ListFooterComponent={loading && items.length > 0 ? <Text style={s.footer}>Memuat…</Text> : null}
+        ListFooterComponent={loading && items.length > 0 ? <Text style={s.footer}>{tr('tunggakan_loading_more')}</Text> : null}
       />
     </View>
   );
