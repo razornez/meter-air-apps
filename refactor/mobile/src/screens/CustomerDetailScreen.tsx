@@ -1,17 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiCustomerDetail, apiCustomerHistory } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { CustomerDetail, MeterHistoryItem, MeterInfo } from '../types';
-import { fonts, radius, shadow, tracking, Theme } from '../theme';
+import { fonts, pastels, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
 import { MiniBars } from '../components/ui/Charts';
-import { CheckIcon, MapPinIcon } from '../components/ui/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CustomerDetail'>;
 
@@ -39,9 +39,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
     }
   }, [id]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   if (loading) return <Loading />;
   if (error || !detail) return <ErrorState message={error ?? tr('customer_detail_error_no_data')} onRetry={load} />;
@@ -65,99 +63,207 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
   const avgUsage = usageVals.length ? Math.round(usageVals.reduce((a, v) => a + v, 0) / usageVals.length) : 0;
   const maxUsage = usageVals.length ? Math.max(...usageVals) : 0;
 
+  const recorded = detail.alreadyRecordedThisMonth;
+  const avatarLetter = (detail.nama ?? '?').charAt(0).toUpperCase();
+
   return (
-    <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 14 }}>
-      {/* gradient identity hero with stat strip */}
+    <ScrollView
+      keyboardShouldPersistTaps="handled"
+      style={s.container}
+      contentContainerStyle={{ padding: 14, paddingBottom: 36 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── Hero identity card ── */}
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
+        {/* Status badge top-right */}
+        <View style={[s.statusBadge, recorded ? s.badgeDone : s.badgePending]}>
+          <Ionicons name={recorded ? 'checkmark-circle' : 'time-outline'} size={13} color={recorded ? '#22C55E' : '#F59E0B'} />
+          <Text style={[s.badgeText, { color: recorded ? '#22C55E' : '#F59E0B' }]}>
+            {recorded ? 'Sudah Dicatat' : 'Belum Dicatat'}
+          </Text>
+        </View>
+
         <View style={s.heroTop}>
-          <View style={s.avatar}>
-            <Text style={s.avatarText}>{(detail.nama ?? '?').charAt(0).toUpperCase()}</Text>
+          {/* Avatar circle */}
+          <View style={s.avatarWrap}>
+            <View style={s.avatar}>
+              <Text style={s.avatarText}>{avatarLetter}</Text>
+            </View>
+            <View style={[s.typeBadge]}>
+              <Text style={s.typeText}>{detail.tipe ?? '?'}</Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
+
+          <View style={{ flex: 1, gap: 3 }}>
             <Text style={s.name} numberOfLines={1}>{detail.nama ?? 'Tanpa nama'}</Text>
-            <Text style={s.meta} numberOfLines={1}>ID {detail.id} · Tipe {detail.tipe ?? '-'}</Text>
-            {!!detail.alamat && <Text style={s.meta} numberOfLines={1}>{detail.alamat}</Text>}
+            <View style={s.metaRow}>
+              <Ionicons name="barcode-outline" size={13} color="rgba(255,255,255,0.75)" />
+              <Text style={s.meta}>ID {detail.id}</Text>
+            </View>
+            {!!detail.alamat && (
+              <View style={s.metaRow}>
+                <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.75)" />
+                <Text style={s.meta} numberOfLines={1}>{detail.alamat}</Text>
+              </View>
+            )}
           </View>
         </View>
+
+        {/* Stats strip */}
         <View style={s.statStrip}>
-          <Stat s={s} label={tr('customer_detail_stat_meter')} value={String(detail.lastMeter)} />
+          <StatChip icon="speedometer-outline" label={tr('customer_detail_stat_meter')} value={String(detail.lastMeter)} />
           <View style={s.statDiv} />
-          <Stat s={s} label={tr('customer_detail_stat_average')} value={`${avgUsage} m³`} />
+          <StatChip icon="trending-up-outline" label={tr('customer_detail_stat_average')} value={`${avgUsage} m³`} />
           <View style={s.statDiv} />
-          <Stat s={s} label={tr('customer_detail_stat_records')} value={String(history.length)} />
+          <StatChip icon="document-text-outline" label={tr('customer_detail_stat_records')} value={String(history.length)} />
         </View>
       </LinearGradient>
 
-      <TouchableOpacity activeOpacity={0.9} onPress={goCatat} disabled={detail.alreadyRecordedThisMonth} style={{ marginTop: 14 }}>
+      {/* ── Catat Meter CTA ── */}
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={goCatat}
+        disabled={recorded}
+        style={[{ marginTop: 12 }, recorded && s.dimmed]}
+      >
         <LinearGradient
-          colors={(detail.alreadyRecordedThisMonth ? [t.muted, t.muted] : t.scan) as readonly [string, string, ...string[]]}
+          colors={recorded ? [t.muted, t.muted] : t.hero}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[s.catatBtn, !detail.alreadyRecordedThisMonth && shadow.glow]}
+          end={{ x: 1, y: 0 }}
+          style={[s.catatCard, !recorded && shadow.glow]}
         >
-          {detail.alreadyRecordedThisMonth && <CheckIcon size={18} color="#fff" strokeWidth={2.4} />}
-          <Text style={s.catatText}>{detail.alreadyRecordedThisMonth ? tr('customer_detail_button_already_recorded') : tr('customer_detail_button_record')}</Text>
+          <View style={s.catatIconWrap}>
+            <MaterialCommunityIcons
+              name={recorded ? 'check-decagram' : 'gauge'}
+              size={26}
+              color="#fff"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.catatTitle}>
+              {recorded ? tr('customer_detail_button_already_recorded') : tr('customer_detail_button_record')}
+            </Text>
+            <Text style={s.catatSub}>
+              {recorded ? `Meter terakhir: ${detail.lastMeter}` : 'Input bacaan meter bulan ini'}
+            </Text>
+          </View>
+          {!recorded && (
+            <View style={s.catatChevron}>
+              <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.9)" />
+            </View>
+          )}
         </LinearGradient>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={s.lokasiBtn}
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('SetLocation', { id: detail.id, nama: detail.nama, lat: detail.latitude, lng: detail.longitude })}
-      >
-        <MapPinIcon size={17} color={t.primary} />
-        <Text style={s.lokasiText}>{detail.latitude != null ? tr('customer_detail_button_change_location') : tr('customer_detail_button_set_location')}</Text>
-      </TouchableOpacity>
+      {/* ── 2 secondary action chips ── */}
+      <View style={s.secondaryRow}>
+        {/* Set / Ubah Lokasi */}
+        <TouchableOpacity
+          style={[s.secCard, { backgroundColor: pastels.sky.bg, borderColor: pastels.sky.fg + '44' }]}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('SetLocation', { id: detail.id, nama: detail.nama, lat: detail.latitude, lng: detail.longitude })}
+        >
+          <View style={[s.secIconWrap, { backgroundColor: pastels.sky.bg }]}>
+            <Ionicons name="navigate-circle-outline" size={30} color={pastels.sky.fg} />
+          </View>
+          <Text style={[s.secTitle, { color: pastels.sky.fg }]}>
+            {detail.latitude != null ? tr('customer_detail_button_change_location') : tr('customer_detail_button_set_location')}
+          </Text>
+          {detail.latitude != null && (
+            <View style={s.locDot}><View style={s.locDotInner} /></View>
+          )}
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={s.cardBtn}
-        onPress={() => navigation.navigate('CustomerCard', { id: detail.id })}
-      >
-        <Text style={s.cardBtnText}>{tr('customer_detail_button_customer_card')}</Text>
-      </TouchableOpacity>
+        {/* Kartu Pelanggan */}
+        <TouchableOpacity
+          style={[s.secCard, { backgroundColor: pastels.lavender.bg, borderColor: pastels.lavender.fg + '44' }]}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('CustomerCard', { id: detail.id })}
+        >
+          <View style={[s.secIconWrap, { backgroundColor: pastels.lavender.bg }]}>
+            <Ionicons name="id-card-outline" size={30} color={pastels.lavender.fg} />
+          </View>
+          <Text style={[s.secTitle, { color: pastels.lavender.fg }]}>
+            {tr('customer_detail_button_customer_card')}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
+      {/* ── Usage trend chart ── */}
       {usageData.length > 1 && (
         <>
           <Text style={s.sectionTitle}>{tr('customer_detail_section_usage_trend')}</Text>
           <View style={s.chartCard}>
             <View style={s.chartHead}>
               <Text style={s.chartHint}>{tr('customer_detail_chart_unit')}</Text>
-              <Text style={s.chartPeak}>{tr('customer_detail_chart_peak', { max: maxUsage })}</Text>
+              <View style={s.peakBadge}>
+                <Ionicons name="flame-outline" size={13} color={t.primary} />
+                <Text style={s.chartPeak}>{tr('customer_detail_chart_peak', { max: maxUsage })}</Text>
+              </View>
             </View>
             <MiniBars data={usageData} labels={usageLabels} color={t.accent} height={100} highlightLast highlightColor={t.primary} />
           </View>
         </>
       )}
 
+      {/* ── History timeline ── */}
       <Text style={s.sectionTitle}>{tr('customer_detail_section_history')}</Text>
       {history.length === 0 ? (
         <Text style={s.empty}>{tr('customer_detail_history_empty')}</Text>
       ) : (
-        <View style={{ gap: 10 }}>
-          {history.map((h) => (
-            <View key={h.id} style={s.histRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.histDate}>{h.tanggal}</Text>
-                <Text style={s.histFaktur}>{h.noFaktur}</Text>
+        <View style={s.timeline}>
+          {history.map((h, idx) => {
+            const delta = idx < history.length - 1
+              ? (h.pemakaian ?? 0) - (history[idx + 1].pemakaian ?? 0)
+              : null;
+            const isUp = delta != null && delta > 0;
+            const isDown = delta != null && delta < 0;
+            const month = (h.tanggal ?? '').slice(0, 7);
+            return (
+              <View key={h.id} style={s.timelineItem}>
+                {/* Left timeline rail */}
+                <View style={s.rail}>
+                  <View style={[s.railDot, { backgroundColor: h.pemakaian != null ? t.primary : t.muted }]} />
+                  {idx < history.length - 1 && <View style={s.railLine} />}
+                </View>
+
+                {/* Content card */}
+                <View style={[s.histCard, { marginBottom: idx < history.length - 1 ? 0 : 0 }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.histDate}>{month}</Text>
+                    <Text style={s.histFaktur} numberOfLines={1}>{h.noFaktur ?? '—'}</Text>
+                  </View>
+                  <View style={s.histRight}>
+                    <Text style={s.histMeter}>{h.meter} <Text style={s.histUnit}>m³</Text></Text>
+                    {delta != null && (
+                      <View style={[s.deltaBadge, isUp ? s.deltaUp : isDown ? s.deltaDown : s.deltaFlat]}>
+                        <Ionicons
+                          name={isUp ? 'arrow-up' : isDown ? 'arrow-down' : 'remove'}
+                          size={10}
+                          color={isUp ? '#16A34A' : isDown ? '#2563EB' : t.muted}
+                        />
+                        <Text style={[s.deltaText, { color: isUp ? '#16A34A' : isDown ? '#2563EB' : t.muted }]}>
+                          {Math.abs(delta)} m³
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
               </View>
-              <View style={s.histRight}>
-                <Text style={s.histMeter}>{h.meter}</Text>
-                <Text style={s.histUsage}>{h.pemakaian == null ? '—' : `${h.pemakaian} m³`}</Text>
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
-      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
 
-function Stat({ s, label, value }: { s: ReturnType<typeof createStyles>; label: string; value: string }) {
+function StatChip({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <View style={s.stat}>
-      <Text style={s.statValue}>{value}</Text>
-      <Text style={s.statLabel}>{label}</Text>
+    <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+      <Ionicons name={icon as any} size={16} color="rgba(255,255,255,0.7)" />
+      <Text style={{ color: '#fff', fontFamily: fonts.displayBold, fontSize: 16 }}>{value}</Text>
+      <Text style={{ color: 'rgba(255,255,255,0.8)', fontFamily: fonts.medium, fontSize: 10 }}>{label}</Text>
     </View>
   );
 }
@@ -165,45 +271,106 @@ function Stat({ s, label, value }: { s: ReturnType<typeof createStyles>; label: 
 const createStyles = (t: Theme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: 'transparent' },
+    dimmed: { opacity: 0.45 },
+
+    // Hero
     hero: { borderRadius: radius.xl, padding: 18 },
     heroTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    avatarWrap: { position: 'relative' },
     avatar: {
-      width: 54,
-      height: 54,
-      borderRadius: 18,
+      width: 68, height: 68, borderRadius: 26,
       backgroundColor: 'rgba(255,255,255,0.22)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.4)',
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.45)',
+      alignItems: 'center', justifyContent: 'center',
     },
-    avatarText: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 24 },
-    name: { fontSize: 22, fontFamily: fonts.displayBold, color: '#fff', letterSpacing: tracking.tight },
-    meta: { color: 'rgba(255,255,255,0.9)', marginTop: 2, fontFamily: fonts.regular, fontSize: 12.5 },
-    statStrip: { flexDirection: 'row', alignItems: 'center', marginTop: 16, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: radius.md, paddingVertical: 12 },
-    stat: { flex: 1, alignItems: 'center' },
-    statValue: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 17 },
-    statLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.medium, fontSize: 11, marginTop: 1 },
-    statDiv: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.25)' },
+    avatarText: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 28 },
+    typeBadge: {
+      position: 'absolute', bottom: -4, right: -4,
+      backgroundColor: 'rgba(255,255,255,0.9)',
+      borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
+    },
+    typeText: { color: t.primary, fontFamily: fonts.extrabold, fontSize: 10 },
+    name: { fontSize: 21, fontFamily: fonts.displayBold, color: '#fff', letterSpacing: tracking.tight },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    meta: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.regular, fontSize: 12, flex: 1 },
+    statStrip: {
+      flexDirection: 'row', alignItems: 'center', marginTop: 16,
+      backgroundColor: 'rgba(255,255,255,0.14)',
+      borderRadius: radius.md, paddingVertical: 14,
+    },
+    statDiv: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.2)' },
+    statusBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 5,
+      borderRadius: radius.pill, marginBottom: 10, borderWidth: 1,
+    },
+    badgeDone: { backgroundColor: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.4)' },
+    badgePending: { backgroundColor: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.4)' },
+    badgeText: { fontFamily: fonts.bold, fontSize: 11 },
 
-    catatBtn: { flexDirection: 'row', gap: 8, borderRadius: radius.md, paddingVertical: 15, alignItems: 'center', justifyContent: 'center' },
-    catatText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
-    lokasiBtn: { flexDirection: 'row', gap: 8, marginTop: 10, borderWidth: 1.5, borderColor: t.primary, borderRadius: radius.md, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
-    lokasiText: { color: t.primary, fontFamily: fonts.bold },
-    cardBtn: { marginTop: 8, borderWidth: 1.5, borderColor: '#7C3AED', borderRadius: radius.md, paddingVertical: 12, alignItems: 'center' },
-    cardBtnText: { color: '#7C3AED', fontFamily: fonts.bold },
+    // Catat Meter CTA
+    catatCard: {
+      flexDirection: 'row', alignItems: 'center', gap: 14,
+      borderRadius: radius.xl, paddingVertical: 18, paddingHorizontal: 20,
+    },
+    catatIconWrap: {
+      width: 50, height: 50, borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    catatTitle: { color: '#fff', fontFamily: fonts.extrabold, fontSize: 15 },
+    catatSub: { color: 'rgba(255,255,255,0.78)', fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },
+    catatChevron: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center', justifyContent: 'center',
+    },
 
-    sectionTitle: { fontSize: 18, fontFamily: fonts.displayBold, color: t.text, marginTop: 22, marginBottom: 12, letterSpacing: tracking.tight },
+    // Secondary action chips (2 cards side-by-side)
+    secondaryRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+    secCard: {
+      flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8,
+      paddingVertical: 16, borderRadius: radius.lg,
+      borderWidth: 1.5, position: 'relative',
+    },
+    secIconWrap: { width: 52, height: 52, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    secTitle: { fontFamily: fonts.bold, fontSize: 12, textAlign: 'center' },
+    locDot: { position: 'absolute', top: 8, right: 8 },
+    locDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' },
+
+    // Chart
+    sectionTitle: { fontSize: 17, fontFamily: fonts.displayBold, color: t.text, marginTop: 22, marginBottom: 12, letterSpacing: tracking.tight },
     chartCard: { backgroundColor: t.surface, borderRadius: radius.lg, padding: 16, borderWidth: 1, borderColor: t.border, ...shadow.soft },
-    chartHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+    chartHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     chartHint: { color: t.muted, fontFamily: fonts.medium, fontSize: 12 },
+    peakBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
     chartPeak: { color: t.primary, fontFamily: fonts.bold, fontSize: 12 },
+    empty: { color: t.muted, fontFamily: fonts.regular, marginTop: 4 },
 
-    empty: { color: t.muted, fontFamily: fonts.regular },
-    histRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: t.surface, paddingHorizontal: 16, paddingVertical: 13, borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, ...shadow.soft },
-    histDate: { color: t.text, fontFamily: fonts.bold },
-    histFaktur: { color: t.muted, fontSize: 12, marginTop: 2, fontFamily: fonts.regular },
-    histRight: { alignItems: 'flex-end' },
-    histMeter: { color: t.text, fontFamily: fonts.displayBold, fontSize: 17 },
-    histUsage: { color: t.primary, fontSize: 12, fontFamily: fonts.semibold },
+    // Timeline history
+    timeline: { gap: 0 },
+    timelineItem: { flexDirection: 'row', gap: 12 },
+    rail: { alignItems: 'center', width: 20, paddingTop: 16 },
+    railDot: { width: 12, height: 12, borderRadius: 6, zIndex: 1 },
+    railLine: { flex: 1, width: 2, backgroundColor: t.border, marginTop: 4 },
+    histCard: {
+      flex: 1, flexDirection: 'row', alignItems: 'center',
+      backgroundColor: t.surface, borderRadius: radius.lg,
+      paddingHorizontal: 14, paddingVertical: 12,
+      marginBottom: 8, borderWidth: 1, borderColor: t.border,
+      ...shadow.soft,
+    },
+    histDate: { color: t.text, fontFamily: fonts.bold, fontSize: 13 },
+    histFaktur: { color: t.muted, fontSize: 11.5, marginTop: 2, fontFamily: fonts.regular },
+    histRight: { alignItems: 'flex-end', gap: 4 },
+    histMeter: { color: t.text, fontFamily: fonts.displayBold, fontSize: 18 },
+    histUnit: { color: t.muted, fontSize: 12, fontFamily: fonts.regular },
+    deltaBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 2,
+      paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.pill,
+    },
+    deltaUp:   { backgroundColor: '#DCFCE7' },
+    deltaDown: { backgroundColor: '#DBEAFE' },
+    deltaFlat: { backgroundColor: t.chip },
+    deltaText: { fontFamily: fonts.bold, fontSize: 10 },
   });
