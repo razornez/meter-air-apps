@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -113,30 +114,41 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     if (!data) return;
     setActing(true);
     try {
-      // config bisa null bila API gagal — pakai fallback agar tetap bisa cetak
       const cfg = config ?? ({ perusahaan: 'Meter Air', alamat: '', telp: '' } as AppConfig);
       const html = buildFakturHtml(data, cfg);
 
-      // Selalu generate file PDF dulu (lebih andal di Android daripada print langsung dari HTML)
-      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      // Step 1: Generate PDF ke temp file
+      const { uri: tmpUri } = await Print.printToFileAsync({ html });
+
+      // Step 2: Copy ke cache dir dengan nama yang jelas
+      const safeName = (data.noFaktur ?? 'faktur').replace(/\//g, '-');
+      const destUri = `${FileSystem.cacheDirectory}Faktur-${safeName}.pdf`;
+      await FileSystem.copyAsync({ from: tmpUri, to: destUri });
 
       if (share) {
-        const available = await Sharing.isAvailableAsync();
-        if (available) {
-          await Sharing.shareAsync(uri, {
+        // Bagikan — native share sheet (WhatsApp, email, Drive, dll)
+        await Sharing.shareAsync(destUri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Faktur ${data.noFaktur}`,
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        // Cetak — iOS: print dialog langsung | Android: share sheet (pilih Print / PDF viewer)
+        if (Platform.OS === 'ios') {
+          await Print.printAsync({ uri: destUri });
+        } else {
+          // Android: Print.printAsync sering gagal tanpa printer service,
+          // pakai share sheet agar user bisa buka di PDF viewer / print dari sana
+          await Sharing.shareAsync(destUri, {
             mimeType: 'application/pdf',
-            dialogTitle: `Faktur ${data.noFaktur}`,
+            dialogTitle: `Cetak Faktur ${data.noFaktur}`,
             UTI: 'com.adobe.pdf',
           });
-        } else {
-          Alert.alert(tr('faktur_detail_alert_share_unavailable'));
         }
-      } else {
-        // Print dari uri file — lebih stabil di Android
-        await Print.printAsync({ uri });
       }
-    } catch (e) {
-      Alert.alert(tr('faktur_detail_alert_print_failed'), apiErrorMessage(e));
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      Alert.alert('Gagal', `Tidak dapat memproses PDF.\n\n${msg}`);
     } finally {
       setActing(false);
     }
