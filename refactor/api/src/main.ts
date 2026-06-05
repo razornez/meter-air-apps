@@ -1,4 +1,4 @@
-import { NestFactory } from '@nestjs/core';
+﻿import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -12,39 +12,29 @@ async function bootstrap() {
 
   const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
-    origin: corsOrigin
-      ? corsOrigin.split(',').map((s) => s.trim())
-      : true,
+    origin: corsOrigin ? corsOrigin.split(',').map((s) => s.trim()) : true,
   });
 
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions: { enableImplicitConversion: true },
+  }));
 
-  // Inject req.tenantId dari JWT payload setelah guard berjalan.
   app.useGlobalInterceptors(new TenantInterceptor());
 
   const secret = process.env.JWT_SECRET ?? '';
-  const weakSecret =
-    !secret || secret.includes('dev-secret') || secret.includes('ganti');
+  const weakSecret = !secret || secret.includes('dev-secret') || secret.includes('ganti');
   if (process.env.NODE_ENV === 'production' && weakSecret) {
-    logger.error(
-      'JWT_SECRET belum diganti untuk produksi! Setel JWT_SECRET yang acak & panjang.',
-    );
+    logger.error('JWT_SECRET belum diganti untuk produksi!');
     process.exit(1);
   }
-  if (weakSecret) {
-    logger.warn('JWT_SECRET masih default — WAJIB diganti sebelum produksi.');
-  }
+  if (weakSecret) logger.warn('JWT_SECRET masih default — WAJIB diganti sebelum produksi.');
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  logger.log(`API meter-air berjalan di http://localhost:${port}/api`);
+  await app.listen(port, '0.0.0.0');
+  logger.log(`API meter-air berjalan di http://0.0.0.0:${port}/api`);
 }
 bootstrap();

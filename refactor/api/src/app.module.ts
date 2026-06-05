@@ -1,8 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Controller, Get, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+
+@Controller()
+export class HealthController {
+  @Get('health')
+  check() { return { status: 'ok' }; }
+}
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
 import { MeterModule } from './meter/meter.module';
@@ -50,6 +56,7 @@ import { PaymentModule } from './payment/payment.module';
     CatalogModule,
     PaymentModule,
   ],
+  controllers: [HealthController],
   providers: [
     // Terapkan rate limit ke seluruh endpoint.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
