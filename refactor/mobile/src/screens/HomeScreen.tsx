@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18nInstance, { LANG_KEY, Language } from '../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -60,6 +62,15 @@ export default function HomeScreen({ navigation }: Props) {
     refreshCustomerCache,
   } = useOffline();
   const [manualCode, setManualCode] = useState('');
+  const [lang, setLang] = useState<Language>(i18nInstance.language as Language);
+
+  async function toggleLang() {
+    const next: Language = lang === 'id' ? 'en' : 'id';
+    await i18nInstance.changeLanguage(next);
+    await AsyncStorage.setItem(LANG_KEY, next);
+    setLang(next);
+  }
+
   function renderGraceBanner() {
     if (!tenant?.dalam_grace_period) return null;
     return (
@@ -144,9 +155,15 @@ export default function HomeScreen({ navigation }: Props) {
               <Text style={s.role}>{i18n('home_role')}</Text>
             </View>
             <View style={s.heroActions}>
+              {/* Language toggle */}
+              <TouchableOpacity onPress={toggleLang} style={s.langBtn} activeOpacity={0.8}>
+                <Text style={s.langText}>{lang === 'id' ? '🇮🇩' : '🇺🇸'}</Text>
+              </TouchableOpacity>
+              {/* Dark mode toggle */}
               <TouchableOpacity onPress={toggle} style={s.iconBtn} activeOpacity={0.8}>
                 {mode === 'dark' ? <SunIcon size={20} color={palette.white} /> : <MoonIcon size={19} color={palette.white} />}
               </TouchableOpacity>
+              {/* Logout */}
               <TouchableOpacity onPress={logout} style={s.iconBtn} activeOpacity={0.8}>
                 <PowerIcon size={20} color={palette.white} />
               </TouchableOpacity>
@@ -296,7 +313,14 @@ const createStyles = (t: Theme) =>
   StyleSheet.create({
     heroInner: { flex: 1, paddingHorizontal: 20, paddingBottom: 18, justifyContent: 'space-between' },
     heroTop: { flexDirection: 'row', alignItems: 'flex-start' },
-    heroActions: { flexDirection: 'row', gap: 10 },
+    heroActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+    langBtn: {
+      paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    langText: { fontSize: 16 },
     hello: { color: palette.foam, fontFamily: fonts.medium, fontSize: 12, letterSpacing: tracking.overline, textTransform: 'uppercase' },
     name: { color: palette.white, fontFamily: fonts.displayBlack, fontSize: 30, marginTop: 3, letterSpacing: tracking.display },
     role: { color: 'rgba(231,247,247,0.78)', fontFamily: fonts.medium, fontSize: 12, marginTop: 4 },
