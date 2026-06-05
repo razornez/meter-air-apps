@@ -194,29 +194,25 @@ export default function ReadingScreen({ route, navigation }: Props) {
     return (
       <View style={s.successScreen}>
         {/* Hero */}
-        <LinearGradient colors={[t.success, '#1A9E75']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[s.successHero, shadow.glow]}>
+        <LinearGradient colors={[t.success, '#1A9E75']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.successHero, shadow.glow]}>
           <View style={s.successIconWrap}>
-            <Ionicons name="checkmark-circle" size={34} color="#fff" />
+            <Ionicons name="checkmark-circle" size={32} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.successHeroLabel}>{tr('reading_alert_record_saved_title')}</Text>
             <Text style={s.successHeroFaktur}>{result.noFaktur}</Text>
             <Text style={s.successHeroName} numberOfLines={1}>{customer.nama ?? '-'}</Text>
           </View>
-          {/* Thumbnail foto kecil di hero */}
-          {!!photoUri && (
-            <Image source={{ uri: photoUri }} style={s.successThumb} resizeMode="cover" />
-          )}
         </LinearGradient>
 
-        {/* Meter stats: lama → baru → pemakaian */}
+        {/* Stat chips */}
         <View style={s.successStatRow}>
           <View style={s.successStat}>
             <Text style={s.successStatVal}>{result.meterLama}</Text>
             <Text style={s.successStatLbl}>{tr('reading_label_old_meter')}</Text>
           </View>
           <Ionicons name="arrow-forward" size={16} color={t.muted} />
-          <View style={[s.successStat, s.successStatHighlight]}>
+          <View style={[s.successStat, { backgroundColor: t.badgeBg }]}>
             <Text style={[s.successStatVal, { color: t.primary }]}>{result.meterBaru}</Text>
             <Text style={s.successStatLbl}>{tr('reading_label_new_meter_result')}</Text>
           </View>
@@ -227,22 +223,23 @@ export default function ReadingScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        {/* Billing grid 2×2 */}
-        <View style={s.billCard}>
-          <View style={s.billGrid}>
-            <BillCell label={tr('reading_label_subtotal')} value={formatRupiah(result.subtotal)} />
-            <BillCell label={tr('reading_label_charge')}   value={formatRupiah(result.beban)} />
-            <BillCell label={tr('reading_label_due_date')} value={result.tglJatuhTempo} />
-            <BillCell label={tr('reading_label_invoice_no')} value={result.noFaktur} small />
-          </View>
-          <View style={s.billSep} />
-          <View style={s.billTotal}>
-            <Text style={s.billTotalLabel}>{tr('reading_label_total')}</Text>
-            <Text style={s.billTotalValue}>{formatRupiah(result.total)}</Text>
-          </View>
+        {/* Rincian tagihan */}
+        <View style={s.card}>
+          <Row s={s} label={tr('reading_label_subtotal')} value={formatRupiah(result.subtotal)} />
+          <Row s={s} label={tr('reading_label_charge')}   value={formatRupiah(result.beban)} />
+          <View style={s.sep} />
+          <Row s={s} label={tr('reading_label_total')}    value={formatRupiah(result.total)} bold />
+          <Row s={s} label={tr('reading_label_due_date')} value={result.tglJatuhTempo} />
         </View>
 
-        {/* Tombol selesai */}
+        {/* Foto meteran */}
+        {!!photoUri && (
+          <View style={s.photoRow}>
+            <Text style={s.photoLabel}>{tr('reading_label_photo')}</Text>
+            <Image source={{ uri: photoUri }} style={s.photoThumb} resizeMode="cover" />
+          </View>
+        )}
+
         <PrimaryButton label={tr('reading_button_done')} onPress={() => navigation.popToTop()} />
       </View>
     );
@@ -433,8 +430,7 @@ const createStyles = (t: Theme) =>
     card: {
       backgroundColor: t.surface,
       borderRadius: radius.lg,
-      padding: 16,
-      marginBottom: 16,
+      padding: 12,
       borderWidth: 1,
       borderColor: t.border,
       ...shadow.soft,
@@ -572,40 +568,36 @@ const createStyles = (t: Theme) =>
     sep: { height: 1, backgroundColor: t.border, marginVertical: 8 },
     // ── Success screen (no scroll) ──
     successScreen: {
-      flex: 1, padding: 16, paddingBottom: 24,
-      justifyContent: 'space-between', gap: 12,
+      flex: 1, padding: 14, paddingBottom: 20, gap: 10,
     },
     successHero: {
       flexDirection: 'row', alignItems: 'center', gap: 12,
-      borderRadius: radius.xl, paddingVertical: 14, paddingHorizontal: 16,
+      borderRadius: radius.lg, paddingVertical: 13, paddingHorizontal: 16,
     },
     successIconWrap: {
-      width: 46, height: 46, borderRadius: 16,
+      width: 44, height: 44, borderRadius: 15,
       backgroundColor: 'rgba(255,255,255,0.2)',
       alignItems: 'center', justifyContent: 'center',
     },
     successHeroLabel: { color: 'rgba(255,255,255,0.82)', fontFamily: fonts.semibold, fontSize: 10.5, letterSpacing: 0.6 },
     successHeroFaktur: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 16, marginTop: 1 },
     successHeroName: { color: 'rgba(255,255,255,0.88)', fontFamily: fonts.regular, fontSize: 12, marginTop: 1 },
-    successThumb: { width: 52, height: 52, borderRadius: 12, borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)' },
     successStatRow: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6,
-      backgroundColor: t.surface, borderRadius: radius.lg, padding: 12,
+      backgroundColor: t.surface, borderRadius: radius.lg, padding: 10,
       borderWidth: 1, borderColor: t.border, ...shadow.soft,
     },
-    successStat: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-    successStatHighlight: { backgroundColor: t.surfaceAlt, borderRadius: radius.sm },
-    successStatVal: { color: t.text, fontFamily: fonts.displayBold, fontSize: 17 },
+    successStat: { flex: 1, alignItems: 'center', paddingVertical: 7 },
+    successStatVal: { color: t.text, fontFamily: fonts.displayBold, fontSize: 16 },
     successStatLbl: { color: t.muted, fontFamily: fonts.medium, fontSize: 10, marginTop: 2 },
-    billCard: {
-      backgroundColor: t.surface, borderRadius: radius.xl,
-      borderWidth: 1, borderColor: t.border, overflow: 'hidden', ...shadow.soft,
+    photoRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      backgroundColor: t.surface, borderRadius: radius.lg,
+      paddingHorizontal: 12, paddingVertical: 10,
+      borderWidth: 1, borderColor: t.border, ...shadow.soft,
     },
-    billGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-    billSep: { height: 1, backgroundColor: t.border, marginHorizontal: 8 },
-    billTotal: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
-    billTotalLabel: { color: t.muted, fontFamily: fonts.semibold, fontSize: 13 },
-    billTotalValue: { color: t.primary, fontFamily: fonts.displayBold, fontSize: 22 },
+    photoLabel: { flex: 1, color: t.muted, fontFamily: fonts.semibold, fontSize: 13 },
+    photoThumb: { width: 56, height: 56, borderRadius: 10 },
     successWrap: { padding: 24, alignItems: 'center', flexGrow: 1 },
     successBadge: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginTop: 20 },
     successTitle: { fontSize: 25, fontFamily: fonts.displayBold, marginVertical: 14, letterSpacing: tracking.tight },
