@@ -17,6 +17,7 @@ import { ConfigAppModule } from './app-config/config-app.module';
 import { ReportsModule } from './reports/reports.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { PaymentModule } from './payment/payment.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { PaymentModule } from './payment/payment.module';
     ReportsModule,
     CatalogModule,
     PaymentModule,
+    SeedModule,
   ],
   controllers: [HealthController],
   providers: [
