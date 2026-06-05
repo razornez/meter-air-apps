@@ -110,6 +110,9 @@ export default function PaymentSelectScreen({ route, navigation }: Props) {
                   {!!method.accountNumber && (
                     <Text style={s.rowSub}>{method.accountNumber}</Text>
                   )}
+                  {!!method.accountNumber && !!method.accountName && (
+                    <Text style={s.rowOwner}>a.n. {method.accountName}</Text>
+                  )}
                   {!method.accountNumber && !!method.instructions && (
                     <Text style={s.rowSub} numberOfLines={1}>{method.instructions}</Text>
                   )}
@@ -146,5 +149,6 @@ const s = StyleSheet.create({
   rowText: { flex: 1 },
   rowName: { fontSize: 15, fontWeight: '700', color: '#111827' },
   rowSub: { fontSize: 12, color: '#6B7280', marginTop: 3 },
+  rowOwner: { fontSize: 11, color: '#9CA3AF', marginTop: 1, fontStyle: 'italic' },
   chevron: { fontSize: 22, color: '#D1D5DB', fontWeight: '300' },
 });
