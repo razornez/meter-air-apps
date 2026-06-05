@@ -1,14 +1,20 @@
 ﻿import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { TenantInterceptor } from './common/tenant.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const logger = new Logger('Bootstrap');
 
-  app.use(helmet());
+  // Serve uploaded meter photos as static files at /uploads/*
+  const uploadDir = process.env.UPLOAD_DIR ?? join(process.cwd(), 'uploads');
+  app.useStaticAssets(uploadDir, { prefix: '/uploads' });
+
+  app.use(helmet({ contentSecurityPolicy: false }));
 
   const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({

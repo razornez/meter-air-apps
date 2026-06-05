@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -13,6 +13,7 @@ import { apiErrorMessage } from '../api/client';
 import { AppConfig, FakturDetail } from '../types';
 import { fonts, formatRupiah, pastels, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
+import { fotoMeterUrl } from '../config';
 import { ErrorState, Loading } from '../components/ScreenStates';
 import { buildFakturHtml } from '../utils/fakturHtml';
 import { buildWAMessage, openWA } from '../utils/whatsapp';
@@ -295,6 +296,19 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
         ))}
         {!!data.catatan && <Row s={s} label={tr('faktur_detail_row_note')} value={data.catatan} />}
 
+        {/* Foto meteran */}
+        {!!fotoMeterUrl(data.fotoMeter) && (
+          <>
+            <DashedLine color={t.border} />
+            <Text style={s.rTitle}>FOTO METERAN</Text>
+            <Image
+              source={{ uri: fotoMeterUrl(data.fotoMeter)! }}
+              style={s.fotoMeter}
+              resizeMode="cover"
+            />
+          </>
+        )}
+
         <View style={s.barcode}>
           {Array.from({ length: 38 }).map((_, i) => (
             <View key={i} style={[s.bar, { width: i % 3 === 0 ? 3 : i % 2 === 0 ? 1 : 2 }]} />
@@ -339,6 +353,7 @@ const createStyles = (t: Theme) =>
     rNotchL: { left: -9 },
     rNotchR: { right: -9 },
     rTitle: { fontFamily: fonts.extrabold, color: t.muted, fontSize: 11, letterSpacing: tracking.overline, marginBottom: 8, marginTop: 4 },
+    fotoMeter: { width: '100%', height: 200, borderRadius: radius.md, marginTop: 8, backgroundColor: t.surfaceAlt },
     barcode: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 44, marginTop: 18 },
     bar: { height: '100%', backgroundColor: t.text, marginRight: 2, opacity: 0.82 },
     barcodeText: { textAlign: 'center', color: t.muted, fontFamily: fonts.medium, fontSize: 11, marginTop: 6, letterSpacing: 2 },

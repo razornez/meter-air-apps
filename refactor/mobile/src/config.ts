@@ -12,3 +12,11 @@ const DEFAULT_API_URL =
     : 'http://10.0.2.2:4000/api';
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL;
+
+// Base untuk file statis — strip trailing '/api'
+export const STATIC_URL = API_URL.replace(/\/api\/?$/, '');
+
+export function fotoMeterUrl(filename: string | null | undefined): string | null {
+  if (!filename) return null;
+  return `${STATIC_URL}/uploads/foto_meter/${filename}`;
+}
