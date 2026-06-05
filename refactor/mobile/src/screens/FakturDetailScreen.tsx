@@ -147,55 +147,49 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
         </View>
       </LinearGradient>
 
-      {/* Action bar — 3 pill buttons */}
-      <View style={s.actions}>
-        {/* Tandai Lunas / Batal Lunas */}
-        <TouchableOpacity
-          style={[s.pillBtn, data.isLunas ? s.pillAmber : s.pillMint, { flex: 1.6 }, acting && s.dimmed]}
-          activeOpacity={0.85}
-          onPress={onToggleLunas}
-          disabled={acting}
-        >
-          <Ionicons
-            name={data.isLunas ? 'close-circle' : 'checkmark-circle'}
-            size={18}
-            color={data.isLunas ? pastels.peach.fg : pastels.mint.fg}
-          />
-          <Text style={[s.pillText, { color: data.isLunas ? pastels.peach.fg : pastels.mint.fg }]}>
+      {/* ── Circular quick-action chips ── */}
+      <View style={s.chipRow}>
+        {/* Tandai / Batal Lunas */}
+        <TouchableOpacity style={s.chip} activeOpacity={0.8} onPress={onToggleLunas} disabled={acting}>
+          <View style={[s.chipCircle, { backgroundColor: data.isLunas ? pastels.peach.bg : pastels.mint.bg }]}>
+            <Ionicons
+              name={data.isLunas ? 'close-circle-outline' : 'checkmark-done-circle-outline'}
+              size={28}
+              color={data.isLunas ? pastels.peach.fg : pastels.mint.fg}
+            />
+          </View>
+          <Text style={s.chipLabel} numberOfLines={2}>
             {data.isLunas ? tr('faktur_detail_button_cancel_paid') : tr('faktur_detail_button_mark_paid')}
           </Text>
         </TouchableOpacity>
 
         {/* Cetak */}
-        <TouchableOpacity
-          style={[s.pillBtn, s.pillLavender, acting && s.dimmed]}
-          activeOpacity={0.85}
-          onPress={() => onPrintOrShare(false)}
-          disabled={acting}
-        >
-          <Ionicons name="print" size={18} color={pastels.lavender.fg} />
-          <Text style={[s.pillText, { color: pastels.lavender.fg }]}>{tr('faktur_detail_button_print')}</Text>
+        <TouchableOpacity style={s.chip} activeOpacity={0.8} onPress={() => onPrintOrShare(false)} disabled={acting}>
+          <View style={[s.chipCircle, { backgroundColor: pastels.lavender.bg }]}>
+            <Ionicons name="print-outline" size={26} color={pastels.lavender.fg} />
+          </View>
+          <Text style={s.chipLabel}>{tr('faktur_detail_button_print')}</Text>
         </TouchableOpacity>
 
         {/* Bagikan */}
-        <TouchableOpacity
-          style={[s.pillBtn, s.pillSky, acting && s.dimmed]}
-          activeOpacity={0.85}
-          onPress={() => onPrintOrShare(true)}
-          disabled={acting}
-        >
-          <Ionicons name="share-social" size={18} color={pastels.sky.fg} />
-          <Text style={[s.pillText, { color: pastels.sky.fg }]}>{tr('faktur_detail_button_share')}</Text>
+        <TouchableOpacity style={s.chip} activeOpacity={0.8} onPress={() => onPrintOrShare(true)} disabled={acting}>
+          <View style={[s.chipCircle, { backgroundColor: pastels.sky.bg }]}>
+            <Ionicons name="share-social-outline" size={26} color={pastels.sky.fg} />
+          </View>
+          <Text style={s.chipLabel}>{tr('faktur_detail_button_share')}</Text>
         </TouchableOpacity>
+
+        {/* Spacer chip (optional 4th slot — kosong agar grid rapi) */}
+        <View style={s.chip} />
       </View>
 
-      {/* Bayar Sekarang — gradient hero, hanya bila belum lunas */}
+      {/* ── Bayar Sekarang — hanya bila belum lunas ── */}
       {!data.isLunas && (
         <TouchableOpacity
           activeOpacity={0.88}
           onPress={openPayment}
           disabled={acting}
-          style={acting && s.dimmed}
+          style={[acting && s.dimmed, { marginBottom: 10 }]}
         >
           <LinearGradient
             colors={t.hero}
@@ -204,15 +198,20 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
             style={[s.payBtn, shadow.glow]}
           >
             <View style={s.payIconWrap}>
-              <Ionicons name="card" size={22} color="rgba(255,255,255,0.95)" />
+              <Ionicons name="wallet-outline" size={24} color="#fff" />
             </View>
-            <Text style={s.payBtnText}>{tr('faktur_detail_button_pay_now')}</Text>
-            <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.7)" />
+            <View style={{ flex: 1 }}>
+              <Text style={s.payBtnLabel}>Bayar Sekarang</Text>
+              <Text style={s.payBtnAmount}>{formatRupiah(data.total ?? 0)}</Text>
+            </View>
+            <View style={s.payChevron}>
+              <Ionicons name="arrow-forward" size={18} color="rgba(255,255,255,0.9)" />
+            </View>
           </LinearGradient>
         </TouchableOpacity>
       )}
 
-      {/* WA Reminder — pastel green, hanya bila belum lunas */}
+      {/* ── WA Reminder — hanya bila belum lunas ── */}
       {!data.isLunas && (
         <TouchableOpacity
           style={[s.waBtn, acting && s.dimmed]}
@@ -221,16 +220,19 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
           disabled={acting}
         >
           <View style={s.waIconWrap}>
-            <MaterialCommunityIcons name="whatsapp" size={22} color="#22C55E" />
+            <MaterialCommunityIcons name="whatsapp" size={26} color="#22C55E" />
           </View>
-          <Text style={s.waBtnText}>{tr('faktur_detail_button_wa_reminder')}</Text>
-          <Ionicons name="chevron-forward" size={20} color="#86EFAC" />
+          <View style={{ flex: 1 }}>
+            <Text style={s.waBtnTitle}>Reminder Tagihan</Text>
+            <Text style={s.waBtnSub}>Kirim via WhatsApp</Text>
+          </View>
+          <Ionicons name="arrow-forward" size={18} color="#86EFAC" />
         </TouchableOpacity>
       )}
 
       {acting && (
         <View style={s.actingRow}>
-          <ActivityIndicator color={t.primary} />
+          <ActivityIndicator color={t.primary} size="small" />
           <Text style={s.muted}>{tr('faktur_detail_processing')}</Text>
         </View>
       )}
@@ -324,49 +326,59 @@ const createStyles = (t: Theme) =>
     heroFaktur: { color: 'rgba(255,255,255,0.92)', fontFamily: fonts.semibold, fontSize: 13, flex: 1 },
     heroBadge: { backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', paddingHorizontal: 11, paddingVertical: 5, borderRadius: radius.pill, marginLeft: 8 },
     heroBadgeText: { color: '#fff', fontFamily: fonts.extrabold, fontSize: 11, letterSpacing: 0.4 },
-    // Action pill buttons
-    actions: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-    pillBtn: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-      gap: 6, paddingVertical: 12, paddingHorizontal: 10,
-      borderRadius: radius.pill, borderWidth: 1.5,
+    dimmed: { opacity: 0.45 },
+    actingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
+
+    // Circular quick-action chips (share-sheet style)
+    chipRow: {
+      flexDirection: 'row', justifyContent: 'space-around',
+      backgroundColor: t.surface, borderRadius: radius.lg,
+      paddingVertical: 18, paddingHorizontal: 8,
+      marginBottom: 12, borderWidth: 1, borderColor: t.border,
+      ...shadow.soft,
     },
-    pillMint:     { backgroundColor: pastels.mint.bg,     borderColor: pastels.mint.fg + '44' },
-    pillAmber:    { backgroundColor: pastels.peach.bg,    borderColor: pastels.peach.fg + '44' },
-    pillLavender: { backgroundColor: pastels.lavender.bg, borderColor: pastels.lavender.fg + '44' },
-    pillSky:      { backgroundColor: pastels.sky.bg,      borderColor: pastels.sky.fg + '44' },
-    pillText: { fontFamily: fonts.bold, fontSize: 13 },
-    dimmed: { opacity: 0.5 },
+    chip: { alignItems: 'center', gap: 8, flex: 1 },
+    chipCircle: {
+      width: 58, height: 58, borderRadius: 29,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    chipLabel: {
+      color: t.text, fontFamily: fonts.semibold, fontSize: 11,
+      textAlign: 'center', maxWidth: 72,
+    },
 
-    actingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-
-    // Bayar Sekarang — full-width gradient
+    // Bayar Sekarang — hero gradient card
     payBtn: {
-      flexDirection: 'row', alignItems: 'center', gap: 12,
-      borderRadius: radius.lg, paddingVertical: 16, paddingHorizontal: 20,
-      marginBottom: 10,
+      flexDirection: 'row', alignItems: 'center', gap: 14,
+      borderRadius: radius.xl, paddingVertical: 18, paddingHorizontal: 20,
     },
     payIconWrap: {
-      width: 40, height: 40, borderRadius: 14,
+      width: 48, height: 48, borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    payBtnLabel: { color: 'rgba(255,255,255,0.82)', fontFamily: fonts.semibold, fontSize: 12 },
+    payBtnAmount: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 20, marginTop: 2 },
+    payChevron: {
+      width: 36, height: 36, borderRadius: 18,
       backgroundColor: 'rgba(255,255,255,0.18)',
       alignItems: 'center', justifyContent: 'center',
     },
-    payBtnText: { flex: 1, color: '#fff', fontFamily: fonts.extrabold, fontSize: 16, letterSpacing: 0.2 },
 
-    // WA Reminder — pastel green card
+    // WA Reminder — pastel green row
     waBtn: {
-      flexDirection: 'row', alignItems: 'center', gap: 12,
-      backgroundColor: '#F0FDF4',
-      borderWidth: 1.5, borderColor: '#86EFAC',
-      borderRadius: radius.lg, paddingVertical: 15, paddingHorizontal: 20,
-      marginBottom: 12,
+      flexDirection: 'row', alignItems: 'center', gap: 14,
+      backgroundColor: '#F0FDF4', borderWidth: 1.5, borderColor: '#BBF7D0',
+      borderRadius: radius.xl, paddingVertical: 16, paddingHorizontal: 18,
+      marginBottom: 12, ...shadow.soft,
     },
     waIconWrap: {
-      width: 40, height: 40, borderRadius: 14,
+      width: 48, height: 48, borderRadius: 18,
       backgroundColor: '#DCFCE7',
       alignItems: 'center', justifyContent: 'center',
     },
-    waBtnText: { flex: 1, color: '#16A34A', fontFamily: fonts.extrabold, fontSize: 15 },
+    waBtnTitle: { color: '#15803D', fontFamily: fonts.extrabold, fontSize: 15 },
+    waBtnSub:   { color: '#4ADE80', fontFamily: fonts.medium, fontSize: 12, marginTop: 1 },
     card: {
       backgroundColor: t.surface,
       borderRadius: radius.lg,
