@@ -75,14 +75,6 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
     >
       {/* ── Hero identity card ── */}
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
-        {/* Status badge top-right */}
-        <View style={[s.statusBadge, recorded ? s.badgeDone : s.badgePending]}>
-          <Ionicons name={recorded ? 'checkmark-circle' : 'time-outline'} size={13} color={recorded ? '#22C55E' : '#F59E0B'} />
-          <Text style={[s.badgeText, { color: recorded ? '#22C55E' : '#F59E0B' }]}>
-            {recorded ? 'Sudah Dicatat' : 'Belum Dicatat'}
-          </Text>
-        </View>
-
         <View style={s.heroTop}>
           {/* Avatar circle */}
           <View style={s.avatarWrap}>
@@ -95,7 +87,15 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           </View>
 
           <View style={{ flex: 1, gap: 3 }}>
-            <Text style={s.name} numberOfLines={1}>{detail.nama ?? 'Tanpa nama'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={[s.name, { flex: 1 }]} numberOfLines={1}>{detail.nama ?? 'Tanpa nama'}</Text>
+              <View style={[s.statusBadge, recorded ? s.badgeDone : s.badgePending]}>
+                <Ionicons name={recorded ? 'checkmark-circle' : 'time-outline'} size={14} color={recorded ? '#15803D' : '#B45309'} />
+                <Text style={[s.badgeText, { color: recorded ? '#15803D' : '#B45309' }]}>
+                  {recorded ? 'Sudah' : 'Belum'}
+                </Text>
+              </View>
+            </View>
             <View style={s.metaRow}>
               <Ionicons name="barcode-outline" size={13} color="rgba(255,255,255,0.75)" />
               <Text style={s.meta}>ID {detail.id}</Text>
@@ -135,7 +135,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           <View style={s.catatIconWrap}>
             <MaterialCommunityIcons
               name={recorded ? 'check-decagram' : 'gauge'}
-              size={20}
+              size={24}
               color="#fff"
             />
           </View>
@@ -164,7 +164,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           onPress={() => navigation.navigate('SetLocation', { id: detail.id, nama: detail.nama, lat: detail.latitude, lng: detail.longitude })}
         >
           <View style={[s.secIconWrap, { backgroundColor: pastels.sky.bg }]}>
-            <Ionicons name="navigate-circle-outline" size={22} color={pastels.sky.fg} />
+            <Ionicons name="navigate-circle-outline" size={26} color={pastels.sky.fg} />
           </View>
           <Text style={[s.secTitle, { color: pastels.sky.fg }]}>
             {detail.latitude != null ? tr('customer_detail_button_change_location') : tr('customer_detail_button_set_location')}
@@ -181,7 +181,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           onPress={() => navigation.navigate('CustomerCard', { id: detail.id })}
         >
           <View style={[s.secIconWrap, { backgroundColor: pastels.lavender.bg }]}>
-            <Ionicons name="id-card-outline" size={22} color={pastels.lavender.fg} />
+            <Ionicons name="id-card-outline" size={26} color={pastels.lavender.fg} />
           </View>
           <Text style={[s.secTitle, { color: pastels.lavender.fg }]}>
             {tr('customer_detail_button_customer_card')}
@@ -301,27 +301,27 @@ const createStyles = (t: Theme) =>
     statDiv: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.2)' },
     statusBadge: {
       flexDirection: 'row', alignItems: 'center', gap: 4,
-      alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 5,
-      borderRadius: radius.pill, marginBottom: 10, borderWidth: 1,
+      paddingHorizontal: 8, paddingVertical: 4,
+      borderRadius: radius.pill, borderWidth: 1,
     },
-    badgeDone: { backgroundColor: 'rgba(34,197,94,0.15)', borderColor: 'rgba(34,197,94,0.4)' },
-    badgePending: { backgroundColor: 'rgba(245,158,11,0.15)', borderColor: 'rgba(245,158,11,0.4)' },
-    badgeText: { fontFamily: fonts.bold, fontSize: 11 },
+    badgeDone:    { backgroundColor: '#DCFCE7', borderColor: '#86EFAC' },
+    badgePending: { backgroundColor: '#FEF3C7', borderColor: '#FCD34D' },
+    badgeText: { fontFamily: fonts.extrabold, fontSize: 11 },
 
     // Catat Meter CTA
     catatCard: {
-      flexDirection: 'row', alignItems: 'center', gap: 10,
-      borderRadius: radius.lg, paddingVertical: 12, paddingHorizontal: 14,
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      borderRadius: radius.lg, paddingVertical: 13, paddingHorizontal: 16,
     },
     catatIconWrap: {
-      width: 38, height: 38, borderRadius: 13,
+      width: 44, height: 44, borderRadius: 15,
       backgroundColor: 'rgba(255,255,255,0.2)',
       alignItems: 'center', justifyContent: 'center',
     },
-    catatTitle: { color: '#fff', fontFamily: fonts.extrabold, fontSize: 14 },
-    catatSub: { color: 'rgba(255,255,255,0.75)', fontFamily: fonts.regular, fontSize: 11, marginTop: 1 },
+    catatTitle: { color: '#fff', fontFamily: fonts.extrabold, fontSize: 15 },
+    catatSub: { color: 'rgba(255,255,255,0.75)', fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },
     catatChevron: {
-      width: 28, height: 28, borderRadius: 14,
+      width: 32, height: 32, borderRadius: 16,
       backgroundColor: 'rgba(255,255,255,0.18)',
       alignItems: 'center', justifyContent: 'center',
     },
@@ -329,12 +329,12 @@ const createStyles = (t: Theme) =>
     // Secondary action chips (2 cards side-by-side)
     secondaryRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
     secCard: {
-      flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5,
-      paddingVertical: 10, borderRadius: radius.md,
+      flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6,
+      paddingVertical: 12, borderRadius: radius.md,
       borderWidth: 1.5, position: 'relative',
     },
-    secIconWrap: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    secTitle: { fontFamily: fonts.bold, fontSize: 11, textAlign: 'center' },
+    secIconWrap: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+    secTitle: { fontFamily: fonts.bold, fontSize: 12, textAlign: 'center' },
     locDot: { position: 'absolute', top: 8, right: 8 },
     locDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' },
 
