@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiWorklist } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -17,6 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Worklist'>;
 export default function WorklistScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: i18n } = useTranslation();
   const [data, setData] = useState<Worklist | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export default function WorklistScreen({ navigation }: Props) {
     });
   }
 
-  if (loading && !data) return <Loading label="Memuat worklist…" />;
+  if (loading && !data) return <Loading label={i18n('worklist_loading')} />;
   if (error && !data) return <ErrorState message={error} onRetry={load} />;
   if (!data) return null;
 
@@ -64,19 +66,19 @@ export default function WorklistScreen({ navigation }: Props) {
         <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
           <DonutChart value={ratio} size={112} stroke={12} color="#fff" track="rgba(255,255,255,0.25)">
             <Text style={s.donutPct}>{Math.round(ratio * 100)}%</Text>
-            <Text style={s.donutSub}>tercatat</Text>
+            <Text style={s.donutSub}>{i18n('worklist_donut_recorded')}</Text>
           </DonutChart>
           <View style={s.heroRight}>
-            <Text style={s.heroLabel}>PENCATATAN · {data.periode}</Text>
+            <Text style={s.heroLabel}>{i18n('worklist_hero_period', { period: data.periode })}</Text>
             <Text style={s.heroBig}>{data.done}<Text style={s.heroSlash}> / {data.total}</Text></Text>
-            <Text style={s.heroNote}>pelanggan selesai dicatat</Text>
+            <Text style={s.heroNote}>{i18n('worklist_hero_customers_done')}</Text>
             <View style={s.pendingPill}>
-              <Text style={s.pendingText}>{data.pending} belum dicatat</Text>
+              <Text style={s.pendingText}>{i18n('worklist_hero_pending', { count: data.pending })}</Text>
             </View>
           </View>
         </LinearGradient>
       }
-      ListEmptyComponent={<EmptyState label="Semua pelanggan sudah dicatat bulan ini 🎉" />}
+      ListEmptyComponent={<EmptyState label={i18n('worklist_empty')} />}
       renderItem={({ item, index }) => (
         <TouchableOpacity style={s.row} activeOpacity={0.85} onPress={() => openCatat(item)}>
           <View style={s.avatar}>
@@ -91,7 +93,7 @@ export default function WorklistScreen({ navigation }: Props) {
             </View>
           </View>
           <LinearGradient colors={t.scan} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.catatPill}>
-            <Text style={s.catatText}>Catat</Text>
+            <Text style={s.catatText}>{i18n('worklist_button_record')}</Text>
             <ChevronIcon size={15} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>

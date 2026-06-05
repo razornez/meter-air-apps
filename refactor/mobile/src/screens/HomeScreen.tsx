@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
 import { useOffline } from '../offline/OfflineContext';
@@ -43,6 +44,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export default function HomeScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: i18n } = useTranslation();
   const { mode, toggle } = useThemeMode();
   const insets = useSafeAreaInsets();
   const { user, tenant, logout } = useAuth();
@@ -60,11 +62,10 @@ export default function HomeScreen({ navigation }: Props) {
   const [manualCode, setManualCode] = useState('');
   function renderGraceBanner() {
     if (!tenant?.dalam_grace_period) return null;
-    const days = Math.abs(tenant.sisa_hari ?? 0);
     return (
       <View style={s.graceBanner}>
         <Text style={s.graceBannerText}>
-          Masa langganan berakhir {days} hari lalu. Segera hubungi administrator.
+          {i18n('home_grace_banner', { days: Math.abs(tenant.sisa_hari ?? 0) })}
         </Text>
       </View>
     );
@@ -88,7 +89,7 @@ export default function HomeScreen({ navigation }: Props) {
     const res = await sync();
     if (res) {
       Alert.alert(
-        'Sinkronisasi',
+        i18n('home_alert_sync_title'),
         `${res.synced} terkirim` + (res.remaining > 0 ? `, ${res.remaining} masih menunggu` : ''),
       );
     }
@@ -109,10 +110,10 @@ export default function HomeScreen({ navigation }: Props) {
           setManualCode('');
           navigation.navigate('Reading', { meterInfo: offline });
         } else {
-          Alert.alert('Offline', 'Pelanggan tidak ada di cache. Sinkronkan data saat ada koneksi.');
+          Alert.alert(i18n('home_alert_offline_title'), i18n('home_alert_offline_message'));
         }
       } else {
-        Alert.alert('Tidak ditemukan', apiErrorMessage(e));
+        Alert.alert(i18n('home_alert_not_found_title'), apiErrorMessage(e));
       }
     } finally {
       setLoading(false);
@@ -138,9 +139,9 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={[s.heroInner, { paddingTop: insets.top + 14 }]}>
           <View style={s.heroTop}>
             <View style={{ flex: 1 }}>
-              <Text style={s.hello}>Halo,</Text>
+              <Text style={s.hello}>{i18n('home_greeting')}</Text>
               <Text style={s.name} numberOfLines={1}>{user?.fullname ?? user?.username}</Text>
-              <Text style={s.role}>Petugas Lapangan · Meter Air</Text>
+              <Text style={s.role}>{i18n('home_role')}</Text>
             </View>
             <View style={s.heroActions}>
               <TouchableOpacity onPress={toggle} style={s.iconBtn} activeOpacity={0.8}>
@@ -155,15 +156,15 @@ export default function HomeScreen({ navigation }: Props) {
           <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Worklist')}>
             <GlassCard style={s.heroCard} intensity={30}>
               <View style={s.heroCardRow}>
-                <LiquidProgress progress={progress} size={116} label="Tercatat" />
+                <LiquidProgress progress={progress} size={116} label={i18n('home_worklist_label_recorded')} />
                 <View style={s.heroCardText}>
-                  <Text style={s.heroCardTitle}>Worklist Hari Ini</Text>
+                  <Text style={s.heroCardTitle}>{i18n('home_worklist_title')}</Text>
                   <Text style={s.heroCardSub}>
-                    {wl ? `${wl.done} dari ${wl.total} pelanggan tercatat` : 'Memuat progres…'}
+                    {wl ? i18n('home_worklist_progress', { done: wl.done, total: wl.total }) : i18n('home_worklist_loading')}
                   </Text>
                   <View style={s.heroChip}>
                     <ListCheckIcon size={15} color={palette.deep} />
-                    <Text style={s.heroChipText}>{wl ? `${wl.pending} belum dicatat` : '—'}</Text>
+                    <Text style={s.heroChipText}>{wl ? i18n('home_worklist_pending', { pending: wl.pending }) : '—'}</Text>
                     <ChevronIcon size={15} color={palette.deep} />
                   </View>
                 </View>
@@ -181,7 +182,7 @@ export default function HomeScreen({ navigation }: Props) {
             <View style={[s.statusBar, !isOnline ? s.statusOffline : s.statusPending]}>
               <SyncIcon size={18} color={!isOnline ? t.warning : t.primary} />
               <Text style={s.statusText}>
-                {!isOnline ? 'Mode offline aktif' : `${pendingCount} catatan menunggu sinkron`}
+                {!isOnline ? i18n('home_status_offline') : i18n('home_status_pending_sync', { count: pendingCount })}
               </Text>
               {pendingCount > 0 && (
                 <TouchableOpacity
@@ -189,7 +190,7 @@ export default function HomeScreen({ navigation }: Props) {
                   disabled={syncing || !isOnline}
                   style={[s.syncBtn, (syncing || !isOnline) && { opacity: 0.5 }]}
                 >
-                  <Text style={s.syncBtnText}>{syncing ? 'Menyinkronkan…' : 'Sinkronkan'}</Text>
+                  <Text style={s.syncBtnText}>{syncing ? i18n('home_button_syncing') : i18n('home_button_sync')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -208,8 +209,8 @@ export default function HomeScreen({ navigation }: Props) {
                 <ScanIcon size={30} color={palette.white} strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={s.scanTitle}>Scan QR Meter</Text>
-                <Text style={s.scanSub}>Arahkan kamera ke QR pada meter pelanggan</Text>
+                <Text style={s.scanTitle}>{i18n('home_scan_card_title')}</Text>
+                <Text style={s.scanSub}>{i18n('home_scan_card_sub')}</Text>
               </View>
               <ChevronIcon size={22} color="rgba(255,255,255,0.9)" />
             </LinearGradient>
@@ -217,23 +218,23 @@ export default function HomeScreen({ navigation }: Props) {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(120).springify()}>
-          <Text style={s.sectionTitle}>Aksi Cepat</Text>
+          <Text style={s.sectionTitle}>{i18n('home_section_quick_actions')}</Text>
           <View style={s.grid}>
-            <ActionTile s={s} t={t} Icon={ListCheckIcon} pastel={pastels.sky} title="Worklist" sub="Belum dicatat" onPress={() => navigation.navigate('Worklist')} />
-            <ActionTile s={s} t={t} Icon={CashIcon} pastel={pastels.peach} title="Tunggakan" sub="Denda & nunggak" onPress={() => navigation.navigate('Tunggakan')} />
-            <ActionTile s={s} t={t} Icon={AlertIcon} pastel={pastels.lavender} title="Anomali" sub="Bocor / rusak" onPress={() => navigation.navigate('Anomaly')} />
-            <ActionTile s={s} t={t} Icon={GridIcon} pastel={pastels.mint} title="Master Data" sub="Produk & supplier" onPress={() => navigation.navigate('MasterData')} />
+            <ActionTile s={s} t={t} Icon={ListCheckIcon} pastel={pastels.sky} title={i18n('home_tile_worklist_title')} sub={i18n('home_tile_worklist_sub')} onPress={() => navigation.navigate('Worklist')} />
+            <ActionTile s={s} t={t} Icon={CashIcon} pastel={pastels.peach} title={i18n('home_tile_tunggakan_title')} sub={i18n('home_tile_tunggakan_sub')} onPress={() => navigation.navigate('Tunggakan')} />
+            <ActionTile s={s} t={t} Icon={AlertIcon} pastel={pastels.lavender} title={i18n('home_tile_anomaly_title')} sub={i18n('home_tile_anomaly_sub')} onPress={() => navigation.navigate('Anomaly')} />
+            <ActionTile s={s} t={t} Icon={GridIcon} pastel={pastels.mint} title={i18n('home_tile_masterdata_title')} sub={i18n('home_tile_masterdata_sub')} onPress={() => navigation.navigate('MasterData')} />
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(180).springify()}>
-          <Text style={s.sectionTitle}>Input Manual</Text>
+          <Text style={s.sectionTitle}>{i18n('home_section_manual_input')}</Text>
           <View style={s.manualCard}>
             <View style={s.manualInputWrap}>
               <SearchIcon size={18} color={t.muted} />
               <TextInput
                 style={s.manualInput}
-                placeholder="ID / barcode pelanggan"
+                placeholder={i18n('home_placeholder_manual')}
                 placeholderTextColor={t.muted}
                 value={manualCode}
                 onChangeText={setManualCode}
@@ -242,20 +243,20 @@ export default function HomeScreen({ navigation }: Props) {
               />
             </View>
             <TouchableOpacity style={[s.manualBtn, loading && { opacity: 0.6 }]} onPress={openManual} disabled={loading}>
-              <Text style={s.manualBtnText}>{loading ? '…' : 'Cari'}</Text>
+              <Text style={s.manualBtnText}>{loading ? '…' : i18n('home_button_search')}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(240).springify()} style={s.cacheRow}>
           <MapPinIcon size={15} color={t.muted} />
-          <Text style={s.cacheText}>{cacheCount} pelanggan di cache · {formatSyncedAt(cacheSyncedAt)}</Text>
+          <Text style={s.cacheText}>{i18n('home_cache_text', { count: cacheCount, date: cacheSyncedAt ? formatSyncedAt(cacheSyncedAt) : i18n('home_cache_never_synced') })}</Text>
           <TouchableOpacity
             onPress={refreshCustomerCache}
             disabled={refreshingCache || !isOnline}
             style={[s.cacheBtn, (refreshingCache || !isOnline) && { opacity: 0.5 }]}
           >
-            <Text style={s.cacheBtnText}>{refreshingCache ? '…' : 'Perbarui'}</Text>
+            <Text style={s.cacheBtnText}>{refreshingCache ? '…' : i18n('home_button_refresh_cache')}</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>

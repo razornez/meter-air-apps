@@ -5,6 +5,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n, { LANG_KEY, Language } from '../i18n';
 import { useAuth } from '../auth/AuthContext';
 import { apiErrorMessage } from '../api/client';
 import { fonts, palette, radius, shadow, Theme } from '../theme';
@@ -15,8 +18,9 @@ import { DropMark, MoonIcon, SunIcon } from '../components/ui/Icons';
 const { height: SCREEN_H } = Dimensions.get('window');
 
 export default function LoginScreen() {
-  const t = useTheme();
-  const s = useMemo(() => createStyles(t), [t]);
+  const { t } = useTranslation();
+  const th = useTheme();
+  const s = useMemo(() => createStyles(th), [th]);
   const { mode, toggle } = useThemeMode();
   const { login } = useAuth();
   const [kode, setKode] = useState('BUMDES-KRK');
@@ -24,28 +28,41 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lang, setLang] = useState<Language>(i18n.language as Language);
   const usernameRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
 
+  async function toggleLang() {
+    const next: Language = lang === 'id' ? 'en' : 'id';
+    await i18n.changeLanguage(next);
+    await AsyncStorage.setItem(LANG_KEY, next);
+    setLang(next);
+  }
+
   async function onSubmit() {
-    if (!kode.trim()) { setError('Kode perusahaan wajib diisi'); return; }
-    if (!username || !password) { setError('Username dan password wajib diisi'); return; }
+    if (!kode.trim()) { setError(t('login_error_company_code_required')); return; }
+    if (!username || !password) { setError(t('login_error_credentials_required')); return; }
     setError(null);
     setLoading(true);
     try {
       await login(username.trim(), password, kode.trim().toUpperCase());
     } catch (e) {
-      setError(apiErrorMessage(e, 'Login gagal'));
+      setError(apiErrorMessage(e, t('login_error_login_failed')));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.bg }}>
+    <View style={{ flex: 1, backgroundColor: th.bg }}>
       <WaveBackground height={SCREEN_H}>
         <SafeAreaView style={{ flex: 1 }}>
           <View style={s.topBar}>
+            {/* Language toggle */}
+            <TouchableOpacity onPress={toggleLang} style={s.langBtn} activeOpacity={0.8}>
+              <Text style={s.langText}>{lang === 'id' ? '🇮🇩 ID' : '🇺🇸 EN'}</Text>
+            </TouchableOpacity>
+            {/* Dark mode toggle */}
             <TouchableOpacity onPress={toggle} style={s.toggle} activeOpacity={0.8}>
               {mode === 'dark' ? <SunIcon size={18} color={palette.white} /> : <MoonIcon size={17} color={palette.white} />}
             </TouchableOpacity>
@@ -55,8 +72,8 @@ export default function LoginScreen() {
             <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
               <View style={s.brandWrap}>
                 <View style={s.mark}><DropMark size={46} color={palette.white} /></View>
-                <Text style={s.title}>Meter Air</Text>
-                <Text style={s.subtitle}>Aplikasi Petugas Pencatat Meter</Text>
+                <Text style={s.title}>{t('login_title')}</Text>
+                <Text style={s.subtitle}>{t('login_subtitle')}</Text>
               </View>
 
               <View style={s.card}>
@@ -66,20 +83,20 @@ export default function LoginScreen() {
                   </View>
                 )}
 
-                <Text style={s.label}>Kode Perusahaan</Text>
+                <Text style={s.label}>{t('login_label_company_code')}</Text>
                 <TextInput
                   style={s.input}
                   autoCapitalize="characters"
                   autoCorrect={false}
                   value={kode}
-                  onChangeText={(t) => setKode(t.toUpperCase())}
-                  placeholder="Contoh: BUMDES-KRK"
-                  placeholderTextColor={t.muted}
+                  onChangeText={(v) => setKode(v.toUpperCase())}
+                  placeholder={t('login_placeholder_company_code')}
+                  placeholderTextColor={th.muted}
                   returnKeyType="next"
                   onSubmitEditing={() => usernameRef.current?.focus()}
                 />
 
-                <Text style={s.label}>Username</Text>
+                <Text style={s.label}>{t('login_label_username')}</Text>
                 <TextInput
                   ref={usernameRef}
                   style={s.input}
@@ -87,38 +104,38 @@ export default function LoginScreen() {
                   autoCorrect={false}
                   value={username}
                   onChangeText={setUsername}
-                  placeholder="username"
-                  placeholderTextColor={t.muted}
+                  placeholder={t('login_placeholder_username')}
+                  placeholderTextColor={th.muted}
                   returnKeyType="next"
                   onSubmitEditing={() => passwordRef.current?.focus()}
                 />
 
-                <Text style={s.label}>Password</Text>
+                <Text style={s.label}>{t('login_label_password')}</Text>
                 <TextInput
                   ref={passwordRef}
                   style={s.input}
                   secureTextEntry
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="••••••"
-                  placeholderTextColor={t.muted}
+                  placeholder={t('login_placeholder_password')}
+                  placeholderTextColor={th.muted}
                   returnKeyType="done"
                   onSubmitEditing={onSubmit}
                 />
 
                 <TouchableOpacity activeOpacity={0.9} onPress={onSubmit} disabled={loading} style={{ marginTop: 22 }}>
                   <LinearGradient
-                    colors={t.scan}
+                    colors={th.scan}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={[s.button, loading && { opacity: 0.7 }, shadow.glow]}
                   >
-                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>Masuk</Text>}
+                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.buttonText}>{t('login_button_submit')}</Text>}
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
 
-              <Text style={s.foot}>Koneksi aman · TIRTA · {new Date().getFullYear()}</Text>
+              <Text style={s.foot}>{t('login_footer')} · {new Date().getFullYear()}</Text>
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -129,7 +146,13 @@ export default function LoginScreen() {
 
 const createStyles = (t: Theme) =>
   StyleSheet.create({
-    topBar: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 18, paddingTop: 6 },
+    topBar: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 18, paddingTop: 6, gap: 8 },
+    langBtn: {
+      paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+    },
+    langText: { color: palette.white, fontSize: 13, fontFamily: fonts.semibold },
     toggle: {
       width: 40, height: 40, borderRadius: 20,
       backgroundColor: 'rgba(255,255,255,0.18)',

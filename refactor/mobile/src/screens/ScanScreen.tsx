@@ -10,6 +10,7 @@ import {
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiResolveCustomer } from '../api/services';
 import { apiErrorMessage, isNetworkError } from '../api/client';
@@ -26,6 +27,7 @@ type ScanState = 'ready' | 'scanning' | 'error';
 export default function ScanScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: i18n } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const { resolveOffline } = useOffline();
 
@@ -52,9 +54,9 @@ export default function ScanScreen({ navigation }: Props) {
           navigation.replace('Reading', { meterInfo: offline });
           return;
         }
-        msg = 'Tidak ada koneksi & pelanggan tidak ada di cache lokal.';
+        msg = i18n('scan_error_no_connection');
       } else {
-        msg = `Kode "${trimmed}" tidak ditemukan.\n${apiErrorMessage(e)}`;
+        msg = i18n('scan_error_code_not_found', { code: trimmed }) + '\n' + apiErrorMessage(e);
       }
       setErrorMsg(msg);
       setScanState('error');
@@ -90,7 +92,7 @@ export default function ScanScreen({ navigation }: Props) {
           <ScanIcon size={40} color={t.primary} strokeWidth={2} />
         </View>
         <Text style={s.permText}>
-          Aplikasi memerlukan izin kamera untuk memindai QR meter.
+          {i18n('scan_permission_text')}
         </Text>
         <TouchableOpacity activeOpacity={0.9} onPress={requestPermission}>
           <LinearGradient
@@ -99,7 +101,7 @@ export default function ScanScreen({ navigation }: Props) {
             end={{ x: 1, y: 1 }}
             style={s.permBtn}
           >
-            <Text style={s.permBtnText}>Izinkan Kamera</Text>
+            <Text style={s.permBtnText}>{i18n('scan_button_allow_camera')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -131,7 +133,7 @@ export default function ScanScreen({ navigation }: Props) {
         {scanState === 'ready' && (
           <View style={s.hintPill}>
             <ScanIcon size={16} color={palette.white} />
-            <Text style={s.hint}>Arahkan ke QR / barcode meter</Text>
+            <Text style={s.hint}>{i18n('scan_hint')}</Text>
           </View>
         )}
 
@@ -139,17 +141,17 @@ export default function ScanScreen({ navigation }: Props) {
         {scanState === 'scanning' && (
           <View style={s.statusBox}>
             <ActivityIndicator color="#fff" size="small" />
-            <Text style={s.statusText}>Mencari pelanggan…</Text>
+            <Text style={s.statusText}>{i18n('scan_searching')}</Text>
           </View>
         )}
 
         {/* State: error — pesan + tombol coba lagi */}
         {scanState === 'error' && (
           <View style={s.errorBox}>
-            <Text style={s.errorTitle}>Tidak ditemukan</Text>
+            <Text style={s.errorTitle}>{i18n('scan_error_title')}</Text>
             <Text style={s.errorMsg}>{errorMsg}</Text>
             <TouchableOpacity style={s.retryBtn} onPress={resetScan}>
-              <Text style={s.retryText}>🔄 Scan ulang</Text>
+              <Text style={s.retryText}>{i18n('scan_button_retry')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -157,11 +159,11 @@ export default function ScanScreen({ navigation }: Props) {
 
       {/* Input manual di bawah — selalu tersedia */}
       <View style={s.manualBar}>
-        <Text style={s.manualLabel}>Atau ketik ID pelanggan manual:</Text>
+        <Text style={s.manualLabel}>{i18n('scan_manual_label')}</Text>
         <View style={s.manualRow}>
           <TextInput
             style={s.manualInput}
-            placeholder="mis. 200212011"
+            placeholder={i18n('scan_manual_placeholder')}
             placeholderTextColor="rgba(255,255,255,0.4)"
             value={manualCode}
             onChangeText={setManualCode}
@@ -174,7 +176,7 @@ export default function ScanScreen({ navigation }: Props) {
             onPress={onManualSubmit}
             disabled={!manualCode.trim() || scanState === 'scanning'}
           >
-            <Text style={s.manualBtnText}>Cari</Text>
+            <Text style={s.manualBtnText}>{i18n('scan_button_search')}</Text>
           </TouchableOpacity>
         </View>
       </View>

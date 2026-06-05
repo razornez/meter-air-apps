@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { apiReportMonthly, apiReportSummary } from '../api/services';
@@ -17,6 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Reports'>;
 export default function ReportsScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
+  const { t: i18n } = useTranslation();
   const [summary, setSummary] = useState<ReportSummary | null>(null);
   const [monthly, setMonthly] = useState<MonthlyReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,22 +55,22 @@ export default function ReportsScreen({ navigation }: Props) {
     <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 16 }}>
       {/* Hero: donut paid-ratio + totals */}
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
-        <Text style={s.heroLabel}>RINGKASAN · {b.periode}</Text>
+        <Text style={s.heroLabel}>{i18n('reports_hero_label', { period: b.periode })}</Text>
         <View style={s.heroRow}>
           <DonutChart value={paidRatio} size={116} stroke={13} color="#fff" track="rgba(255,255,255,0.25)">
             <Text style={s.donutPct}>{Math.round(paidRatio * 100)}%</Text>
-            <Text style={s.donutSub}>terbayar</Text>
+            <Text style={s.donutSub}>{i18n('reports_donut_paid')}</Text>
           </DonutChart>
           <View style={s.heroRight}>
-            <Text style={s.heroTotalLabel}>Total Tagihan</Text>
+            <Text style={s.heroTotalLabel}>{i18n('reports_total_billing_label')}</Text>
             <Text style={s.heroTotal}>{formatRupiah(b.totalTagihan)}</Text>
             <View style={s.legendRow}>
               <View style={[s.dot, { backgroundColor: '#BFF5E2' }]} />
-              <Text style={s.legendText}>Terbayar {formatRupiah(b.totalTerbayar)}</Text>
+              <Text style={s.legendText}>{i18n('reports_legend_paid', { amount: formatRupiah(b.totalTerbayar) })}</Text>
             </View>
             <View style={s.legendRow}>
               <View style={[s.dot, { backgroundColor: '#FFC2CF' }]} />
-              <Text style={s.legendText}>Belum {formatRupiah(b.totalBelum)}</Text>
+              <Text style={s.legendText}>{i18n('reports_legend_unpaid', { amount: formatRupiah(b.totalBelum) })}</Text>
             </View>
           </View>
         </View>
@@ -76,25 +78,25 @@ export default function ReportsScreen({ navigation }: Props) {
 
       {/* KPI grid with icon chips */}
       <View style={s.kpiGrid}>
-        <Kpi s={s} t={t} Icon={UsersIcon} tint="#3DA0E3" bg="#DEEFFF" label="Pelanggan" value={String(summary.totalPelanggan)} />
-        <Kpi s={s} t={t} Icon={ListCheckIcon} tint="#23B58A" bg="#DCF5EA" label="Faktur" value={String(b.jumlahFaktur)} />
-        <Kpi s={s} t={t} Icon={ChartIcon} tint="#7A6CF0" bg="#ECE9FF" label="Pemakaian" value={`${b.pemakaianM3} m³`} />
-        <Kpi s={s} t={t} Icon={ChartIcon} tint="#FF8E63" bg="#FFE7DC" label="Rata/Faktur" value={b.jumlahFaktur ? formatRupiah(Math.round(b.totalTagihan / b.jumlahFaktur)) : '-'} />
+        <Kpi s={s} t={t} Icon={UsersIcon} tint="#3DA0E3" bg="#DEEFFF" label={i18n('reports_kpi_customers')} value={String(summary.totalPelanggan)} />
+        <Kpi s={s} t={t} Icon={ListCheckIcon} tint="#23B58A" bg="#DCF5EA" label={i18n('reports_kpi_invoices')} value={String(b.jumlahFaktur)} />
+        <Kpi s={s} t={t} Icon={ChartIcon} tint="#7A6CF0" bg="#ECE9FF" label={i18n('reports_kpi_usage')} value={`${b.pemakaianM3} m³`} />
+        <Kpi s={s} t={t} Icon={ChartIcon} tint="#FF8E63" bg="#FFE7DC" label={i18n('reports_kpi_avg_invoice')} value={b.jumlahFaktur ? formatRupiah(Math.round(b.totalTagihan / b.jumlahFaktur)) : '-'} />
       </View>
 
       <TouchableOpacity style={s.kinerjaCard} onPress={() => navigation.navigate('Kinerja')} activeOpacity={0.85}>
         <View style={s.kinerjaIcon}><UsersIcon size={22} color={t.primary} /></View>
         <View style={{ flex: 1 }}>
-          <Text style={s.kinerjaTitle}>Rekap Kinerja Petugas</Text>
-          <Text style={s.kinerjaSubtitle}>Jumlah catatan per petugas per periode</Text>
+          <Text style={s.kinerjaTitle}>{i18n('reports_kinerja_title')}</Text>
+          <Text style={s.kinerjaSubtitle}>{i18n('reports_kinerja_subtitle')}</Text>
         </View>
         <ChevronIcon size={20} color={t.muted} />
       </TouchableOpacity>
 
       {/* 6-month trend bar chart */}
-      <Text style={s.section}>Tren Tagihan 6 Bulan</Text>
+      <Text style={s.section}>{i18n('reports_section_trend')}</Text>
       {chrono.length === 0 ? (
-        <Text style={s.muted}>Belum ada data.</Text>
+        <Text style={s.muted}>{i18n('reports_no_data')}</Text>
       ) : (
         <>
           <View style={s.chartCard}>
@@ -115,8 +117,8 @@ export default function ReportsScreen({ navigation }: Props) {
                     <View style={[s.barFill, { width: `${pct * 100}%`, backgroundColor: t.success }]} />
                   </View>
                   <View style={s.monthMetaRow}>
-                    <Text style={s.muted}>{m.jumlahFaktur} faktur</Text>
-                    <Text style={s.muted}>Terbayar {Math.round(pct * 100)}%</Text>
+                    <Text style={s.muted}>{i18n('reports_month_invoices', { count: m.jumlahFaktur })}</Text>
+                    <Text style={s.muted}>{i18n('reports_month_paid_pct', { pct: Math.round(pct * 100) })}</Text>
                   </View>
                 </View>
               );

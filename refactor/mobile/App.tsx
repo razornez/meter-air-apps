@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -48,6 +48,10 @@ import CustomerCardScreen from './src/screens/CustomerCardScreen';
 import PaymentSelectScreen from './src/screens/PaymentSelectScreen';
 import CashPaymentScreen from './src/screens/CashPaymentScreen';
 import AccountPaymentScreen from './src/screens/AccountPaymentScreen';
+import { initI18n } from './src/i18n';
+import { useTranslation } from 'react-i18next';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './src/i18n';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -63,6 +67,7 @@ function Splash() {
 function RootNavigator() {
   const { user, initializing } = useAuth();
   const t = useTheme();
+  const { t: tr } = useTranslation();
   if (initializing) return <Splash />;
 
   return (
@@ -122,6 +127,12 @@ function ThemedApp() {
 }
 
 export default function App() {
+  const [i18nReady, setI18nReady] = React.useState(false);
+
+  React.useEffect(() => {
+    initI18n().then(() => setI18nReady(true));
+  }, []);
+
   const [fontsLoaded] = useFonts({
     Nunito_400Regular,
     Nunito_500Medium,
@@ -145,3 +156,6 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
+
+

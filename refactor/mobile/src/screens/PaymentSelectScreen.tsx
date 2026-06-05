@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiPaymentMethods } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -20,24 +21,26 @@ import { ErrorState, Loading } from '../components/ScreenStates';
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentSelect'>;
 
 const GROUP_ORDER = ['cash', 'ewallet', 'bank_static', 'midtrans'];
-const GROUP_LABEL: Record<string, string> = {
-  cash: '💵  Tunai',
-  ewallet: '📲  Dompet Digital',
-  bank_static: '🏦  Transfer Bank',
-  midtrans: '🔐  Bayar via Gateway',
-};
-const GROUP_DESC: Record<string, string> = {
-  cash: 'Terima langsung, hitung kembalian',
-  ewallet: 'Kirim ke nomor e-wallet perusahaan',
-  bank_static: 'Transfer ke rekening bank perusahaan',
-  midtrans: 'QRIS dinamis atau kartu kredit',
-};
 
 export default function PaymentSelectScreen({ route, navigation }: Props) {
+  const { t: tr } = useTranslation();
   const { noFaktur, amount, customerName } = route.params;
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const GROUP_LABEL: Record<string, string> = {
+    cash: tr('payment_select_group_cash'),
+    ewallet: tr('payment_select_group_ewallet'),
+    bank_static: tr('payment_select_group_bank'),
+    midtrans: tr('payment_select_group_gateway'),
+  };
+  const GROUP_DESC: Record<string, string> = {
+    cash: tr('payment_select_desc_cash'),
+    ewallet: tr('payment_select_desc_ewallet'),
+    bank_static: tr('payment_select_desc_bank'),
+    midtrans: tr('payment_select_desc_gateway'),
+  };
 
   useEffect(() => {
     apiPaymentMethods()
@@ -69,14 +72,14 @@ export default function PaymentSelectScreen({ route, navigation }: Props) {
     }
   }
 
-  if (loading) return <Loading label="Memuat metode bayar…" />;
+  if (loading) return <Loading label={tr('payment_select_loading')} />;
   if (error) return <ErrorState message={error} onRetry={() => { setLoading(true); setError(null); apiPaymentMethods().then(setMethods).catch((e) => setError(apiErrorMessage(e))).finally(() => setLoading(false)); }} />;
 
   return (
     <View style={s.container}>
       {/* Header tagihan */}
       <LinearGradient colors={['#1565C0', '#0D47A1']} style={s.header}>
-        <Text style={s.headerLabel}>TOTAL TAGIHAN</Text>
+        <Text style={s.headerLabel}>{tr('payment_select_header_label')}</Text>
         <Text style={s.headerAmount}>Rp {amount.toLocaleString('id-ID')}</Text>
         {!!customerName && <Text style={s.headerCustomer}>{customerName}</Text>}
         <Text style={s.headerFaktur}>{noFaktur}</Text>
@@ -111,7 +114,7 @@ export default function PaymentSelectScreen({ route, navigation }: Props) {
                     <Text style={s.rowSub}>{method.accountNumber}</Text>
                   )}
                   {!!method.accountNumber && !!method.accountName && (
-                    <Text style={s.rowOwner}>a.n. {method.accountName}</Text>
+                    <Text style={s.rowOwner}>{tr('payment_select_owner_prefix')} {method.accountName}</Text>
                   )}
                   {!method.accountNumber && !!method.instructions && (
                     <Text style={s.rowSub} numberOfLines={1}>{method.instructions}</Text>

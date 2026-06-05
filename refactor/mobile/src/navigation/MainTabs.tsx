@@ -1,5 +1,6 @@
-import React from 'react';
+﻿import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
 import FloatingTabBar, { TAB_BAR_SPACE } from '../components/ui/FloatingTabBar';
 import AppHeader from '../components/ui/AppHeader';
 import { useTheme } from '../ThemeContext';
@@ -12,16 +13,11 @@ import MapScreen from '../screens/MapScreen';
 
 const Tab = createBottomTabNavigator();
 
-// Screens were originally typed for the native stack; in the tab navigator their
-// navigation object still bubbles to the parent stack at runtime.
 const asScreen = (c: unknown) => c as React.ComponentType<object>;
 
-/**
- * Primary navigation: a floating glass tab bar over the 5 core sections.
- * Detail/secondary screens stay in the parent stack (see App.tsx).
- */
 export default function MainTabs() {
   const t = useTheme();
+  const { t: tr } = useTranslation();
   return (
     <Tab.Navigator
       tabBar={(props) => <FloatingTabBar {...props} />}
@@ -33,27 +29,27 @@ export default function MainTabs() {
       <Tab.Screen
         name="Home"
         component={asScreen(HomeScreen)}
-        options={{ headerShown: false, title: 'Beranda', tabBarLabel: 'Beranda' }}
+        options={{ headerShown: false, title: tr('nav_home'), tabBarLabel: tr('nav_home') }}
       />
       <Tab.Screen
         name="CustomersList"
         component={asScreen(CustomersListScreen)}
-        options={{ title: 'Pelanggan', tabBarLabel: 'Pelanggan' }}
+        options={{ title: tr('nav_customers'), tabBarLabel: tr('nav_customers') }}
       />
       <Tab.Screen
         name="FakturList"
         component={asScreen(FakturListScreen)}
-        options={{ title: 'Tagihan', tabBarLabel: 'Tagihan' }}
+        options={{ title: tr('nav_invoices'), tabBarLabel: tr('nav_invoices') }}
       />
       <Tab.Screen
         name="Reports"
         component={asScreen(ReportsScreen)}
-        options={{ title: 'Laporan', tabBarLabel: 'Laporan' }}
+        options={{ title: tr('nav_reports'), tabBarLabel: tr('nav_reports') }}
       />
       <Tab.Screen
         name="Map"
         component={asScreen(MapScreen)}
-        options={{ title: 'Peta', tabBarLabel: 'Peta' }}
+        options={{ title: tr('nav_map'), tabBarLabel: tr('nav_map') }}
       />
     </Tab.Navigator>
   );
