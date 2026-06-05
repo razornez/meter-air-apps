@@ -234,9 +234,9 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
                 {/* Content card */}
                 <View style={s.histCard}>
                   {/* Thumbnail foto meteran */}
-                  {!!fotoMeterUrl(h.fotoUrl) && (
-                    <TouchableOpacity onPress={() => setFotoModal(fotoMeterUrl(h.fotoUrl)!)} activeOpacity={0.85}>
-                      <Image source={{ uri: fotoMeterUrl(h.fotoUrl)! }} style={s.histPhoto} resizeMode="cover" />
+                  {!!fotoMeterUrl(h.fotoMeter) && (
+                    <TouchableOpacity onPress={() => setFotoModal(fotoMeterUrl(h.fotoMeter)!)} activeOpacity={0.85}>
+                      <Image source={{ uri: fotoMeterUrl(h.fotoMeter)! }} style={s.histPhoto} resizeMode="cover" />
                     </TouchableOpacity>
                   )}
                   <View style={{ flex: 1 }}>

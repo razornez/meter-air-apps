@@ -201,7 +201,7 @@ export interface MeterHistoryItem {
   meter: number;
   pemakaian: number | null;
   noFaktur: string;
-  fotoUrl?: string | null;   // foto bukti meteran bila tersedia
+  fotoMeter?: string | null; // filename foto bukti meteran (dari faktur.foto_meter)
   isLunas?: boolean | null;  // status bayar faktur terkait
 }
 
