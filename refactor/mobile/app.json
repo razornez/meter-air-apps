@@ -15,21 +15,12 @@
       "package": "com.bumdes.meterair",
       "versionCode": 1,
       "minSdkVersion": 24,
-      "compileSdkVersion": 35,
-      "targetSdkVersion": 35,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "permissions": [
-        "CAMERA",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "READ_MEDIA_IMAGES",
-        "INTERNET"
-      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -57,6 +48,12 @@
         }
       ],
       "expo-localization"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "aebe7f38-0ca8-4e58-b104-d74287fe5547"
+      }
+    },
+    "owner": "razornez"
   }
 }
