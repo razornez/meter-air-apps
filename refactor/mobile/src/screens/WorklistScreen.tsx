@@ -64,9 +64,9 @@ export default function WorklistScreen({ navigation }: Props) {
   const pendingCount  = data.customers.filter(c => !c.alreadyRecorded).length;
 
   const FILTERS: { key: Filter; label: string }[] = [
-    { key: 'semua',    label: `Semua (${data.customers.length})` },
-    { key: 'pending',  label: `Belum Dicatat (${pendingCount})` },
-    { key: 'recorded', label: `Sudah Dicatat (${recordedCount})` },
+    { key: 'semua',    label: i18n('worklist_filter_all',      { count: data.customers.length }) },
+    { key: 'pending',  label: i18n('worklist_filter_pending',  { count: pendingCount }) },
+    { key: 'recorded', label: i18n('worklist_filter_recorded', { count: recordedCount }) },
   ];
 
   return (
@@ -138,7 +138,7 @@ export default function WorklistScreen({ navigation }: Props) {
                     color={recorded ? pastels.mint.fg : pastels.peach.fg}
                   />
                   <Text style={[s.payBadgeText, { color: recorded ? pastels.mint.fg : pastels.peach.fg }]}>
-                    {recorded ? 'Sudah' : 'Belum'}
+                    {recorded ? i18n('worklist_status_recorded') : i18n('worklist_status_pending')}
                   </Text>
                 </View>
               </View>

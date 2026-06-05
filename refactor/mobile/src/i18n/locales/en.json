@@ -304,5 +304,41 @@
     "login_show_password":  "Show",
     "login_remember_me":  "Remember me",
     "login_version":  "Version",
-    "login_forgot_message":  "Contact your company administrator to reset your password."
+    "login_forgot_message":  "Contact your company administrator to reset your password.",
+
+    "anomaly_severity_high":   "High",
+    "anomaly_severity_medium": "Medium",
+    "anomaly_label_latest":    "Latest:",
+    "anomaly_label_average":   "Average:",
+
+    "worklist_filter_all":      "All ({{count}})",
+    "worklist_filter_pending":  "Unrecorded ({{count}})",
+    "worklist_filter_recorded": "Recorded ({{count}})",
+    "worklist_status_recorded": "Done",
+    "worklist_status_pending":  "Pending",
+
+    "map_officer_label": "Your Position",
+
+    "customer_detail_status_recorded":    "Done",
+    "customer_detail_status_pending":     "Pending",
+    "customer_detail_catat_sub_pending":  "Record this month's meter reading",
+    "customer_detail_catat_sub_recorded": "Last reading: {{meter}}",
+    "customer_detail_history_paid":       "Paid",
+    "customer_detail_history_unpaid":     "Unpaid",
+
+    "customer_card_title":          "WATER CUSTOMER CARD",
+    "customer_card_no_label":       "CUSTOMER NO.",
+    "customer_card_type_label":     "TYPE",
+    "customer_card_qr_caption":     "Scan meter",
+    "customer_card_company_fallback": "Water Utility",
+    "customer_card_btn_save":       "Save",
+    "customer_card_btn_share":      "Share",
+    "customer_card_note":           "QR contains customer ID. Officer scans when recording meter.",
+    "customer_card_alert_capture_failed": "Cannot capture card image.",
+    "customer_card_alert_save_title":     "Saved",
+    "customer_card_alert_save_message":   "Customer card saved to gallery.",
+    "customer_card_alert_save_failed":    "Cannot save image.",
+    "customer_card_alert_permission":     "Enable gallery permission in device settings.",
+    "customer_card_alert_share_unavailable": "Sharing is not available on this device.",
+    "customer_card_share_dialog_title":   "Share Customer Card"
 }

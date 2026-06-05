@@ -92,7 +92,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
               <View style={[s.statusBadge, recorded ? s.badgeDone : s.badgePending]}>
                 <Ionicons name={recorded ? 'checkmark-circle' : 'time-outline'} size={14} color={recorded ? '#15803D' : '#B45309'} />
                 <Text style={[s.badgeText, { color: recorded ? '#15803D' : '#B45309' }]}>
-                  {recorded ? 'Sudah' : 'Belum'}
+                  {recorded ? tr('customer_detail_status_recorded') : tr('customer_detail_status_pending')}
                 </Text>
               </View>
             </View>
@@ -144,7 +144,9 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
               {recorded ? tr('customer_detail_button_already_recorded') : tr('customer_detail_button_record')}
             </Text>
             <Text style={s.catatSub}>
-              {recorded ? `Meter terakhir: ${detail.lastMeter}` : 'Input bacaan meter bulan ini'}
+              {recorded
+                ? tr('customer_detail_catat_sub_recorded', { meter: detail.lastMeter })
+                : tr('customer_detail_catat_sub_pending')}
             </Text>
           </View>
           {!recorded && (
@@ -244,7 +246,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
                         <View style={[s.histPayBadge, h.isLunas ? s.histBadgePaid : s.histBadgeUnpaid]}>
                           <Ionicons name={h.isLunas ? 'checkmark-circle' : 'time-outline'} size={11} color={h.isLunas ? '#15803D' : '#B45309'} />
                           <Text style={[s.histPayText, { color: h.isLunas ? '#15803D' : '#B45309' }]}>
-                            {h.isLunas ? 'Lunas' : 'Belum'}
+                            {h.isLunas ? tr('customer_detail_history_paid') : tr('customer_detail_history_unpaid')}
                           </Text>
                         </View>
                       )}

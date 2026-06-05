@@ -14,6 +14,7 @@ import ViewShot from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiCustomerDetail, apiGetConfig } from '../api/services';
 import { apiErrorMessage } from '../api/client';
@@ -26,6 +27,7 @@ const CARD_WIDTH = 320;
 const PRIMARY = colors.primary;
 
 export default function CustomerCardScreen({ route }: Props) {
+  const { t: tr } = useTranslation();
   const { id } = route.params;
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
@@ -40,7 +42,7 @@ export default function CustomerCardScreen({ route }: Props) {
       setCustomer(c);
       setConfig(cfg);
     } catch (e) {
-      Alert.alert('Gagal', apiErrorMessage(e));
+      Alert.alert(tr('common_failed'), apiErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -60,22 +62,22 @@ export default function CustomerCardScreen({ route }: Props) {
 
   async function onSave() {
     const uri = await captureCard();
-    if (!uri) { Alert.alert('Gagal', 'Tidak dapat mengambil gambar kartu.'); return; }
+    if (!uri) { Alert.alert(tr('common_failed'), tr('customer_card_alert_capture_failed')); return; }
     if (Platform.OS === 'web') {
-      Alert.alert('Info', 'Save ke galeri tidak tersedia di web. Gunakan "Bagikan".');
+      Alert.alert(tr('common_ok'), tr('customer_card_alert_share_unavailable'));
       return;
     }
     setSaving(true);
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Izin diperlukan', 'Aktifkan izin galeri di pengaturan HP.');
+        Alert.alert(tr('common_failed'), tr('customer_card_alert_permission'));
         return;
       }
       await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('✅ Tersimpan', 'Kartu pelanggan disimpan ke galeri.');
+      Alert.alert(tr('customer_card_alert_save_title'), tr('customer_card_alert_save_message'));
     } catch {
-      Alert.alert('Gagal', 'Tidak dapat menyimpan gambar.');
+      Alert.alert(tr('common_failed'), tr('customer_card_alert_save_failed'));
     } finally {
       setSaving(false);
     }
@@ -83,13 +85,13 @@ export default function CustomerCardScreen({ route }: Props) {
 
   async function onShare() {
     const uri = await captureCard();
-    if (!uri) { Alert.alert('Gagal', 'Tidak dapat mengambil gambar kartu.'); return; }
+    if (!uri) { Alert.alert(tr('common_failed'), tr('customer_card_alert_capture_failed')); return; }
     setSaving(true);
     try {
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Bagikan Kartu Pelanggan' });
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: tr('customer_card_share_dialog_title') });
       } else {
-        Alert.alert('Info', 'Berbagi tidak tersedia di perangkat ini.');
+        Alert.alert(tr('common_ok'), tr('customer_card_alert_share_unavailable'));
       }
     } finally {
       setSaving(false);
@@ -117,9 +119,9 @@ export default function CustomerCardScreen({ route }: Props) {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.companyName} numberOfLines={1}>
-                {config.perusahaan || 'PDAM / BUMDES'}
+                {config.perusahaan || tr('customer_card_company_fallback')}
               </Text>
-              <Text style={styles.cardTitle}>KARTU PELANGGAN AIR</Text>
+              <Text style={styles.cardTitle}>{tr('customer_card_title')}</Text>
             </View>
           </View>
 
@@ -139,11 +141,11 @@ export default function CustomerCardScreen({ route }: Props) {
               {/* ID + Tipe */}
               <View style={styles.idRow}>
                 <View style={styles.idBox}>
-                  <Text style={styles.idLabel}>NO. PELANGGAN</Text>
+                  <Text style={styles.idLabel}>{tr('customer_card_no_label')}</Text>
                   <Text style={styles.idValue}>{qrValue}</Text>
                 </View>
                 <View style={styles.tipeBox}>
-                  <Text style={styles.tipeLabel}>TIPE</Text>
+                  <Text style={styles.tipeLabel}>{tr('customer_card_type_label')}</Text>
                   <Text style={styles.tipeValue}>{customer.tipe ?? '-'}</Text>
                 </View>
               </View>
@@ -157,7 +159,7 @@ export default function CustomerCardScreen({ route }: Props) {
                 color="#1A2530"
                 backgroundColor="#fff"
               />
-              <Text style={styles.qrCaption}>Scan meter</Text>
+              <Text style={styles.qrCaption}>{tr('customer_card_qr_caption')}</Text>
             </View>
           </View>
 
@@ -189,7 +191,7 @@ export default function CustomerCardScreen({ route }: Props) {
                 <View style={styles.btnIcon}>
                   <Ionicons name="download-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.btnSaveText}>Simpan</Text>
+                <Text style={styles.btnSaveText}>{tr('customer_card_btn_save')}</Text>
               </>
           }
         </TouchableOpacity>
@@ -202,13 +204,11 @@ export default function CustomerCardScreen({ route }: Props) {
           <View style={styles.btnIconGreen}>
             <MaterialCommunityIcons name="whatsapp" size={20} color="#16A34A" />
           </View>
-          <Text style={styles.btnShareText}>Bagikan</Text>
+          <Text style={styles.btnShareText}>{tr('customer_card_btn_share')}</Text>
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.note}>
-        QR berisi ID pelanggan. Petugas scan saat mencatat meter.
-      </Text>
+      <Text style={styles.note}>{tr('customer_card_note')}</Text>
     </View>
   );
 }

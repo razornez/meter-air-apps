@@ -73,7 +73,7 @@ export default function MapScreen() {
         {officerPos && (
           <View style={s.legendItem}>
             <View style={[s.dot, s.dotOfficer]} />
-            <Text style={s.legendText}>Posisi Anda</Text>
+            <Text style={s.legendText}>{tr('map_officer_label')}</Text>
           </View>
         )}
       </View>

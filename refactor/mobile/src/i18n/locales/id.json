@@ -304,5 +304,41 @@
     "login_show_password":  "Tampilkan",
     "login_remember_me":  "Ingat saya",
     "login_version":  "Versi",
-    "login_forgot_message":  "Hubungi administrator perusahaan Anda untuk mereset password."
+    "login_forgot_message":  "Hubungi administrator perusahaan Anda untuk mereset password.",
+
+    "anomaly_severity_high":   "Tinggi",
+    "anomaly_severity_medium": "Sedang",
+    "anomaly_label_latest":    "Terakhir:",
+    "anomaly_label_average":   "Rata-rata:",
+
+    "worklist_filter_all":      "Semua ({{count}})",
+    "worklist_filter_pending":  "Belum Dicatat ({{count}})",
+    "worklist_filter_recorded": "Sudah Dicatat ({{count}})",
+    "worklist_status_recorded": "Sudah",
+    "worklist_status_pending":  "Belum",
+
+    "map_officer_label": "Posisi Anda",
+
+    "customer_detail_status_recorded":    "Sudah",
+    "customer_detail_status_pending":     "Belum",
+    "customer_detail_catat_sub_pending":  "Input bacaan meter bulan ini",
+    "customer_detail_catat_sub_recorded": "Meter terakhir: {{meter}}",
+    "customer_detail_history_paid":       "Lunas",
+    "customer_detail_history_unpaid":     "Belum",
+
+    "customer_card_title":          "KARTU PELANGGAN AIR",
+    "customer_card_no_label":       "NO. PELANGGAN",
+    "customer_card_type_label":     "TIPE",
+    "customer_card_qr_caption":     "Scan meter",
+    "customer_card_company_fallback": "PDAM / BUMDES",
+    "customer_card_btn_save":       "Simpan",
+    "customer_card_btn_share":      "Bagikan",
+    "customer_card_note":           "QR berisi ID pelanggan. Petugas scan saat mencatat meter.",
+    "customer_card_alert_capture_failed": "Tidak dapat mengambil gambar kartu.",
+    "customer_card_alert_save_title":     "Tersimpan",
+    "customer_card_alert_save_message":   "Kartu pelanggan disimpan ke galeri.",
+    "customer_card_alert_save_failed":    "Tidak dapat menyimpan gambar.",
+    "customer_card_alert_permission":     "Aktifkan izin galeri di pengaturan HP.",
+    "customer_card_alert_share_unavailable": "Berbagi tidak tersedia di perangkat ini.",
+    "customer_card_share_dialog_title":   "Bagikan Kartu Pelanggan"
 }

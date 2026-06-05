@@ -55,11 +55,11 @@ export default function AnomalyScreen({ navigation }: Props) {
       <View style={s.summaryRow}>
         <View style={[s.summaryChip, { backgroundColor: pastels.peach.bg, borderColor: pastels.peach.fg + '55' }]}>
           <Ionicons name="flame" size={13} color={pastels.peach.fg} />
-          <Text style={[s.summaryText, { color: pastels.peach.fg }]}>{tinggi} Tinggi</Text>
+          <Text style={[s.summaryText, { color: pastels.peach.fg }]}>{tinggi} {tr('anomaly_severity_high')}</Text>
         </View>
         <View style={[s.summaryChip, { backgroundColor: '#FEF3C7', borderColor: '#FCD34D' }]}>
           <Ionicons name="warning-outline" size={13} color="#B45309" />
-          <Text style={[s.summaryText, { color: '#B45309' }]}>{sedang} Sedang</Text>
+          <Text style={[s.summaryText, { color: '#B45309' }]}>{sedang} {tr('anomaly_severity_medium')}</Text>
         </View>
         <Text style={s.summaryTotal}>{tr('anomaly_summary', { count: items.length })}</Text>
       </View>
@@ -94,11 +94,11 @@ export default function AnomalyScreen({ navigation }: Props) {
                 <View style={s.statRow}>
                   <View style={s.statChip}>
                     <Ionicons name="speedometer-outline" size={11} color={t.muted} />
-                    <Text style={s.statText}>Terakhir: <Text style={[s.statBold, { color: accentColor }]}>{item.latest} m³</Text></Text>
+                    <Text style={s.statText}>{tr('anomaly_label_latest')} <Text style={[s.statBold, { color: accentColor }]}>{item.latest} m³</Text></Text>
                   </View>
                   <View style={s.statChip}>
                     <Ionicons name="analytics-outline" size={11} color={t.muted} />
-                    <Text style={s.statText}>Rata-rata: {item.rata} m³</Text>
+                    <Text style={s.statText}>{tr('anomaly_label_average')} {item.rata} m³</Text>
                   </View>
                   {item.rasio > 0 && (
                     <View style={[s.ratioBadge, { backgroundColor: accentBg }]}>
