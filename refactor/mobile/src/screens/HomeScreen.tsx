@@ -174,7 +174,7 @@ export default function HomeScreen({ navigation }: Props) {
       showsVerticalScrollIndicator={false}
     >
       {/* ---- Wave hero ---- */}
-      <WaveBackground height={336} style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}>
+      <WaveBackground height={370} style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}>
         <View style={[s.heroInner, { paddingTop: insets.top + 14 }]}>
           <View style={s.heroTop}>
             <View style={{ flex: 1 }}>
@@ -354,7 +354,7 @@ function ActionTile({ s, t, tileIndex, title, sub, onPress }: {
 
 const createStyles = (t: Theme) =>
   StyleSheet.create({
-    heroInner: { flex: 1, paddingHorizontal: 20, paddingBottom: 18, justifyContent: 'space-between' },
+    heroInner: { flex: 1, paddingHorizontal: 20, paddingBottom: 26, justifyContent: 'space-between' },
     heroTop: { flexDirection: 'row', alignItems: 'flex-start' },
     heroActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
     langBtn: {
