@@ -211,9 +211,12 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={s.foot}>{t('login_footer')} · {new Date().getFullYear()}</Text>
-              <Text style={s.footBrand}>Powered by Anugrah Solusi Digital</Text>
-              <Text style={s.footVersion}>v1.0.0</Text>
+              <View style={s.footerWrap}>
+                <Text style={s.foot}>{t('login_footer')} · {new Date().getFullYear()}</Text>
+                <View style={s.divider} />
+                <Text style={s.footBrand}>Powered by Anugrah Solusi Digital</Text>
+                <Text style={s.footVersion}>v1.0.0</Text>
+              </View>
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -237,7 +240,7 @@ const createStyles = (t: Theme) =>
       borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
       alignItems: 'center', justifyContent: 'center',
     },
-    scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+    scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingBottom: 32 },
     brandWrap: { alignItems: 'center', marginBottom: 26 },
     mark: {
       width: 86, height: 86, borderRadius: 28,
@@ -280,7 +283,9 @@ const createStyles = (t: Theme) =>
     buttonText: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
     errorBox: { backgroundColor: t.danger + '22', padding: 11, borderRadius: radius.sm, marginBottom: 4 },
     errorText: { color: t.danger, fontSize: 13, fontFamily: fonts.medium },
-    foot: { textAlign: 'center', color: 'rgba(231,247,247,0.7)', fontSize: 11.5, marginTop: 22, fontFamily: fonts.regular },
-    footBrand: { textAlign: 'center', color: 'rgba(231,247,247,0.5)', fontSize: 10.5, marginTop: 4, fontFamily: fonts.medium },
-    footVersion: { textAlign: 'center', color: 'rgba(231,247,247,0.35)', fontSize: 10, marginTop: 2, fontFamily: fonts.regular },
+    footerWrap: { alignItems: 'center', marginTop: 20, paddingBottom: 16 },
+    foot: { textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 12, fontFamily: fonts.regular },
+    divider: { width: 40, height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 8 },
+    footBrand: { textAlign: 'center', color: 'rgba(255,255,255,0.85)', fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 0.3 },
+    footVersion: { textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 10, marginTop: 3, fontFamily: fonts.regular },
   });
