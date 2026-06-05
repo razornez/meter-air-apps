@@ -72,9 +72,11 @@ function RootNavigator() {
 
   return (
     <Stack.Navigator
+      key={user ? 'authed' : 'guest'}
       screenOptions={{
         header: (props) => <AppHeader {...props} />,
         contentStyle: { backgroundColor: t.bg },
+        animation: 'fade',
       }}
     >
       {user ? (
