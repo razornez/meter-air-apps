@@ -305,8 +305,8 @@ export class ReportsService {
         'totalTerbayar',
       )
       .where('f.tenantId = :tid AND f.tanggal IS NOT NULL', { tid: tenantId })
-      .groupBy('periode')
-      .orderBy('periode', 'DESC')
+      .groupBy("DATE_FORMAT(f.tanggal,'%Y-%m')")
+      .orderBy("DATE_FORMAT(f.tanggal,'%Y-%m')", 'DESC')
       .limit(take)
       .getRawMany<RawMonthlyRow>();
 

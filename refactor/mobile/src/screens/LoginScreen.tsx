@@ -101,7 +101,9 @@ export default function LoginScreen() {
           </View>
 
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-            <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+            <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              {/* Spacer atas agar konten ter-center */}
+              <View style={{ flex: 1, justifyContent: 'center' }}>
               {/* Brand */}
               <View style={s.brandWrap}>
                 <View style={s.mark}><DropMark size={46} color={palette.white} /></View>
@@ -211,6 +213,9 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
+              </View>{/* end flex center */}
+
+              {/* Footer — selalu di bawah, di luar area center */}
               <View style={s.footerWrap}>
                 <Text style={s.foot}>{t('login_footer')} · {new Date().getFullYear()}</Text>
                 <View style={s.divider} />
@@ -240,7 +245,7 @@ const createStyles = (t: Theme) =>
       borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
       alignItems: 'center', justifyContent: 'center',
     },
-    scroll: { flexGrow: 1, justifyContent: 'center', padding: 24, paddingBottom: 32 },
+    scroll: { flexGrow: 1, padding: 24, paddingBottom: 16 },
     brandWrap: { alignItems: 'center', marginBottom: 26 },
     mark: {
       width: 86, height: 86, borderRadius: 28,
