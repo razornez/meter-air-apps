@@ -60,12 +60,13 @@ export default function WorklistScreen({ navigation }: Props) {
   if (!data) return null;
 
   const ratio = data.total > 0 ? data.done / data.total : 0;
-  const hasPayStatus = data.customers.some(c => c.isLunas != null);
+  const lunasCount = data.customers.filter(c => c.isLunas === true).length;
+  const belumCount = data.customers.filter(c => c.isLunas === false || c.isLunas == null).length;
 
   const FILTERS: { key: Filter; label: string }[] = [
     { key: 'semua', label: `Semua (${data.customers.length})` },
-    { key: 'belum', label: `Belum Bayar` },
-    { key: 'lunas', label: `Sudah Bayar` },
+    { key: 'belum', label: `Belum Bayar (${belumCount})` },
+    { key: 'lunas', label: `Lunas (${lunasCount})` },
   ];
 
   return (
@@ -92,23 +93,21 @@ export default function WorklistScreen({ navigation }: Props) {
             </View>
           </LinearGradient>
 
-          {/* Filter tabs — tampil kalau backend kirim data bayar */}
-          {hasPayStatus && (
-            <View style={s.filterRow}>
-              {FILTERS.map(f => (
-                <TouchableOpacity
-                  key={f.key}
-                  style={[s.filterTab, filter === f.key && s.filterTabActive]}
-                  onPress={() => setFilter(f.key)}
-                  activeOpacity={0.8}
-                >
-                  {f.key === 'lunas' && <Ionicons name="checkmark-circle" size={13} color={filter === f.key ? '#fff' : pastels.mint.fg} />}
-                  {f.key === 'belum' && <Ionicons name="time-outline"      size={13} color={filter === f.key ? '#fff' : pastels.peach.fg} />}
-                  <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+          {/* Filter tabs — selalu tampil */}
+          <View style={s.filterRow}>
+            {FILTERS.map(f => (
+              <TouchableOpacity
+                key={f.key}
+                style={[s.filterTab, filter === f.key && s.filterTabActive]}
+                onPress={() => setFilter(f.key)}
+                activeOpacity={0.8}
+              >
+                {f.key === 'lunas' && <Ionicons name="checkmark-circle" size={13} color={filter === f.key ? '#fff' : pastels.mint.fg} />}
+                {f.key === 'belum' && <Ionicons name="time-outline"      size={13} color={filter === f.key ? '#fff' : pastels.peach.fg} />}
+                <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       }
       ListEmptyComponent={<EmptyState label={i18n('worklist_empty')} />}
