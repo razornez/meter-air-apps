@@ -169,8 +169,7 @@ export interface WorklistItem {
   tipe: string | null;
   barcode: string | null;
   lastMeter: number;
-  isLunas?: boolean | null;       // status bayar tagihan terakhir
-  noFakturTerakhir?: string | null;
+  alreadyRecorded?: boolean;      // sudah dicatat bulan ini
 }
 
 export interface Worklist {

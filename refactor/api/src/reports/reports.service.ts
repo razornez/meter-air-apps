@@ -172,12 +172,18 @@ export class ReportsService {
 
     const { pending, done } = partitionWorklist(normalized, recorded);
 
+    // Kirim semua pelanggan + flag alreadyRecorded agar mobile bisa filter
+    const customers = normalized.map((c) => ({
+      ...c,
+      alreadyRecorded: recorded.has(String(c.id)),
+    }));
+
     return {
       periode: `${y}-${String(m).padStart(2, '0')}`,
       total: normalized.length,
       done,
       pending: pending.length,
-      customers: pending,
+      customers,
     };
   }
 

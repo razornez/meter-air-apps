@@ -15,7 +15,7 @@ import { DonutChart } from '../components/ui/Charts';
 import { MapPinIcon } from '../components/ui/Icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Worklist'>;
-type Filter = 'semua' | 'lunas' | 'belum';
+type Filter = 'semua' | 'recorded' | 'pending';
 
 export default function WorklistScreen({ navigation }: Props) {
   const t = useTheme();
@@ -50,9 +50,9 @@ export default function WorklistScreen({ navigation }: Props) {
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    if (filter === 'semua') return data.customers;
-    if (filter === 'lunas') return data.customers.filter(c => c.isLunas === true);
-    return data.customers.filter(c => c.isLunas === false || c.isLunas == null);
+    if (filter === 'recorded') return data.customers.filter(c => c.alreadyRecorded === true);
+    if (filter === 'pending')  return data.customers.filter(c => !c.alreadyRecorded);
+    return data.customers;
   }, [data, filter]);
 
   if (loading && !data) return <Loading label={i18n('worklist_loading')} />;
@@ -60,13 +60,13 @@ export default function WorklistScreen({ navigation }: Props) {
   if (!data) return null;
 
   const ratio = data.total > 0 ? data.done / data.total : 0;
-  const lunasCount = data.customers.filter(c => c.isLunas === true).length;
-  const belumCount = data.customers.filter(c => c.isLunas === false || c.isLunas == null).length;
+  const recordedCount = data.customers.filter(c => c.alreadyRecorded).length;
+  const pendingCount  = data.customers.filter(c => !c.alreadyRecorded).length;
 
   const FILTERS: { key: Filter; label: string }[] = [
-    { key: 'semua', label: `Semua (${data.customers.length})` },
-    { key: 'belum', label: `Belum Bayar (${belumCount})` },
-    { key: 'lunas', label: `Lunas (${lunasCount})` },
+    { key: 'semua',    label: `Semua (${data.customers.length})` },
+    { key: 'pending',  label: `Belum Dicatat (${pendingCount})` },
+    { key: 'recorded', label: `Sudah Dicatat (${recordedCount})` },
   ];
 
   return (
@@ -102,8 +102,8 @@ export default function WorklistScreen({ navigation }: Props) {
                 onPress={() => setFilter(f.key)}
                 activeOpacity={0.8}
               >
-                {f.key === 'lunas' && <Ionicons name="checkmark-circle" size={13} color={filter === f.key ? '#fff' : pastels.mint.fg} />}
-                {f.key === 'belum' && <Ionicons name="time-outline"      size={13} color={filter === f.key ? '#fff' : pastels.peach.fg} />}
+                {f.key === 'recorded' && <Ionicons name="checkmark-circle" size={13} color={filter === f.key ? '#fff' : pastels.mint.fg} />}
+                {f.key === 'pending'  && <Ionicons name="time-outline"      size={13} color={filter === f.key ? '#fff' : pastels.peach.fg} />}
                 <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
               </TouchableOpacity>
             ))}
@@ -112,39 +112,48 @@ export default function WorklistScreen({ navigation }: Props) {
       }
       ListEmptyComponent={<EmptyState label={i18n('worklist_empty')} />}
       renderItem={({ item, index }) => {
-        const payKnown  = item.isLunas != null;
-        const isLunas   = item.isLunas === true;
+        const recorded = item.alreadyRecorded === true;
         return (
-          <TouchableOpacity style={s.row} activeOpacity={0.85} onPress={() => openCatat(item)}>
-            <View style={s.avatar}>
-              <Text style={s.avatarText}>{(item.nama ?? '?').charAt(0).toUpperCase()}</Text>
+          <TouchableOpacity
+            style={s.row}
+            activeOpacity={0.85}
+            onPress={() => recorded
+              ? navigation.navigate('CustomerDetail', { id: item.id })
+              : openCatat(item)
+            }
+          >
+            <View style={[s.avatar, recorded && s.avatarDone]}>
+              <Text style={[s.avatarText, recorded && { color: pastels.mint.fg }]}>
+                {(item.nama ?? '?').charAt(0).toUpperCase()}
+              </Text>
               <View style={s.numBadge}><Text style={s.numText}>{index + 1}</Text></View>
             </View>
             <View style={{ flex: 1 }}>
               <View style={s.nameRow}>
                 <Text style={s.nama} numberOfLines={1}>{item.nama ?? `ID ${item.id}`}</Text>
-                {payKnown && (
-                  <View style={[s.payBadge, isLunas ? s.payBadgeLunas : s.payBadgeBelum]}>
-                    <Ionicons
-                      name={isLunas ? 'checkmark-circle' : 'time-outline'}
-                      size={11}
-                      color={isLunas ? pastels.mint.fg : pastels.peach.fg}
-                    />
-                    <Text style={[s.payBadgeText, { color: isLunas ? pastels.mint.fg : pastels.peach.fg }]}>
-                      {isLunas ? 'Lunas' : 'Belum'}
-                    </Text>
-                  </View>
-                )}
+                <View style={[s.payBadge, recorded ? s.payBadgeLunas : s.payBadgeBelum]}>
+                  <Ionicons
+                    name={recorded ? 'checkmark-circle' : 'time-outline'}
+                    size={11}
+                    color={recorded ? pastels.mint.fg : pastels.peach.fg}
+                  />
+                  <Text style={[s.payBadgeText, { color: recorded ? pastels.mint.fg : pastels.peach.fg }]}>
+                    {recorded ? 'Sudah' : 'Belum'}
+                  </Text>
+                </View>
               </View>
               <View style={s.metaRow}>
                 <MapPinIcon size={13} color={t.muted} />
                 <Text style={s.meta} numberOfLines={1}>{item.alamat ?? '-'} · meter {item.lastMeter}</Text>
               </View>
             </View>
-            <LinearGradient colors={t.scan} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.catatPill}>
-              <Text style={s.catatText}>{i18n('worklist_button_record')}</Text>
-              <Ionicons name="chevron-forward" size={14} color="#fff" />
-            </LinearGradient>
+            {recorded
+              ? <View style={s.donePill}><Ionicons name="checkmark-done" size={16} color={pastels.mint.fg} /></View>
+              : <LinearGradient colors={t.scan} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.catatPill}>
+                  <Text style={s.catatText}>{i18n('worklist_button_record')}</Text>
+                  <Ionicons name="chevron-forward" size={14} color="#fff" />
+                </LinearGradient>
+            }
           </TouchableOpacity>
         );
       }}
@@ -182,6 +191,7 @@ const createStyles = (t: Theme) =>
       borderRadius: radius.lg, borderWidth: 1, borderColor: t.border, ...shadow.soft,
     },
     avatar: { width: 46, height: 46, borderRadius: 15, backgroundColor: t.badgeBg, alignItems: 'center', justifyContent: 'center' },
+    avatarDone: { backgroundColor: pastels.mint.bg },
     avatarText: { color: t.primary, fontFamily: fonts.displayBold, fontSize: 19 },
     numBadge: { position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: t.primary, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: t.surface },
     numText: { color: '#fff', fontFamily: fonts.bold, fontSize: 9.5 },
@@ -195,4 +205,5 @@ const createStyles = (t: Theme) =>
     meta: { color: t.muted, fontSize: 12, fontFamily: fonts.regular, flex: 1 },
     catatPill: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius.pill },
     catatText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12 },
+    donePill: { width: 36, height: 36, borderRadius: 18, backgroundColor: pastels.mint.bg, alignItems: 'center', justifyContent: 'center' },
   });
