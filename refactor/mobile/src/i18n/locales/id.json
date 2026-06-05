@@ -295,5 +295,14 @@
     "nav_screen_customer_detail":  "Detail Pelanggan",
     "nav_screen_kinerja":  "Rekap Kinerja",
     "nav_screen_customer_card":  "Kartu Pelanggan",
-    "nav_screen_tunggakan":  "Tunggakan \u0026 Denda"
+    "nav_screen_tunggakan":  "Tunggakan \u0026 Denda",
+    "login_welcome_back":  "Selamat datang kembali",
+    "login_forgot_password":  "Lupa password?",
+    "login_forgot_title":  "Lupa Password",
+    "login_hide_password":  "Sembunyikan",
+    "login_forgot_ok":  "OK",
+    "login_show_password":  "Tampilkan",
+    "login_remember_me":  "Ingat saya",
+    "login_version":  "Versi",
+    "login_forgot_message":  "Hubungi administrator perusahaan Anda untuk mereset password."
 }

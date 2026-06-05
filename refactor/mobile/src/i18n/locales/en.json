@@ -295,5 +295,14 @@
     "nav_screen_customer_detail":  "Customer Detail",
     "nav_screen_kinerja":  "Performance Recap",
     "nav_screen_customer_card":  "Customer Card",
-    "nav_screen_tunggakan":  "Arrears \u0026 Fines"
+    "nav_screen_tunggakan":  "Arrears \u0026 Fines",
+    "login_welcome_back":  "Welcome back",
+    "login_forgot_password":  "Forgot password?",
+    "login_forgot_title":  "Forgot Password",
+    "login_hide_password":  "Hide",
+    "login_forgot_ok":  "OK",
+    "login_show_password":  "Show",
+    "login_remember_me":  "Remember me",
+    "login_version":  "Version",
+    "login_forgot_message":  "Contact your company administrator to reset your password."
 }
