@@ -212,6 +212,8 @@ export default function LoginScreen() {
               </View>
 
               <Text style={s.foot}>{t('login_footer')} · {new Date().getFullYear()}</Text>
+              <Text style={s.footBrand}>Powered by Anugrah Solusi Digital</Text>
+              <Text style={s.footVersion}>v1.0.0</Text>
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -279,4 +281,6 @@ const createStyles = (t: Theme) =>
     errorBox: { backgroundColor: t.danger + '22', padding: 11, borderRadius: radius.sm, marginBottom: 4 },
     errorText: { color: t.danger, fontSize: 13, fontFamily: fonts.medium },
     foot: { textAlign: 'center', color: 'rgba(231,247,247,0.7)', fontSize: 11.5, marginTop: 22, fontFamily: fonts.regular },
+    footBrand: { textAlign: 'center', color: 'rgba(231,247,247,0.5)', fontSize: 10.5, marginTop: 4, fontFamily: fonts.medium },
+    footVersion: { textAlign: 'center', color: 'rgba(231,247,247,0.35)', fontSize: 10, marginTop: 2, fontFamily: fonts.regular },
   });
