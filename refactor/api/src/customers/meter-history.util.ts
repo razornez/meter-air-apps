@@ -6,6 +6,8 @@ export interface RawReading {
   tanggalCatat: string;
   jamCatat: string;
   noFaktur: string;
+  fotoMeter?: string | null;
+  isLunas?: boolean | null;
 }
 
 export interface UsageReading {
@@ -13,9 +15,10 @@ export interface UsageReading {
   tanggal: string;
   jam: string;
   meter: number;
-  // Pemakaian = selisih dengan pembacaan sebelumnya; null untuk baris tertua.
   pemakaian: number | null;
   noFaktur: string;
+  fotoMeter: string | null;
+  isLunas: boolean | null;
 }
 
 /**
@@ -32,6 +35,8 @@ export function mapUsageHistory(rowsDesc: RawReading[]): UsageReading[] {
     meter: r.meter,
     noFaktur: r.noFaktur,
     pemakaian: i === 0 ? null : Math.max(0, r.meter - asc[i - 1].meter),
+    fotoMeter: r.fotoMeter ?? null,
+    isLunas: r.isLunas ?? null,
   }));
   return mapped.reverse();
 }

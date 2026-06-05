@@ -340,5 +340,18 @@
     "customer_card_alert_save_failed":    "Tidak dapat menyimpan gambar.",
     "customer_card_alert_permission":     "Aktifkan izin galeri di pengaturan HP.",
     "customer_card_alert_share_unavailable": "Berbagi tidak tersedia di perangkat ini.",
-    "customer_card_share_dialog_title":   "Bagikan Kartu Pelanggan"
+    "customer_card_share_dialog_title":   "Bagikan Kartu Pelanggan",
+
+    "tunggakan_filter_all":        "Semua",
+    "tunggakan_filter_largest":    "Terbesar",
+    "tunggakan_filter_oldest":     "Terlama",
+    "tunggakan_search_placeholder": "Cari nama pelanggan…",
+    "tunggakan_search_empty":       "Pelanggan tidak ditemukan",
+    "tunggakan_count_suffix":       "data",
+    "tunggakan_fine_label":         "denda",
+
+    "reading_alert_record_saved_title": "Catatan Tersimpan",
+    "reading_alert_offline_saved_title": "Tersimpan Offline",
+    "reading_alert_offline_saved_detail": "Data akan otomatis tersinkron saat terhubung.",
+    "reading_alert_save_failed_title": "Gagal Simpan"
 }

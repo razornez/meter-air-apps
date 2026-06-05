@@ -340,5 +340,18 @@
     "customer_card_alert_save_failed":    "Cannot save image.",
     "customer_card_alert_permission":     "Enable gallery permission in device settings.",
     "customer_card_alert_share_unavailable": "Sharing is not available on this device.",
-    "customer_card_share_dialog_title":   "Share Customer Card"
+    "customer_card_share_dialog_title":   "Share Customer Card",
+
+    "tunggakan_filter_all":        "All",
+    "tunggakan_filter_largest":    "Largest",
+    "tunggakan_filter_oldest":     "Oldest",
+    "tunggakan_search_placeholder": "Search customer name…",
+    "tunggakan_search_empty":       "Customer not found",
+    "tunggakan_count_suffix":       "items",
+    "tunggakan_fine_label":         "fine",
+
+    "reading_alert_record_saved_title": "Record Saved",
+    "reading_alert_offline_saved_title": "Saved Offline",
+    "reading_alert_offline_saved_detail": "Data will sync automatically when connected.",
+    "reading_alert_save_failed_title": "Save Failed"
 }

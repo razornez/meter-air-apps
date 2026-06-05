@@ -25,6 +25,7 @@ import { ReadingResult, TariffResult } from '../types';
 import { fonts, formatRupiah, palette, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { CameraIcon, CheckIcon, MapPinIcon, SyncIcon } from '../components/ui/Icons';
+import { Ionicons } from '@expo/vector-icons';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Reading'>;
 
@@ -191,23 +192,55 @@ export default function ReadingScreen({ route, navigation }: Props) {
   // ---- Success ----
   if (result) {
     return (
-      <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: 'transparent' }} contentContainerStyle={s.successWrap}>
-        <View style={[s.successBadge, { backgroundColor: t.success + '22' }]}>
-          <CheckIcon size={42} color={t.success} strokeWidth={2.4} />
+      <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: 'transparent' }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        {/* Hero sukses */}
+        <LinearGradient colors={[t.success, '#1A9E75']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.successHero, shadow.glow]}>
+          <View style={s.successIconWrap}>
+            <Ionicons name="checkmark-circle" size={40} color="#fff" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.successHeroLabel}>{tr('reading_alert_record_saved_title')}</Text>
+            <Text style={s.successHeroFaktur}>{result.noFaktur}</Text>
+            <Text style={s.successHeroName} numberOfLines={1}>{customer.nama ?? '-'}</Text>
+          </View>
+        </LinearGradient>
+
+        {/* Stat chips */}
+        <View style={s.successStatRow}>
+          <View style={s.successStat}>
+            <Text style={s.successStatVal}>{result.meterLama}</Text>
+            <Text style={s.successStatLbl}>{tr('reading_label_old_meter')}</Text>
+          </View>
+          <Ionicons name="arrow-forward" size={18} color={t.muted} />
+          <View style={[s.successStat, { backgroundColor: t.badgeBg }]}>
+            <Text style={[s.successStatVal, { color: t.primary }]}>{result.meterBaru}</Text>
+            <Text style={s.successStatLbl}>{tr('reading_label_new_meter_result')}</Text>
+          </View>
+          <View style={s.successStat}>
+            <Text style={[s.successStatVal, { color: t.accent }]}>{result.pemakaian} m³</Text>
+            <Text style={s.successStatLbl}>{tr('reading_label_usage')}</Text>
+          </View>
         </View>
-        <Text style={[s.successTitle, { color: t.success }]}>{tr('reading_alert_record_saved_title')}</Text>
+
+        {/* Rincian tagihan */}
         <View style={s.card}>
-          <Row s={s} label={tr('reading_label_invoice_no')} value={result.noFaktur} />
-          <Row s={s} label={tr('reading_label_customer')} value={customer.nama ?? '-'} />
-          <Row s={s} label={tr('reading_label_old_meter')} value={String(result.meterLama)} />
-          <Row s={s} label={tr('reading_label_new_meter_result')} value={String(result.meterBaru)} />
-          <Row s={s} label={tr('reading_label_usage')} value={`${result.pemakaian} m³`} />
-          <Row s={s} label={tr('reading_label_subtotal')} value={formatRupiah(result.subtotal)} />
-          <Row s={s} label={tr('reading_label_charge')} value={formatRupiah(result.beban)} />
-          <Row s={s} label={tr('reading_label_total')} value={formatRupiah(result.total)} bold />
-          <Row s={s} label={tr('reading_label_due_date')} value={result.tglJatuhTempo} />
+          <Text style={s.cardTitle}>{tr('reading_tariff_title')}</Text>
+          <Row s={s} label={tr('reading_label_subtotal')}  value={formatRupiah(result.subtotal)} />
+          <Row s={s} label={tr('reading_label_charge')}    value={formatRupiah(result.beban)} />
+          <View style={s.sep} />
+          <Row s={s} label={tr('reading_label_total')}     value={formatRupiah(result.total)} bold />
+          <Row s={s} label={tr('reading_label_due_date')}  value={result.tglJatuhTempo} />
         </View>
-        <View style={{ width: '100%' }}>
+
+        {/* Foto meteran (bila ada) */}
+        {!!photoUri && (
+          <View style={s.card}>
+            <Text style={s.cardTitle}>{tr('reading_label_photo')}</Text>
+            <Image source={{ uri: photoUri }} style={s.preview} resizeMode="cover" />
+          </View>
+        )}
+
+        <View style={{ marginTop: 8 }}>
           <PrimaryButton label={tr('reading_button_done')} onPress={() => navigation.popToTop()} />
         </View>
       </ScrollView>
@@ -530,6 +563,15 @@ const createStyles = (t: Theme) =>
     successWrap: { padding: 24, alignItems: 'center', flexGrow: 1 },
     successBadge: { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginTop: 20 },
     successTitle: { fontSize: 25, fontFamily: fonts.displayBold, marginVertical: 14, letterSpacing: tracking.tight },
+    successHero: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: radius.xl, padding: 18, marginBottom: 12 },
+    successIconWrap: { width: 56, height: 56, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+    successHeroLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 0.8 },
+    successHeroFaktur: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 18, marginTop: 2 },
+    successHeroName: { color: 'rgba(255,255,255,0.9)', fontFamily: fonts.regular, fontSize: 13, marginTop: 2 },
+    successStatRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6, backgroundColor: t.surface, borderRadius: radius.lg, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: t.border, ...shadow.soft },
+    successStat: { flex: 1, alignItems: 'center', backgroundColor: t.surfaceAlt, borderRadius: radius.sm, paddingVertical: 10 },
+    successStatVal: { color: t.text, fontFamily: fonts.displayBold, fontSize: 18 },
+    successStatLbl: { color: t.muted, fontFamily: fonts.medium, fontSize: 10, marginTop: 2 },
     camControls: {
       position: 'absolute',
       bottom: 40,

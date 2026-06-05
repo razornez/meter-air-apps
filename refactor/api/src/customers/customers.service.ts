@@ -112,10 +112,24 @@ export class CustomersService {
     const rows = await this.history.find({
       where: { idPelanggan: id, tenantId }, order: { id: 'DESC' }, take,
     });
-    const raw: RawReading[] = rows.map((r) => ({
-      id: r.id, meter: r.meter,
-      tanggalCatat: String(r.tanggalCatat), jamCatat: String(r.jamCatat), noFaktur: r.noFaktur,
-    }));
+
+    // Batch-fetch faktur untuk mendapatkan fotoMeter + isLunas
+    const noFakturList = rows.map((r) => r.noFaktur).filter(Boolean) as string[];
+    const fakturs = noFakturList.length > 0
+      ? await this.faktur.findBy(noFakturList.map((nf) => ({ noFaktur: nf, tenantId })) as any)
+      : [];
+    const fakturMap = new Map(fakturs.map((f) => [f.noFaktur, f]));
+
+    const raw: RawReading[] = rows.map((r) => {
+      const f = r.noFaktur ? fakturMap.get(r.noFaktur) : undefined;
+      return {
+        id: r.id, meter: r.meter,
+        tanggalCatat: String(r.tanggalCatat), jamCatat: String(r.jamCatat),
+        noFaktur: r.noFaktur,
+        fotoMeter: f?.fotoMeter ?? null,
+        isLunas: f ? Boolean(f.isLunas) : null,
+      };
+    });
     return mapUsageHistory(raw);
   }
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,6 +12,7 @@ import { fonts, pastels, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
 import { MiniBars } from '../components/ui/Charts';
+import { fotoMeterUrl } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CustomerDetail'>;
 
@@ -24,6 +25,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
   const [history, setHistory] = useState<MeterHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fotoModal, setFotoModal] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,9 +69,9 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
   const avatarLetter = (detail.nama ?? '?').charAt(0).toUpperCase();
 
   return (
+    <View style={s.container}>
     <ScrollView
       keyboardShouldPersistTaps="handled"
-      style={s.container}
       contentContainerStyle={{ padding: 14, paddingBottom: 36 }}
       showsVerticalScrollIndicator={false}
     >
@@ -231,9 +233,11 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
 
                 {/* Content card */}
                 <View style={s.histCard}>
-                  {/* Foto meteran (bila ada) */}
-                  {!!h.fotoUrl && (
-                    <Image source={{ uri: h.fotoUrl }} style={s.histPhoto} resizeMode="cover" />
+                  {/* Thumbnail foto meteran */}
+                  {!!fotoMeterUrl(h.fotoUrl) && (
+                    <TouchableOpacity onPress={() => setFotoModal(fotoMeterUrl(h.fotoUrl)!)} activeOpacity={0.85}>
+                      <Image source={{ uri: fotoMeterUrl(h.fotoUrl)! }} style={s.histPhoto} resizeMode="cover" />
+                    </TouchableOpacity>
                   )}
                   <View style={{ flex: 1 }}>
                     <View style={s.histTopRow}>
@@ -268,6 +272,19 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
         </View>
       )}
     </ScrollView>
+
+    {/* Modal foto meteran full-screen */}
+    <Modal visible={!!fotoModal} transparent animationType="fade" onRequestClose={() => setFotoModal(null)}>
+      <TouchableOpacity style={s.fotoOverlay} activeOpacity={1} onPress={() => setFotoModal(null)}>
+        {fotoModal && (
+          <Image source={{ uri: fotoModal }} style={s.fotoFull} resizeMode="contain" />
+        )}
+        <View style={s.fotoCloseBtn}>
+          <Ionicons name="close-circle" size={36} color="#fff" />
+        </View>
+      </TouchableOpacity>
+    </Modal>
+    </View>
   );
 }
 
@@ -392,4 +409,9 @@ const createStyles = (t: Theme) =>
     deltaDown: { backgroundColor: '#DBEAFE' },
     deltaFlat: { backgroundColor: t.chip },
     deltaText: { fontFamily: fonts.bold, fontSize: 10 },
+
+    // Modal foto full-screen
+    fotoOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
+    fotoFull: { width: '95%', height: '75%' },
+    fotoCloseBtn: { position: 'absolute', top: 50, right: 20 },
   });
