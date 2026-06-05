@@ -13,12 +13,23 @@
     },
     "android": {
       "package": "com.bumdes.meterair",
+      "versionCode": 1,
+      "minSdkVersion": 24,
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_MEDIA_IMAGES",
+        "INTERNET"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -44,7 +55,8 @@
         {
           "photosPermission": "Aplikasi memerlukan akses galeri untuk menyimpan kartu pelanggan."
         }
-      ]
+      ],
+      "expo-localization"
     ]
   }
 }
