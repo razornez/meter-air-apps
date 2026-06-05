@@ -135,7 +135,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           <View style={s.catatIconWrap}>
             <MaterialCommunityIcons
               name={recorded ? 'check-decagram' : 'gauge'}
-              size={26}
+              size={20}
               color="#fff"
             />
           </View>
@@ -164,7 +164,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           onPress={() => navigation.navigate('SetLocation', { id: detail.id, nama: detail.nama, lat: detail.latitude, lng: detail.longitude })}
         >
           <View style={[s.secIconWrap, { backgroundColor: pastels.sky.bg }]}>
-            <Ionicons name="navigate-circle-outline" size={30} color={pastels.sky.fg} />
+            <Ionicons name="navigate-circle-outline" size={22} color={pastels.sky.fg} />
           </View>
           <Text style={[s.secTitle, { color: pastels.sky.fg }]}>
             {detail.latitude != null ? tr('customer_detail_button_change_location') : tr('customer_detail_button_set_location')}
@@ -181,7 +181,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
           onPress={() => navigation.navigate('CustomerCard', { id: detail.id })}
         >
           <View style={[s.secIconWrap, { backgroundColor: pastels.lavender.bg }]}>
-            <Ionicons name="id-card-outline" size={30} color={pastels.lavender.fg} />
+            <Ionicons name="id-card-outline" size={22} color={pastels.lavender.fg} />
           </View>
           <Text style={[s.secTitle, { color: pastels.lavender.fg }]}>
             {tr('customer_detail_button_customer_card')}
@@ -310,31 +310,31 @@ const createStyles = (t: Theme) =>
 
     // Catat Meter CTA
     catatCard: {
-      flexDirection: 'row', alignItems: 'center', gap: 14,
-      borderRadius: radius.xl, paddingVertical: 18, paddingHorizontal: 20,
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      borderRadius: radius.lg, paddingVertical: 12, paddingHorizontal: 14,
     },
     catatIconWrap: {
-      width: 50, height: 50, borderRadius: 18,
+      width: 38, height: 38, borderRadius: 13,
       backgroundColor: 'rgba(255,255,255,0.2)',
       alignItems: 'center', justifyContent: 'center',
     },
-    catatTitle: { color: '#fff', fontFamily: fonts.extrabold, fontSize: 15 },
-    catatSub: { color: 'rgba(255,255,255,0.78)', fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },
+    catatTitle: { color: '#fff', fontFamily: fonts.extrabold, fontSize: 14 },
+    catatSub: { color: 'rgba(255,255,255,0.75)', fontFamily: fonts.regular, fontSize: 11, marginTop: 1 },
     catatChevron: {
-      width: 36, height: 36, borderRadius: 18,
+      width: 28, height: 28, borderRadius: 14,
       backgroundColor: 'rgba(255,255,255,0.18)',
       alignItems: 'center', justifyContent: 'center',
     },
 
     // Secondary action chips (2 cards side-by-side)
-    secondaryRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+    secondaryRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
     secCard: {
-      flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8,
-      paddingVertical: 16, borderRadius: radius.lg,
+      flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5,
+      paddingVertical: 10, borderRadius: radius.md,
       borderWidth: 1.5, position: 'relative',
     },
-    secIconWrap: { width: 52, height: 52, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    secTitle: { fontFamily: fonts.bold, fontSize: 12, textAlign: 'center' },
+    secIconWrap: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    secTitle: { fontFamily: fonts.bold, fontSize: 11, textAlign: 'center' },
     locDot: { position: 'absolute', top: 8, right: 8 },
     locDotInner: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22C55E' },
 
