@@ -14,7 +14,6 @@
     "android": {
       "package": "com.bumdes.meterair",
       "versionCode": 1,
-      "minSdkVersion": 24,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
