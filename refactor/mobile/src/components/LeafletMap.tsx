@@ -12,9 +12,10 @@ export function LeafletMap({
   zoom,
   editable,
   selected,
+  officerPos,
   onPick,
 }: LeafletMapProps) {
-  const html = buildMapHtml(markers, { center, zoom, editable, selected });
+  const html = buildMapHtml(markers, { center, zoom, editable, selected, officerPos });
   return (
     <View style={styles.fill}>
       <WebView

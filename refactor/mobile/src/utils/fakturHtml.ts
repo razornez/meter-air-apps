@@ -6,8 +6,8 @@ function rupiah(n: number | null | undefined): string {
   return 'Rp ' + (n ?? 0).toLocaleString('id-ID');
 }
 
-function esc(s: string | null | undefined): string {
-  return (s ?? '').replace(
+function esc(s: string | number | null | undefined): string {
+  return String(s ?? '').replace(
     /[&<>"]/g,
     (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string,

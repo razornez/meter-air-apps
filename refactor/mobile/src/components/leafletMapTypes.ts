@@ -11,5 +11,6 @@ export interface LeafletMapProps {
   zoom?: number;
   editable?: boolean;
   selected?: { lat: number; lng: number } | null;
+  officerPos?: { lat: number; lng: number } | null;
   onPick?: (p: PickedPoint) => void;
 }

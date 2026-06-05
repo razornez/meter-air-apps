@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -228,23 +228,34 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
                 </View>
 
                 {/* Content card */}
-                <View style={[s.histCard, { marginBottom: idx < history.length - 1 ? 0 : 0 }]}>
+                <View style={s.histCard}>
+                  {/* Foto meteran (bila ada) */}
+                  {!!h.fotoUrl && (
+                    <Image source={{ uri: h.fotoUrl }} style={s.histPhoto} resizeMode="cover" />
+                  )}
                   <View style={{ flex: 1 }}>
-                    <Text style={s.histDate}>{month}</Text>
-                    <Text style={s.histFaktur} numberOfLines={1}>{h.noFaktur ?? '—'}</Text>
+                    <View style={s.histTopRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.histDate}>{month}</Text>
+                        <Text style={s.histFaktur} numberOfLines={1}>{h.noFaktur ?? '—'}</Text>
+                      </View>
+                      {/* Status bayar */}
+                      {h.isLunas != null && (
+                        <View style={[s.histPayBadge, h.isLunas ? s.histBadgePaid : s.histBadgeUnpaid]}>
+                          <Ionicons name={h.isLunas ? 'checkmark-circle' : 'time-outline'} size={11} color={h.isLunas ? '#15803D' : '#B45309'} />
+                          <Text style={[s.histPayText, { color: h.isLunas ? '#15803D' : '#B45309' }]}>
+                            {h.isLunas ? 'Lunas' : 'Belum'}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                   <View style={s.histRight}>
                     <Text style={s.histMeter}>{h.meter} <Text style={s.histUnit}>m³</Text></Text>
                     {delta != null && (
                       <View style={[s.deltaBadge, isUp ? s.deltaUp : isDown ? s.deltaDown : s.deltaFlat]}>
-                        <Ionicons
-                          name={isUp ? 'arrow-up' : isDown ? 'arrow-down' : 'remove'}
-                          size={10}
-                          color={isUp ? '#16A34A' : isDown ? '#2563EB' : t.muted}
-                        />
-                        <Text style={[s.deltaText, { color: isUp ? '#16A34A' : isDown ? '#2563EB' : t.muted }]}>
-                          {Math.abs(delta)} m³
-                        </Text>
+                        <Ionicons name={isUp ? 'arrow-up' : isDown ? 'arrow-down' : 'remove'} size={10} color={isUp ? '#16A34A' : isDown ? '#2563EB' : t.muted} />
+                        <Text style={[s.deltaText, { color: isUp ? '#16A34A' : isDown ? '#2563EB' : t.muted }]}>{Math.abs(delta)} m³</Text>
                       </View>
                     )}
                   </View>
@@ -354,14 +365,20 @@ const createStyles = (t: Theme) =>
     railDot: { width: 12, height: 12, borderRadius: 6, zIndex: 1 },
     railLine: { flex: 1, width: 2, backgroundColor: t.border, marginTop: 4 },
     histCard: {
-      flex: 1, flexDirection: 'row', alignItems: 'center',
+      flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
       backgroundColor: t.surface, borderRadius: radius.lg,
-      paddingHorizontal: 14, paddingVertical: 12,
+      paddingHorizontal: 12, paddingVertical: 10,
       marginBottom: 8, borderWidth: 1, borderColor: t.border,
       ...shadow.soft,
     },
+    histPhoto: { width: 48, height: 48, borderRadius: 10, backgroundColor: t.surfaceAlt },
+    histTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     histDate: { color: t.text, fontFamily: fonts.bold, fontSize: 13 },
     histFaktur: { color: t.muted, fontSize: 11.5, marginTop: 2, fontFamily: fonts.regular },
+    histPayBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 3, borderRadius: radius.pill },
+    histBadgePaid:   { backgroundColor: '#DCFCE7' },
+    histBadgeUnpaid: { backgroundColor: '#FEF3C7' },
+    histPayText: { fontFamily: fonts.extrabold, fontSize: 10 },
     histRight: { alignItems: 'flex-end', gap: 4 },
     histMeter: { color: t.text, fontFamily: fonts.displayBold, fontSize: 18 },
     histUnit: { color: t.muted, fontSize: 12, fontFamily: fonts.regular },

@@ -169,6 +169,8 @@ export interface WorklistItem {
   tipe: string | null;
   barcode: string | null;
   lastMeter: number;
+  isLunas?: boolean | null;       // status bayar tagihan terakhir
+  noFakturTerakhir?: string | null;
 }
 
 export interface Worklist {
@@ -200,6 +202,8 @@ export interface MeterHistoryItem {
   meter: number;
   pemakaian: number | null;
   noFaktur: string;
+  fotoUrl?: string | null;   // foto bukti meteran bila tersedia
+  isLunas?: boolean | null;  // status bayar faktur terkait
 }
 
 export interface FakturListItem {
