@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -93,7 +93,7 @@ export default function FakturListScreen({ route, navigation }: Props) {
           data={items}
           keyExtractor={(it, i) => `${it.noFaktur}-${i}`}
           contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
-          ListEmptyComponent={<EmptyState label={tr('faktur_list_empty')} />}
+          ListEmptyComponent={<EmptyState label={tr('faktur_list_empty')} illustration='invoices' />}
           renderItem={({ item }) => {
             const color = item.isLunas ? t.success : t.danger;
             return (
@@ -188,3 +188,4 @@ const createStyles = (t: Theme) =>
     badgeText: { fontSize: 10.5, fontFamily: fonts.extrabold, letterSpacing: 0.4 },
     footer: { textAlign: 'center', padding: 14, color: t.muted, fontFamily: fonts.regular },
   });
+

@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Dimensions, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Alert, Dimensions, Image, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,6 +14,8 @@ import { fonts, palette, radius, shadow, Theme } from '../theme';
 import { useTheme, useThemeMode } from '../ThemeContext';
 import WaveBackground from '../components/ui/WaveBackground';
 import { CheckIcon, DropMark, EyeIcon, EyeOffIcon, MoonIcon, SunIcon } from '../components/ui/Icons';
+
+const ILLUSTRATION = require('../../assets/illustration-login.png');
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const REMEMBER_KEY = 'meterair_remember';
@@ -109,6 +111,11 @@ export default function LoginScreen() {
                 <View style={s.mark}><DropMark size={46} color={palette.white} /></View>
                 <Text style={s.title}>{t('login_title')}</Text>
                 <Text style={s.subtitle}>{t('login_subtitle')}</Text>
+              </View>
+
+              {/* Ilustrasi dekoratif */}
+              <View style={s.illustrationWrap}>
+                <Image source={ILLUSTRATION} style={s.illustration} resizeMode="contain" />
               </View>
 
               {/* Card */}
@@ -288,9 +295,12 @@ const createStyles = (t: Theme) =>
     buttonText: { color: '#fff', fontSize: 16, fontFamily: fonts.bold },
     errorBox: { backgroundColor: t.danger + '22', padding: 11, borderRadius: radius.sm, marginBottom: 4 },
     errorText: { color: t.danger, fontSize: 13, fontFamily: fonts.medium },
+    illustrationWrap: { alignItems: 'center', marginBottom: 8, marginTop: -8 },
+    illustration: { width: Dimensions.get('window').width * 0.7, height: 120, opacity: 0.9 },
     footerWrap: { alignItems: 'center', marginTop: 20, paddingBottom: 16 },
     foot: { textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 12, fontFamily: fonts.regular },
     divider: { width: 40, height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 8 },
     footBrand: { textAlign: 'center', color: 'rgba(255,255,255,0.85)', fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 0.3 },
     footVersion: { textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 10, marginTop: 3, fontFamily: fonts.regular },
   });
+

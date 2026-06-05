@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,15 +22,12 @@ import { useOffline } from '../offline/OfflineContext';
 import { useTheme, useThemeMode } from '../ThemeContext';
 import { apiResolveCustomer, apiWorklist } from '../api/services';
 import { apiErrorMessage, isNetworkError } from '../api/client';
-import { fonts, palette, pastels, Pastel, radius, shadow, tracking, Theme } from '../theme';
+import { fonts, palette, radius, shadow, tracking, Theme } from '../theme';
 import WaveBackground from '../components/ui/WaveBackground';
 import { GlassCard } from '../components/ui/Cards';
 import LiquidProgress from '../components/ui/LiquidProgress';
 import {
-  AlertIcon,
-  CashIcon,
   ChevronIcon,
-  GridIcon,
   IconProps,
   ListCheckIcon,
   MapPinIcon,
@@ -40,6 +38,9 @@ import {
   SunIcon,
   SyncIcon,
 } from '../components/ui/Icons';
+
+// Tile icons sprite: 1536x1024, 4 tiles dalam 2x2 grid, setiap tile 768x512
+const TILE_SPRITE = require('../../assets/icon-tiles.png');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -237,10 +238,10 @@ export default function HomeScreen({ navigation }: Props) {
         <Animated.View entering={FadeInDown.delay(120).springify()}>
           <Text style={s.sectionTitle}>{i18n('home_section_quick_actions')}</Text>
           <View style={s.grid}>
-            <ActionTile s={s} t={t} Icon={ListCheckIcon} pastel={pastels.sky} title={i18n('home_tile_worklist_title')} sub={i18n('home_tile_worklist_sub')} onPress={() => navigation.navigate('Worklist')} />
-            <ActionTile s={s} t={t} Icon={CashIcon} pastel={pastels.peach} title={i18n('home_tile_tunggakan_title')} sub={i18n('home_tile_tunggakan_sub')} onPress={() => navigation.navigate('Tunggakan')} />
-            <ActionTile s={s} t={t} Icon={AlertIcon} pastel={pastels.lavender} title={i18n('home_tile_anomaly_title')} sub={i18n('home_tile_anomaly_sub')} onPress={() => navigation.navigate('Anomaly')} />
-            <ActionTile s={s} t={t} Icon={GridIcon} pastel={pastels.mint} title={i18n('home_tile_masterdata_title')} sub={i18n('home_tile_masterdata_sub')} onPress={() => navigation.navigate('MasterData')} />
+            <ActionTile s={s} t={t} tileIndex={0} title={i18n('home_tile_worklist_title')} sub={i18n('home_tile_worklist_sub')} onPress={() => navigation.navigate('Worklist')} />
+            <ActionTile s={s} t={t} tileIndex={1} title={i18n('home_tile_tunggakan_title')} sub={i18n('home_tile_tunggakan_sub')} onPress={() => navigation.navigate('Tunggakan')} />
+            <ActionTile s={s} t={t} tileIndex={2} title={i18n('home_tile_anomaly_title')} sub={i18n('home_tile_anomaly_sub')} onPress={() => navigation.navigate('Anomaly')} />
+            <ActionTile s={s} t={t} tileIndex={3} title={i18n('home_tile_masterdata_title')} sub={i18n('home_tile_masterdata_sub')} onPress={() => navigation.navigate('MasterData')} />
           </View>
         </Animated.View>
 
@@ -281,28 +282,37 @@ export default function HomeScreen({ navigation }: Props) {
   );
 }
 
-function ActionTile({
-  s,
-  t,
-  Icon,
-  pastel,
-  title,
-  sub,
-  onPress,
-}: {
-  s: ReturnType<typeof createStyles>;
-  t: Theme;
-  Icon: (p: IconProps) => React.JSX.Element;
-  pastel: Pastel;
-  title: string;
-  sub: string;
-  onPress: () => void;
+// tileIndex: 0=Worklist, 1=Tunggakan, 2=Anomali, 3=MasterData
+// Sprite 1536x1024, setiap tile 768x512
+// 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
+const TILE_COLS = 2, TILE_W = 768, TILE_H = 512, TILE_SPRITE_W = 1536, TILE_SPRITE_H = 1024;
+function TileIconImage({ index, size = 64 }: { index: number; size?: number }) {
+  const col = index % TILE_COLS;
+  const row = Math.floor(index / TILE_COLS);
+  const scale = size / TILE_W;
+  return (
+    <View style={{ width: size, height: size * (TILE_H / TILE_W), overflow: 'hidden', borderRadius: 12 }}>
+      <Image
+        source={TILE_SPRITE}
+        style={{
+          width: TILE_SPRITE_W * scale, height: TILE_SPRITE_H * scale,
+          position: 'absolute',
+          left: -(col * TILE_W * scale),
+          top: -(row * TILE_H * scale),
+        }}
+        resizeMode="cover"
+      />
+    </View>
+  );
+}
+
+function ActionTile({ s, t, tileIndex, title, sub, onPress }: {
+  s: ReturnType<typeof createStyles>; t: Theme;
+  tileIndex: number; title: string; sub: string; onPress: () => void;
 }) {
   return (
     <TouchableOpacity style={s.tile} activeOpacity={0.85} onPress={onPress}>
-      <View style={[s.tileIcon, { backgroundColor: t.isDark ? pastel.fg + '26' : pastel.bg }]}>
-        <Icon size={23} color={pastel.fg} strokeWidth={2.2} />
-      </View>
+      <TileIconImage index={tileIndex} size={64} />
       <Text style={s.tileTitle}>{title}</Text>
       <Text style={s.tileSub}>{sub}</Text>
     </TouchableOpacity>
@@ -409,7 +419,7 @@ const createStyles = (t: Theme) =>
       padding: 16,
       ...shadow.soft,
     },
-    tileIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    tileIconPlaceholder: { marginBottom: 8 },
     tileTitle: { color: t.text, fontFamily: fonts.bold, fontSize: 15 },
     tileSub: { color: t.muted, fontFamily: fonts.regular, fontSize: 11.5, marginTop: 2 },
 
@@ -452,5 +462,6 @@ const createStyles = (t: Theme) =>
     cacheBtn: { backgroundColor: t.accent, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
     cacheBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 11 },
   });
+
 
 

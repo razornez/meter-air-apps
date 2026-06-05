@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +46,7 @@ export default function AnomalyScreen({ navigation }: Props) {
 
   if (loading) return <Loading label={tr('anomaly_loading')} />;
   if (error) return <ErrorState message={error} onRetry={load} />;
-  if (items.length === 0) return <EmptyState label={tr('anomaly_empty')} />;
+  if (items.length === 0) return <EmptyState label={tr('anomaly_empty')} illustration='anomaly' />;
 
   return (
     <View style={s.container}>
@@ -104,3 +104,4 @@ const createStyles = (t: Theme) =>
     meta: { color: t.muted, fontSize: 12, marginTop: 5, fontFamily: fonts.regular },
     bold: { fontFamily: fonts.bold, color: t.text },
   });
+

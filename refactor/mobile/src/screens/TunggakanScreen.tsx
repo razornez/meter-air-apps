@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -75,7 +75,7 @@ export default function TunggakanScreen({ navigation }: Props) {
         data={items}
         keyExtractor={(it) => String(it.customerId)}
         contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
-        ListEmptyComponent={<EmptyState label={tr('tunggakan_empty')} />}
+        ListEmptyComponent={<EmptyState label={tr('tunggakan_empty')} illustration='arrears' />}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={s.row}
@@ -158,3 +158,4 @@ const createStyles = (t: Theme) =>
     waSmallText: { color: '#fff', fontFamily: fonts.bold, fontSize: 12 },
     footer: { textAlign: 'center', padding: 14, color: t.muted, fontFamily: fonts.regular },
   });
+
