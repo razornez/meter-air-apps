@@ -1,7 +1,6 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -29,8 +28,9 @@ import WaveBackground from '../components/ui/WaveBackground';
 import { GlassCard } from '../components/ui/Cards';
 import LiquidProgress from '../components/ui/LiquidProgress';
 import {
+  AlertIcon,
   ChevronIcon,
-  IconProps,
+  GridIcon,
   ListCheckIcon,
   MapPinIcon,
   MoonIcon,
@@ -40,9 +40,7 @@ import {
   SunIcon,
   SyncIcon,
 } from '../components/ui/Icons';
-
-// Tile icons sprite: 1536x1024, 4 tiles dalam 2x2 grid, setiap tile 768x512
-const TILE_SPRITE = require('../../assets/icon-tiles.png');
+import { pastels } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -330,37 +328,24 @@ export default function HomeScreen({ navigation }: Props) {
   );
 }
 
-// tileIndex: 0=Worklist, 1=Tunggakan, 2=Anomali, 3=MasterData
-// Sprite 1536x1024, setiap tile 768x512
-// 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
-const TILE_COLS = 2, TILE_W = 768, TILE_H = 512, TILE_SPRITE_W = 1536, TILE_SPRITE_H = 1024;
-function TileIconImage({ index, size = 64 }: { index: number; size?: number }) {
-  const col = index % TILE_COLS;
-  const row = Math.floor(index / TILE_COLS);
-  const scale = size / TILE_W;
-  return (
-    <View style={{ width: size, height: size * (TILE_H / TILE_W), overflow: 'hidden', borderRadius: 12 }}>
-      <Image
-        source={TILE_SPRITE}
-        style={{
-          width: TILE_SPRITE_W * scale, height: TILE_SPRITE_H * scale,
-          position: 'absolute',
-          left: -(col * TILE_W * scale),
-          top: -(row * TILE_H * scale),
-        }}
-        resizeMode="cover"
-      />
-    </View>
-  );
-}
+// Pastel vector tile: 0=Worklist, 1=Tunggakan, 2=Anomali, 3=MasterData
+const TILE_PASTELS = [
+  { ...pastels.lavender, Icon: ListCheckIcon },
+  { ...pastels.peach,    Icon: AlertIcon },
+  { ...pastels.mint,     Icon: ScanIcon },
+  { ...pastels.sky,      Icon: GridIcon },
+] as const;
 
 function ActionTile({ s, t, tileIndex, title, sub, onPress }: {
   s: ReturnType<typeof createStyles>; t: Theme;
   tileIndex: number; title: string; sub: string; onPress: () => void;
 }) {
+  const p = TILE_PASTELS[tileIndex] ?? TILE_PASTELS[0];
   return (
     <TouchableOpacity style={s.tile} activeOpacity={0.85} onPress={onPress}>
-      <TileIconImage index={tileIndex} size={64} />
+      <View style={[s.tileIconWrap, { backgroundColor: p.bg }]}>
+        <p.Icon size={28} color={p.fg} strokeWidth={2} />
+      </View>
       <Text style={s.tileTitle}>{title}</Text>
       <Text style={s.tileSub}>{sub}</Text>
     </TouchableOpacity>
@@ -482,7 +467,11 @@ const createStyles = (t: Theme) =>
       padding: 16,
       ...shadow.soft,
     },
-    tileIconPlaceholder: { marginBottom: 8 },
+    tileIconWrap: {
+      width: 52, height: 52, borderRadius: 18,
+      alignItems: 'center', justifyContent: 'center',
+      marginBottom: 10,
+    },
     tileTitle: { color: t.text, fontFamily: fonts.bold, fontSize: 15 },
     tileSub: { color: t.muted, fontFamily: fonts.regular, fontSize: 11.5, marginTop: 2 },
 
