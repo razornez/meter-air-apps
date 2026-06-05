@@ -15,7 +15,13 @@ import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Tunggakan'>;
 type Filter = 'semua' | 'besar' | 'lama';
-const LIMIT = 200; // ambil banyak agar search client-side bekerja
+const LIMIT = 200;
+
+function severityConfig(days: number) {
+  if (days > 90) return { bg: '#FEE2E2', fg: '#DC2626', icon: 'flame' as const,        label: `${days}h` };
+  if (days > 30) return { bg: '#FEF3C7', fg: '#D97706', icon: 'warning' as const,      label: `${days}h` };
+  return          { bg: '#DBEAFE', fg: '#2563EB', icon: 'time-outline' as const, label: `${days}h` };
+}
 
 export default function TunggakanScreen({ navigation }: Props) {
   const t = useTheme();
@@ -32,13 +38,9 @@ export default function TunggakanScreen({ navigation }: Props) {
     setLoading(true); setError(null);
     try {
       const data = await apiTunggakan(1, LIMIT);
-      setRes(data);
-      setItems(data.data);
-    } catch (e) {
-      setError(apiErrorMessage(e));
-    } finally {
-      setLoading(false);
-    }
+      setRes(data); setItems(data.data);
+    } catch (e) { setError(apiErrorMessage(e)); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -65,92 +67,149 @@ export default function TunggakanScreen({ navigation }: Props) {
   ];
 
   return (
-    <View style={s.container}>
-      <LinearGradient colors={gradients.coral} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
-        <Text style={s.heroLabel}>{tr('tunggakan_hero_label')}</Text>
-        <Text style={s.heroTotal}>{formatRupiah(res.grandTotal)}</Text>
-        <View style={s.heroPills}>
-          <View style={s.heroPill}>
-            <Text style={s.heroPillValue}>{res.total}</Text>
-            <Text style={s.heroPillLabel}>{tr('tunggakan_pill_arrears')}</Text>
+    <FlatList
+      keyboardShouldPersistTaps="handled"
+      style={{ flex: 1 }}
+      data={filtered}
+      keyExtractor={(it) => String(it.customerId)}
+      contentContainerStyle={filtered.length === 0
+        ? { flexGrow: 1 }
+        : { paddingHorizontal: 14, paddingBottom: 24, gap: 10 }}
+      ListEmptyComponent={
+        <EmptyState label={search ? tr('tunggakan_search_empty') : tr('tunggakan_empty')} illustration="arrears" />
+      }
+
+      ListHeaderComponent={
+        <View>
+          {/* ── Hero ── */}
+          <LinearGradient colors={gradients.coral} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[s.hero, shadow.glow]}>
+            <View style={s.heroLeft}>
+              <Text style={s.heroLabel}>{tr('tunggakan_hero_label')}</Text>
+              <Text style={s.heroTotal}>{formatRupiah(res.grandTotal)}</Text>
+              <View style={s.heroTagRow}>
+                <View style={s.heroTag}>
+                  <Ionicons name="people" size={12} color="rgba(255,255,255,0.9)" />
+                  <Text style={s.heroTagText}>{res.total} {tr('tunggakan_pill_arrears')}</Text>
+                </View>
+                {res.totalDenda > 0 && (
+                  <View style={[s.heroTag, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+                    <Ionicons name="alert-circle" size={12} color="rgba(255,255,255,0.9)" />
+                    <Text style={s.heroTagText}>{tr('tunggakan_pill_fine')} {formatRupiah(res.totalDenda)}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            {/* Dekoratif icon kanan */}
+            <View style={s.heroIconWrap}>
+              <Ionicons name="card" size={48} color="rgba(255,255,255,0.18)" />
+            </View>
+          </LinearGradient>
+
+          {/* ── Search ── */}
+          <View style={s.searchWrap}>
+            <Ionicons name="search-outline" size={18} color={t.muted} />
+            <TextInput
+              style={s.searchInput}
+              placeholder={tr('tunggakan_search_placeholder')}
+              placeholderTextColor={t.muted}
+              value={search}
+              onChangeText={setSearch}
+              autoCapitalize="none"
+              returnKeyType="search"
+            />
+            {!!search && (
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color={t.muted} />
+              </TouchableOpacity>
+            )}
           </View>
-          <View style={s.heroPill}>
-            <Text style={s.heroPillValue}>{formatRupiah(res.totalTagihan)}</Text>
-            <Text style={s.heroPillLabel}>{tr('tunggakan_pill_billing')}</Text>
-          </View>
-          <View style={s.heroPill}>
-            <Text style={s.heroPillValue}>{formatRupiah(res.totalDenda)}</Text>
-            <Text style={s.heroPillLabel}>{tr('tunggakan_pill_fine')}</Text>
+
+          {/* ── Filters ── */}
+          <View style={s.filterRow}>
+            {FILTERS.map(f => (
+              <TouchableOpacity
+                key={f.key}
+                style={[s.filterChip, filter === f.key && s.filterChipActive]}
+                onPress={() => setFilter(f.key)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name={f.icon as any} size={13} color={filter === f.key ? '#fff' : t.muted} />
+                <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
+              </TouchableOpacity>
+            ))}
+            <Text style={s.filterCount}>{filtered.length} {tr('tunggakan_count_suffix')}</Text>
           </View>
         </View>
-      </LinearGradient>
+      }
 
-      {/* Search bar */}
-      <View style={s.searchWrap}>
-        <Ionicons name="search-outline" size={18} color={t.muted} />
-        <TextInput
-          style={s.searchInput}
-          placeholder={tr('tunggakan_search_placeholder')}
-          placeholderTextColor={t.muted}
-          value={search}
-          onChangeText={setSearch}
-          autoCapitalize="none"
-          returnKeyType="search"
-        />
-        {!!search && (
-          <TouchableOpacity onPress={() => setSearch('')}>
-            <Ionicons name="close-circle" size={18} color={t.muted} />
-          </TouchableOpacity>
-        )}
-      </View>
+      renderItem={({ item, index }) => {
+        const sev      = severityConfig(item.hariTelatMax);
+        const initials = (item.nama ?? '?').trim().split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+        const hasWA    = !!formatPhoneWA(item.telp);
 
-      {/* Filter chips */}
-      <View style={s.filterRow}>
-        {FILTERS.map(f => (
+        return (
           <TouchableOpacity
-            key={f.key}
-            style={[s.filterChip, filter === f.key && s.filterChipActive]}
-            onPress={() => setFilter(f.key)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name={f.icon as any} size={13} color={filter === f.key ? '#fff' : t.muted} />
-            <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>{f.label}</Text>
-          </TouchableOpacity>
-        ))}
-        <Text style={s.filterCount}>{filtered.length} {tr('tunggakan_count_suffix')}</Text>
-      </View>
-
-      <FlatList
-        keyboardShouldPersistTaps="handled"
-        data={filtered}
-        keyExtractor={(it) => String(it.customerId)}
-        contentContainerStyle={filtered.length === 0 ? { flex: 1 } : { paddingHorizontal: 14, paddingBottom: 20, gap: 10 }}
-        ListEmptyComponent={<EmptyState label={search ? tr('tunggakan_search_empty') : tr('tunggakan_empty')} illustration="arrears" />}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={s.row}
-            activeOpacity={0.85}
+            style={s.card}
+            activeOpacity={0.88}
             onPress={() => navigation.navigate('FakturList', { customerId: item.customerId })}
           >
-            {/* Left: severity bar */}
-            <View style={[s.severityBar, { backgroundColor: item.hariTelatMax > 90 ? t.danger : item.hariTelatMax > 30 ? t.warning : t.accent }]} />
+            {/* ── Baris 1: avatar + nama + amount ── */}
+            <View style={s.cardTop}>
+              {/* Avatar */}
+              <View style={[s.avatar, { backgroundColor: sev.bg }]}>
+                <Text style={[s.avatarText, { color: sev.fg }]}>{initials}</Text>
+                <View style={[s.rankBadge, { backgroundColor: sev.fg }]}>
+                  <Text style={s.rankText}>{index + 1}</Text>
+                </View>
+              </View>
 
-            <View style={{ flex: 1, paddingLeft: 2 }}>
-              <Text style={s.nama} numberOfLines={1}>{item.nama ?? `ID ${item.customerId}`}</Text>
-              <Text style={s.meta}>{tr('tunggakan_item_meta', { count: item.jumlahFaktur, days: item.hariTelatMax })}</Text>
-              {!!item.alamat && <Text style={s.alamat} numberOfLines={1}>{item.alamat}</Text>}
+              {/* Nama + meta */}
+              <View style={{ flex: 1 }}>
+                <Text style={s.nama} numberOfLines={1}>{item.nama ?? `ID ${item.customerId}`}</Text>
+                {!!item.alamat && (
+                  <View style={s.metaRow}>
+                    <Ionicons name="location-outline" size={11} color={t.muted} />
+                    <Text style={s.alamat} numberOfLines={1}>{item.alamat}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Grand total */}
+              <View style={s.amountWrap}>
+                <Text style={[s.grand, { color: sev.fg }]}>{formatRupiah(item.grandTotal)}</Text>
+                <Ionicons name="chevron-forward" size={14} color={t.muted} />
+              </View>
             </View>
 
-            <View style={s.right}>
-              <Text style={s.grand}>{formatRupiah(item.grandTotal)}</Text>
+            {/* ── Baris 2: chips info ── */}
+            <View style={s.cardBottom}>
+              {/* Faktur count */}
+              <View style={s.infoChip}>
+                <Ionicons name="document-text-outline" size={12} color={t.muted} />
+                <Text style={s.infoChipText}>{tr('tunggakan_item_meta', { count: item.jumlahFaktur, days: item.hariTelatMax })}</Text>
+              </View>
+
+              {/* Days overdue badge */}
+              <View style={[s.daysBadge, { backgroundColor: sev.bg }]}>
+                <Ionicons name={sev.icon} size={11} color={sev.fg} />
+                <Text style={[s.daysText, { color: sev.fg }]}>{sev.label} telat</Text>
+              </View>
+
+              {/* Denda badge */}
               {item.totalDenda > 0 && (
-                <View style={s.dendaBadge}>
-                  <Text style={s.denda}>{tr('tunggakan_fine_label')} {formatRupiah(item.totalDenda)}</Text>
+                <View style={[s.daysBadge, { backgroundColor: pastels.peach.bg }]}>
+                  <Ionicons name="alert-circle-outline" size={11} color={pastels.peach.fg} />
+                  <Text style={[s.daysText, { color: pastels.peach.fg }]}>+{formatRupiah(item.totalDenda)}</Text>
                 </View>
               )}
-              {!!formatPhoneWA(item.telp) && (
+
+              {/* Spacer */}
+              <View style={{ flex: 1 }} />
+
+              {/* WA button */}
+              {hasWA && (
                 <TouchableOpacity
-                  style={s.waSmall}
+                  style={s.waBtn}
                   activeOpacity={0.85}
                   onPress={async (e) => {
                     e.stopPropagation?.();
@@ -158,42 +217,54 @@ export default function TunggakanScreen({ navigation }: Props) {
                     await openWA(item.telp, msg);
                   }}
                 >
-                  <MaterialCommunityIcons name="whatsapp" size={14} color="#16A34A" />
-                  <Text style={s.waSmallText}>{tr('tunggakan_wa_button')}</Text>
+                  <MaterialCommunityIcons name="whatsapp" size={15} color="#16A34A" />
+                  <Text style={s.waBtnText}>{tr('tunggakan_wa_button')}</Text>
                 </TouchableOpacity>
               )}
             </View>
           </TouchableOpacity>
-        )}
-      />
-    </View>
+        );
+      }}
+    />
   );
 }
 
 const createStyles = (t: Theme) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: 'transparent' },
-    hero: { margin: 14, marginBottom: 0, padding: 18, borderRadius: radius.xl },
-    heroLabel: { color: 'rgba(255,255,255,0.9)', fontFamily: fonts.semibold, fontSize: 11.5, letterSpacing: tracking.overline },
-    heroTotal: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 30, marginTop: 4, letterSpacing: tracking.display },
-    heroPills: { flexDirection: 'row', gap: 8, marginTop: 14 },
-    heroPill: { flex: 1, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: radius.md, paddingVertical: 9, paddingHorizontal: 8, alignItems: 'center' },
-    heroPillValue: { color: '#fff', fontFamily: fonts.bold, fontSize: 12 },
-    heroPillLabel: { color: 'rgba(255,255,255,0.85)', fontFamily: fonts.medium, fontSize: 10, marginTop: 2 },
+    // Hero
+    hero: {
+      flexDirection: 'row', alignItems: 'center',
+      margin: 14, marginBottom: 0,
+      borderRadius: radius.xl, padding: 20,
+      overflow: 'hidden',
+    },
+    heroLeft: { flex: 1 },
+    heroLabel: { color: 'rgba(255,255,255,0.88)', fontFamily: fonts.semibold, fontSize: 11, letterSpacing: tracking.overline },
+    heroTotal: { color: '#fff', fontFamily: fonts.displayBold, fontSize: 28, marginTop: 4, letterSpacing: tracking.display },
+    heroTagRow: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' },
+    heroTag: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: radius.pill,
+      paddingHorizontal: 10, paddingVertical: 5,
+    },
+    heroTagText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 11 },
+    heroIconWrap: { width: 70, alignItems: 'flex-end' },
 
+    // Search
     searchWrap: {
       flexDirection: 'row', alignItems: 'center', gap: 8,
-      margin: 14, marginBottom: 8,
-      backgroundColor: t.surface, borderRadius: radius.md,
-      paddingHorizontal: 12, paddingVertical: 10,
+      marginHorizontal: 14, marginTop: 12, marginBottom: 8,
+      backgroundColor: t.surface, borderRadius: radius.lg,
+      paddingHorizontal: 14, paddingVertical: 11,
       borderWidth: 1, borderColor: t.border, ...shadow.soft,
     },
     searchInput: { flex: 1, color: t.text, fontFamily: fonts.regular, fontSize: 14 },
 
-    filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, marginBottom: 10 },
+    // Filters
+    filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, marginBottom: 12 },
     filterChip: {
       flexDirection: 'row', alignItems: 'center', gap: 4,
-      paddingHorizontal: 10, paddingVertical: 6,
+      paddingHorizontal: 12, paddingVertical: 7,
       borderRadius: radius.pill, backgroundColor: t.surface,
       borderWidth: 1.5, borderColor: t.border,
     },
@@ -202,25 +273,55 @@ const createStyles = (t: Theme) =>
     filterTextActive: { color: '#fff' },
     filterCount: { flex: 1, textAlign: 'right', color: t.muted, fontFamily: fonts.medium, fontSize: 12 },
 
-    row: {
-      flexDirection: 'row', alignItems: 'center',
-      backgroundColor: t.surface, borderRadius: radius.lg,
+    // Card
+    card: {
+      backgroundColor: t.surface,
+      borderRadius: radius.xl,
       borderWidth: 1, borderColor: t.border,
-      overflow: 'hidden', paddingVertical: 12, paddingRight: 12,
+      paddingHorizontal: 14, paddingTop: 14, paddingBottom: 12,
       ...shadow.soft,
     },
-    severityBar: { width: 4, alignSelf: 'stretch', marginRight: 10 },
+    cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+    cardBottom: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+
+    // Avatar
+    avatar: {
+      width: 50, height: 50, borderRadius: 18,
+      alignItems: 'center', justifyContent: 'center',
+      position: 'relative',
+    },
+    avatarText: { fontFamily: fonts.displayBold, fontSize: 18 },
+    rankBadge: {
+      position: 'absolute', top: -4, right: -4,
+      minWidth: 18, height: 18, borderRadius: 9,
+      alignItems: 'center', justifyContent: 'center',
+      paddingHorizontal: 4, borderWidth: 2, borderColor: t.surface,
+    },
+    rankText: { color: '#fff', fontFamily: fonts.bold, fontSize: 9 },
+
+    // Name + meta
     nama: { fontFamily: fonts.bold, color: t.text, fontSize: 15 },
-    meta: { color: t.muted, fontSize: 12, marginTop: 2, fontFamily: fonts.regular },
-    alamat: { color: t.muted, fontSize: 11, marginTop: 1, fontFamily: fonts.regular },
-    right: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 8, gap: 4 },
-    grand: { color: t.danger, fontFamily: fonts.displayBold, fontSize: 15 },
-    dendaBadge: { backgroundColor: pastels.peach.bg, borderRadius: radius.pill, paddingHorizontal: 6, paddingVertical: 2 },
-    denda: { color: pastels.peach.fg, fontSize: 10, fontFamily: fonts.bold },
-    waSmall: {
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 },
+    alamat: { color: t.muted, fontSize: 11.5, fontFamily: fonts.regular, flex: 1 },
+
+    // Amount
+    amountWrap: { alignItems: 'flex-end', gap: 2 },
+    grand: { fontFamily: fonts.displayBold, fontSize: 16 },
+
+    // Bottom chips
+    infoChip: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+    infoChipText: { color: t.muted, fontSize: 11, fontFamily: fonts.regular },
+    daysBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 3,
+      paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.pill,
+    },
+    daysText: { fontFamily: fonts.extrabold, fontSize: 10 },
+
+    // WA
+    waBtn: {
       flexDirection: 'row', alignItems: 'center', gap: 4,
       backgroundColor: '#F0FDF4', borderWidth: 1, borderColor: '#86EFAC',
-      borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5,
+      borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6,
     },
-    waSmallText: { color: '#16A34A', fontFamily: fonts.bold, fontSize: 11 },
+    waBtnText: { color: '#16A34A', fontFamily: fonts.bold, fontSize: 11 },
   });
