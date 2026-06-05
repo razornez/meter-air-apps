@@ -174,8 +174,8 @@ export default function HomeScreen({ navigation }: Props) {
       showsVerticalScrollIndicator={false}
     >
       {/* ---- Wave hero ---- */}
-      <WaveBackground height={370} style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}>
-        <View style={[s.heroInner, { paddingTop: insets.top + 14 }]}>
+      <WaveBackground height={340} style={{ borderBottomLeftRadius: 30, borderBottomRightRadius: 30 }}>
+        <View style={[s.heroInner, { paddingTop: insets.top + 10 }]}>
           <View style={s.heroTop}>
             <View style={{ flex: 1 }}>
               <Text style={s.hello}>{i18n('home_greeting')}</Text>
@@ -354,7 +354,7 @@ function ActionTile({ s, t, tileIndex, title, sub, onPress }: {
 
 const createStyles = (t: Theme) =>
   StyleSheet.create({
-    heroInner: { flex: 1, paddingHorizontal: 20, paddingBottom: 26, justifyContent: 'space-between' },
+    heroInner: { flex: 1, paddingHorizontal: 16, paddingBottom: 16, justifyContent: 'space-between' },
     heroTop: { flexDirection: 'row', alignItems: 'flex-start' },
     heroActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
     langBtn: {
@@ -364,29 +364,25 @@ const createStyles = (t: Theme) =>
       alignItems: 'center', justifyContent: 'center',
     },
     langText: { fontSize: 16 },
-    hello: { color: palette.foam, fontFamily: fonts.medium, fontSize: 12, letterSpacing: tracking.overline, textTransform: 'uppercase' },
-    name: { color: palette.white, fontFamily: fonts.displayBlack, fontSize: 30, marginTop: 3, letterSpacing: tracking.display },
-    role: { color: 'rgba(231,247,247,0.78)', fontFamily: fonts.medium, fontSize: 12, marginTop: 4 },
+    hello: { color: palette.foam, fontFamily: fonts.medium, fontSize: 11, letterSpacing: tracking.overline, textTransform: 'uppercase' },
+    name: { color: palette.white, fontFamily: fonts.displayBlack, fontSize: 24, marginTop: 2, letterSpacing: tracking.display },
+    role: { color: 'rgba(231,247,247,0.78)', fontFamily: fonts.medium, fontSize: 11, marginTop: 2 },
     iconBtn: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
+      width: 36, height: 36, borderRadius: 18,
       backgroundColor: 'rgba(255,255,255,0.18)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.35)',
-      alignItems: 'center',
-      justifyContent: 'center',
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)',
+      alignItems: 'center', justifyContent: 'center',
     },
     infoBar: {
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      marginHorizontal: 20, marginTop: 6, marginBottom: 2,
+      marginTop: 4, marginBottom: 2,
       backgroundColor: 'rgba(255,255,255,0.12)',
-      borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
+      borderRadius: 12, paddingHorizontal: 12, paddingVertical: 7,
       borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
     },
-    infoLeft: { gap: 2 },
-    clockText: { color: palette.white, fontFamily: fonts.displayBold, fontSize: 22, letterSpacing: 1 },
-    dateText: { color: 'rgba(231,247,247,0.75)', fontFamily: fonts.medium, fontSize: 11 },
+    infoLeft: { gap: 1 },
+    clockText: { color: palette.white, fontFamily: fonts.displayBold, fontSize: 18, letterSpacing: 1 },
+    dateText: { color: 'rgba(231,247,247,0.75)', fontFamily: fonts.medium, fontSize: 10 },
     weatherRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     weatherIcon: { fontSize: 28 },
     weatherTemp: { color: palette.white, fontFamily: fonts.bold, fontSize: 16, textAlign: 'right' },

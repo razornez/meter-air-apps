@@ -12,12 +12,13 @@ import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import ViewShot from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiCustomerDetail, apiGetConfig } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { AppConfig, CustomerDetail } from '../types';
-import { colors } from '../theme';
+import { colors, pastels } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CustomerCard'>;
 
@@ -163,11 +164,11 @@ export default function CustomerCardScreen({ route }: Props) {
           {/* Footer */}
           <View style={styles.cardFooter}>
             {!!config.telp && (
-              <Text style={styles.footerText}>📞 {config.telp}</Text>
+              <Text style={styles.footerText}>{config.telp}</Text>
             )}
             {!!config.alamat && (
               <Text style={styles.footerText} numberOfLines={1}>
-                📍 {config.alamat.slice(0, 50)}
+                {config.alamat.slice(0, 50)}
               </Text>
             )}
           </View>
@@ -180,23 +181,33 @@ export default function CustomerCardScreen({ route }: Props) {
           style={[styles.btn, styles.btnSave, saving && { opacity: 0.5 }]}
           onPress={onSave}
           disabled={saving}
+          activeOpacity={0.85}
         >
           {saving
-            ? <ActivityIndicator color="#fff" size="small" />
-            : <Text style={styles.btnText}>💾 Simpan ke Galeri</Text>
+            ? <ActivityIndicator color={colors.primary} size="small" />
+            : <>
+                <View style={styles.btnIcon}>
+                  <Ionicons name="download-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.btnSaveText}>Simpan</Text>
+              </>
           }
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.btn, styles.btnShare, saving && { opacity: 0.5 }]}
           onPress={onShare}
           disabled={saving}
+          activeOpacity={0.85}
         >
-          <Text style={styles.btnText}>📲 Bagikan via WA</Text>
+          <View style={styles.btnIconGreen}>
+            <MaterialCommunityIcons name="whatsapp" size={20} color="#16A34A" />
+          </View>
+          <Text style={styles.btnShareText}>Bagikan</Text>
         </TouchableOpacity>
       </View>
 
       <Text style={styles.note}>
-        💡 QR berisi ID pelanggan. Petugas scan saat mencatat meter — langsung buka form catat.
+        QR berisi ID pelanggan. Petugas scan saat mencatat meter.
       </Text>
     </View>
   );
@@ -244,11 +255,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F7FF', paddingHorizontal: 14, paddingVertical: 10,
   },
   footerText: { color: '#0277BD', fontSize: 10, lineHeight: 16 },
-  actions: { flexDirection: 'row', gap: 12, marginTop: 20, width: CARD_WIDTH },
-  btn: { flex: 1, paddingVertical: 13, borderRadius: 12, alignItems: 'center' },
-  btnSave: { backgroundColor: colors.primary },
-  btnShare: { backgroundColor: '#25D366' },
-  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 20, width: CARD_WIDTH },
+  btn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5,
+  },
+  btnSave:  { backgroundColor: '#EAF5F8', borderColor: colors.primary + '66' },
+  btnShare: { backgroundColor: '#F0FDF4', borderColor: '#86EFAC' },
+  btnIcon:      { width: 32, height: 32, borderRadius: 10, backgroundColor: '#D0EEF4', alignItems: 'center', justifyContent: 'center' },
+  btnIconGreen: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center' },
+  btnSaveText:  { color: colors.primary, fontWeight: '700', fontSize: 14 },
+  btnShareText: { color: '#16A34A', fontWeight: '700', fontSize: 14 },
   note: {
     marginTop: 14, color: colors.muted, fontSize: 12,
     textAlign: 'center', lineHeight: 18, paddingHorizontal: 10,
