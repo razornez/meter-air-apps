@@ -110,19 +110,30 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   }
 
   async function onPrintOrShare(share: boolean) {
-    if (!data || !config) return;
+    if (!data) return;
     setActing(true);
     try {
-      const html = buildFakturHtml(data, config);
+      // config bisa null bila API gagal — pakai fallback agar tetap bisa cetak
+      const cfg = config ?? ({ perusahaan: 'Meter Air', alamat: '', telp: '' } as AppConfig);
+      const html = buildFakturHtml(data, cfg);
+
+      // Selalu generate file PDF dulu (lebih andal di Android daripada print langsung dari HTML)
+      const { uri } = await Print.printToFileAsync({ html, base64: false });
+
       if (share) {
-        const { uri } = await Print.printToFileAsync({ html });
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
+        const available = await Sharing.isAvailableAsync();
+        if (available) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: `Faktur ${data.noFaktur}`,
+            UTI: 'com.adobe.pdf',
+          });
         } else {
           Alert.alert(tr('faktur_detail_alert_share_unavailable'));
         }
       } else {
-        await Print.printAsync({ html });
+        // Print dari uri file — lebih stabil di Android
+        await Print.printAsync({ uri });
       }
     } catch (e) {
       Alert.alert(tr('faktur_detail_alert_print_failed'), apiErrorMessage(e));
