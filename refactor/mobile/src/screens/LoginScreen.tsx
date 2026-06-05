@@ -221,16 +221,14 @@ export default function LoginScreen() {
               </View>
 
               </View>{/* end flex center */}
-
-              {/* Footer — selalu di bawah, di luar area center */}
-              <View style={s.footerWrap}>
-                <Text style={s.foot}>{t('login_footer')} · {new Date().getFullYear()}</Text>
-                <View style={s.divider} />
-                <Text style={s.footBrand}>Powered by Anugrah Solusi Digital</Text>
-                <Text style={s.footVersion}>v1.0.0</Text>
-              </View>
             </ScrollView>
           </KeyboardAvoidingView>
+          {/* Footer — outside ScrollView, always visible */}
+          <View style={s.footerWrap}>
+            <View style={s.divider} />
+            <Text style={s.footBrand}>Powered by Anugrah Solusi Digital</Text>
+            <Text style={s.footVersion}>v1.0.0  ·  {t('login_footer')} · {new Date().getFullYear()}</Text>
+          </View>
         </SafeAreaView>
       </WaveBackground>
     </View>
@@ -303,4 +301,5 @@ const createStyles = (t: Theme) =>
     footBrand: { textAlign: 'center', color: 'rgba(255,255,255,0.85)', fontSize: 11, fontFamily: fonts.semibold, letterSpacing: 0.3 },
     footVersion: { textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 10, marginTop: 3, fontFamily: fonts.regular },
   });
+
 

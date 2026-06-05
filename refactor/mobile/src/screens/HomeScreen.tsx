@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Image,
@@ -10,6 +10,8 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
+import { fetchWeather, WeatherData } from '../utils/weather';
 import i18nInstance, { LANG_KEY, Language } from '../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -65,12 +67,39 @@ export default function HomeScreen({ navigation }: Props) {
   const [manualCode, setManualCode] = useState('');
   const [lang, setLang] = useState<Language>(i18nInstance.language as Language);
 
+  const [clock, setClock] = useState('');
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+
   async function toggleLang() {
     const next: Language = lang === 'id' ? 'en' : 'id';
     await i18nInstance.changeLanguage(next);
     await AsyncStorage.setItem(LANG_KEY, next);
     setLang(next);
   }
+
+  // Clock
+  useEffect(() => {
+    function tick() {
+      const now = new Date();
+      setClock(now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Weather via GPS + Open-Meteo (gratis, no API key)
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        const w = await fetchWeather(loc.coords.latitude, loc.coords.longitude, lang as 'id' | 'en');
+        setWeather(w);
+      } catch {}
+    })();
+  }, [lang]);
 
   function renderGraceBanner() {
     if (!tenant?.dalam_grace_period) return null;
@@ -169,6 +198,25 @@ export default function HomeScreen({ navigation }: Props) {
                 <PowerIcon size={20} color={palette.white} />
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Clock + Weather bar */}
+          <View style={s.infoBar}>
+            <View style={s.infoLeft}>
+              <Text style={s.clockText}>{clock || '--:--:--'}</Text>
+              <Text style={s.dateText}>{new Date().toLocaleDateString(lang === 'id' ? 'id-ID' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short' })}</Text>
+            </View>
+            {weather ? (
+              <View style={s.weatherRight}>
+                <Text style={s.weatherIcon}>{weather.icon}</Text>
+                <View>
+                  <Text style={s.weatherTemp}>{weather.temp}°C</Text>
+                  <Text style={s.weatherDesc} numberOfLines={1}>{weather.description}</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={s.weatherLoading}>📡 {lang === 'id' ? 'Memuat cuaca...' : 'Loading weather...'}</Text>
+            )}
           </View>
 
           <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Worklist')}>
@@ -344,6 +392,21 @@ const createStyles = (t: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
+    infoBar: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      marginHorizontal: 20, marginTop: 6, marginBottom: 2,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
+      borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)',
+    },
+    infoLeft: { gap: 2 },
+    clockText: { color: palette.white, fontFamily: fonts.displayBold, fontSize: 22, letterSpacing: 1 },
+    dateText: { color: 'rgba(231,247,247,0.75)', fontFamily: fonts.medium, fontSize: 11 },
+    weatherRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    weatherIcon: { fontSize: 28 },
+    weatherTemp: { color: palette.white, fontFamily: fonts.bold, fontSize: 16, textAlign: 'right' },
+    weatherDesc: { color: 'rgba(231,247,247,0.8)', fontFamily: fonts.regular, fontSize: 10, textAlign: 'right', maxWidth: 90 },
+    weatherLoading: { color: 'rgba(231,247,247,0.6)', fontFamily: fonts.regular, fontSize: 11 },
     heroCard: { marginTop: 8 },
     heroCardRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     heroCardText: { flex: 1 },
@@ -462,6 +525,8 @@ const createStyles = (t: Theme) =>
     cacheBtn: { backgroundColor: t.accent, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
     cacheBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 11 },
   });
+
+
 
 
 
