@@ -5,6 +5,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Faktur } from './entities/faktur.entity';
 import { HistoryMeter } from './entities/history-meter.entity';
 import { Transaksi } from './entities/transaksi.entity';
+import { MeterPhoto } from './entities/meter-photo.entity';
 import { TariffService } from './tariff.service';
 import { CustomersService } from '../customers/customers.service';
 import { dueDate20th, fakturTotal, fotoMeterName, nextFakturNumber } from './faktur.util';
@@ -22,6 +23,7 @@ export class MeterService {
     private readonly customersService: CustomersService,
     private readonly config: ConfigService,
     @InjectRepository(Faktur) private readonly faktur: Repository<Faktur>,
+    @InjectRepository(MeterPhoto) private readonly photos: Repository<MeterPhoto>,
   ) {
     this.waterBarcode = this.config.get<string>('WATER_PRODUCT_BARCODE', 'B1502200001');
   }
@@ -82,5 +84,20 @@ export class MeterService {
     const f = await this.faktur.findOne({ where: { noFaktur, tenantId } });
     if (!f) throw new NotFoundException('Faktur tidak ditemukan');
     return f;
+  }
+
+  /** Simpan/replace foto bukti meteran sebagai BLOB di DB (upsert per faktur). */
+  async savePhoto(noFaktur: string, tenantId: number, data: Buffer, mime: string): Promise<void> {
+    const existing = await this.photos.findOne({ where: { noFaktur } });
+    if (existing) {
+      await this.photos.update({ id: existing.id }, { data, mime, tenantId });
+    } else {
+      await this.photos.save({ noFaktur, tenantId, data, mime, createdAt: new Date() });
+    }
+  }
+
+  /** Ambil BLOB foto untuk disajikan. Publik (lihat MeterPhotoController). */
+  async getPhoto(noFaktur: string): Promise<MeterPhoto | null> {
+    return this.photos.findOne({ where: { noFaktur } });
   }
 }

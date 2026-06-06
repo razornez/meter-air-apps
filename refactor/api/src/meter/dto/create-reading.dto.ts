@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -17,7 +18,6 @@ export class CreateReadingDto {
   @Min(0)
   meterBaru: number;
 
-  @IsString()
-  @IsOptional()
+  @IsString() @IsOptional() @MaxLength(500)
   catatan?: string;
 }

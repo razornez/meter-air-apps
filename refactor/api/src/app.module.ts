@@ -1,13 +1,25 @@
 import { Controller, Get, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Controller()
 export class HealthController {
+  constructor(@InjectDataSource() private readonly db: DataSource) {}
+
   @Get('health')
-  check() { return { status: 'ok' }; }
+  async check() {
+    try {
+      await this.db.query('SELECT 1');
+      return { status: 'ok', db: 'ok', ts: new Date().toISOString() };
+    } catch {
+      return { status: 'degraded', db: 'error', ts: new Date().toISOString() };
+    }
+  }
 }
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
@@ -22,6 +34,7 @@ import { SeedModule } from './seed/seed.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     // Rate limit global (anti penyalahgunaan/brute-force). Bisa disetel via env
     // THROTTLE_LIMIT/THROTTLE_TTL (mis. dinaikkan saat uji performa/beban).
     ThrottlerModule.forRootAsync({
@@ -43,9 +56,15 @@ import { SeedModule } from './seed/seed.module';
         password: config.get('DB_PASSWORD', ''),
         database: config.get('DB_DATABASE', 'pdam'),
         autoLoadEntities: true,
-        // Database `pdam` sudah ada — JANGAN biarkan TypeORM mengubah skema.
         synchronize: false,
         charset: 'latin1_swedish_ci',
+        // Connection pool — Railway membatasi koneksi MySQL, jaga di bawah 10.
+        // (acquireTimeout dihapus: bukan opsi mysql2 yang valid.)
+        extra: {
+          connectionLimit: 8,
+          connectTimeout: 10000,
+          waitForConnections: true,
+        },
       }),
     }),
     AuthModule,

@@ -3,9 +3,6 @@
   UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ConfigService } from '@nestjs/config';
-import { promises as fs } from 'fs';
-import { join } from 'path';
 import { MeterService } from './meter.service';
 import { OcrService } from './ocr.service';
 import { CalculateDto } from './dto/calculate.dto';
@@ -16,15 +13,10 @@ import { AuthUser, CurrentUser } from '../common/decorators/current-user.decorat
 @UseGuards(JwtAuthGuard)
 @Controller('meter')
 export class MeterController {
-  private readonly uploadDir: string;
-
   constructor(
     private readonly meter: MeterService,
     private readonly ocr: OcrService,
-    private readonly config: ConfigService,
-  ) {
-    this.uploadDir = this.config.get<string>('UPLOAD_DIR', 'uploads/foto_meter');
-  }
+  ) {}
 
   @Post('calculate')
   calculate(@CurrentUser() user: AuthUser, @Body() dto: CalculateDto) {
@@ -64,10 +56,12 @@ export class MeterController {
   async uploadPhoto(@Request() req, @Param('noFaktur') noFaktur: string, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('File foto wajib diunggah');
     const decoded = decodeURIComponent(noFaktur);
+    // Pastikan faktur ada & milik tenant ini (juga set flag foto_meter saat saveReading).
     const faktur = await this.meter.attachPhotoFilename(decoded, req.tenantId);
-    await fs.mkdir(this.uploadDir, { recursive: true });
-    const filename = faktur.fotoMeter ?? `pic_${faktur.id}.jpeg`;
-    await fs.writeFile(join(this.uploadDir, filename), file.buffer);
-    return { filename, path: `/${this.uploadDir}/${filename}` };
+
+    // Simpan BLOB ke DB — persisten lintas redeploy (Railway FS ephemeral).
+    await this.meter.savePhoto(decoded, req.tenantId, file.buffer, file.mimetype || 'image/jpeg');
+
+    return { ok: true, noFaktur: decoded, fotoMeter: faktur.fotoMeter };
   }
 }

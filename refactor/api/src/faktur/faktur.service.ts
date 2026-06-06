@@ -39,8 +39,20 @@ export class FakturService {
   }
 
   async listPayments(noFaktur: string, tenantId: number) {
+    // Audit trail: siapa (nama petugas), metode, jumlah, status, kapan.
     try {
-      return await this.pembayaran.find({ where: { noFaktur, tenantId }, order: { id: 'DESC' } });
+      return await this.pembayaran
+        .createQueryBuilder('p')
+        .leftJoin('users', 'u', 'u.id = p.petugas')
+        .select('p.id', 'id')
+        .addSelect('p.metode', 'metode')
+        .addSelect('p.jumlah', 'jumlah')
+        .addSelect('p.status', 'status')
+        .addSelect('p.paid_at', 'paidAt')
+        .addSelect('u.name', 'petugasNama')
+        .where('p.no_faktur = :nf AND p.tenant_id = :tid', { nf: noFaktur, tid: tenantId })
+        .orderBy('p.id', 'DESC')
+        .getRawMany();
     } catch { return []; }
   }
 

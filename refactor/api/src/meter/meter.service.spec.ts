@@ -7,12 +7,14 @@ function makeService(meterInfo: any) {
   const customersService = { meterInfo: jest.fn(async () => meterInfo) };
   const config = { get: jest.fn((_k: string, d: string) => d) };
   const fakturRepo = { findOne: jest.fn() };
+  const photoRepo = { findOne: jest.fn(), save: jest.fn(), update: jest.fn() };
   const service = new MeterService(
     dataSource as any,
     tariff as any,
     customersService as any,
     config as any,
     fakturRepo as any,
+    photoRepo as any,
   );
   return { service, dataSource };
 }
