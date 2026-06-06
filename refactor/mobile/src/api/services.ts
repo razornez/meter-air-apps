@@ -23,6 +23,7 @@ import {
   UserProfile,
   TunggakanResponse,
   KinerjaResponse,
+  PaymentLogItem,
   Worklist,
 } from '../types';
 
@@ -120,6 +121,14 @@ export async function apiListFaktur(params: {
 
 export async function apiFakturDetail(noFaktur: string) {
   const { data } = await api.get<FakturDetail>('/faktur/detail', {
+    params: { noFaktur },
+  });
+  return data;
+}
+
+// Audit trail pembayaran untuk satu faktur (siapa, metode, kapan).
+export async function apiListPayments(noFaktur: string) {
+  const { data } = await api.get<PaymentLogItem[]>('/faktur/payments', {
     params: { noFaktur },
   });
   return data;
@@ -264,18 +273,19 @@ export async function apiUpdateLocation(
 }
 
 export async function apiUploadPhoto(noFaktur: string, photoUri: string) {
+  // Deteksi format dari ekstensi (compressForUpload bisa hasilkan .webp / .jpg)
+  const isWebp = /\.webp(\?|$)/i.test(photoUri);
+  const type = isWebp ? 'image/webp' : 'image/jpeg';
+  const name = isWebp ? 'meter.webp' : 'meter.jpeg';
+
   const form = new FormData();
-  form.append('photo', {
-    uri: photoUri,
-    name: 'meter.jpeg',
-    type: 'image/jpeg',
-  } as unknown as Blob);
+  form.append('photo', { uri: photoUri, name, type } as unknown as Blob);
 
   const { data } = await api.post(
     `/meter/readings/${encodeURIComponent(noFaktur)}/photo`,
     form,
     { headers: { 'Content-Type': 'multipart/form-data' } },
   );
-  return data as { filename: string; path: string };
+  return data as { ok: boolean; noFaktur: string; fotoMeter: string | null };
 }
 

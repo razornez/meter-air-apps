@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +33,7 @@ export default function AnomalyScreen({ navigation }: Props) {
   const [items, setItems]     = useState<Anomaly[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -42,6 +43,12 @@ export default function AnomalyScreen({ navigation }: Props) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
 
   if (loading) return <Loading label={tr('anomaly_loading')} />;
   if (error)   return <ErrorState message={error} onRetry={load} />;
@@ -68,6 +75,7 @@ export default function AnomalyScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         data={items}
         keyExtractor={(it) => String(it.customerId)}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} colors={[t.primary]} />}
         contentContainerStyle={{ padding: 14, gap: 10 }}
         renderItem={({ item }) => {
           const isHigh     = item.severity === 'tinggi';

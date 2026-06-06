@@ -1,6 +1,6 @@
 ﻿import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
-import { setAuthToken } from '../api/client';
+import { setAuthToken, setUnauthorizedHandler } from '../api/client';
 import { apiLogin, apiMe } from '../api/services';
 import { deleteToken, getToken, setToken as persistToken } from './tokenStorage';
 import { UserProfile, TenantInfo } from '../types';
@@ -24,6 +24,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [tenant, setTenant] = useState<TenantInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    // Daftarkan handler: bila API balas 401, hapus token & set user null
+    setUnauthorizedHandler(() => {
+      deleteToken(TOKEN_KEY);
+      deleteToken(TENANT_KEY);
+      setToken(null);
+      setUser(null);
+      setTenant(null);
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -33,6 +33,7 @@ export default function TunggakanScreen({ navigation }: Props) {
   const [error, setError]     = useState<string | null>(null);
   const [search, setSearch]   = useState('');
   const [filter, setFilter]   = useState<Filter>('semua');
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -44,6 +45,14 @@ export default function TunggakanScreen({ navigation }: Props) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    setItems([]);
+    setRes(null);
+    await load();
+    setRefreshing(false);
+  }
 
   const filtered = useMemo(() => {
     let list = items;
@@ -71,6 +80,7 @@ export default function TunggakanScreen({ navigation }: Props) {
       keyboardShouldPersistTaps="handled"
       style={{ flex: 1 }}
       data={filtered}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} colors={[t.primary]} />}
       keyExtractor={(it) => String(it.customerId)}
       contentContainerStyle={filtered.length === 0
         ? { flexGrow: 1 }

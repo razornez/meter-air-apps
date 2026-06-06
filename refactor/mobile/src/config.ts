@@ -16,7 +16,9 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL;
 // Base untuk file statis — strip trailing '/api'
 export const STATIC_URL = API_URL.replace(/\/api\/?$/, '');
 
-export function fotoMeterUrl(filename: string | null | undefined): string | null {
-  if (!filename) return null;
-  return `${STATIC_URL}/uploads/foto_meter/${filename}`;
+// URL foto bukti meteran — disajikan dari BLOB DB via endpoint /meter-photo/:noFaktur.
+// Key-nya nomor faktur (bukan nama file lagi).
+export function fotoMeterUrl(noFaktur: string | null | undefined): string | null {
+  if (!noFaktur) return null;
+  return `${API_URL}/meter-photo/${encodeURIComponent(noFaktur)}`;
 }

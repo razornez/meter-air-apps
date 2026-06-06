@@ -77,6 +77,10 @@ export default function CustomersListScreen({ navigation }: Props) {
         keyExtractor={(it) => String(it.id)}
         contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
         ListEmptyComponent={<EmptyState label={tr('customers_list_empty')} illustration='customers' />}
+        initialNumToRender={15}
+        maxToRenderPerBatch={15}
+        windowSize={7}
+        removeClippedSubviews
         renderItem={({ item }) => (
           <TouchableOpacity
             style={s.row}

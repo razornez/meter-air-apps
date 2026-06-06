@@ -4,9 +4,15 @@ import { API_URL } from '../config';
 // Token disuntikkan oleh AuthContext (setAuthToken) agar interceptor
 // selalu mengirim Authorization header terbaru.
 let authToken: string | null = null;
+let _onUnauthorized: (() => void) | null = null;
 
 export function setAuthToken(token: string | null) {
   authToken = token;
+}
+
+/** Dipanggil AuthContext saat mount: daftarkan handler logout otomatis bila 401. */
+export function setUnauthorizedHandler(fn: () => void) {
+  _onUnauthorized = fn;
 }
 
 export const api = axios.create({
@@ -20,6 +26,18 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Jika server balas 401, token sudah expire → logout + redirect ke Login
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (axios.isAxiosError(err) && err.response?.status === 401 && authToken) {
+      setAuthToken(null);
+      _onUnauthorized?.();
+    }
+    return Promise.reject(err);
+  },
+);
 
 // Error jaringan = tidak ada respons dari server (offline / timeout).
 export function isNetworkError(err: unknown): boolean {

@@ -18,7 +18,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiCalculate, apiOcrMeter, apiSaveReading, apiUpdateLocation, apiUploadPhoto } from '../api/services';
-import { preprocessForOcr } from '../utils/imagePreprocess';
+import { compressForUpload, preprocessForOcr } from '../utils/imagePreprocess';
 import { apiErrorMessage, isNetworkError } from '../api/client';
 import { useOffline } from '../offline/OfflineContext';
 import { ReadingResult, TariffResult } from '../types';
@@ -134,7 +134,8 @@ export default function ReadingScreen({ route, navigation }: Props) {
       const saved = await apiSaveReading(customer.id, meterBaru, catatan || undefined);
       if (photoUri) {
         try {
-          await apiUploadPhoto(saved.noFaktur, photoUri);
+          const compressed = await compressForUpload(photoUri);
+          await apiUploadPhoto(saved.noFaktur, compressed);
         } catch {
           Alert.alert(tr('reading_alert_photo_upload_title'), tr('reading_alert_photo_upload_message'));
         }

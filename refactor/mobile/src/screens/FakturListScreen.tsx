@@ -1,5 +1,5 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+﻿import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -25,8 +25,9 @@ export default function FakturListScreen({ route, navigation }: Props) {
   const [items, setItems] = useState<FakturListItem[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(
     async (pageToLoad: number, f: Filter) => {
@@ -54,9 +55,13 @@ export default function FakturListScreen({ route, navigation }: Props) {
     [customerId],
   );
 
-  useEffect(() => {
-    load(1, filter);
-  }, [filter, load]);
+  useEffect(() => { load(1, filter); }, [filter, load]);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await load(1, filter);
+    setRefreshing(false);
+  }
 
   const canLoadMore = items.length < total;
 
@@ -74,7 +79,7 @@ export default function FakturListScreen({ route, navigation }: Props) {
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.sumStrip, shadow.glow]}>
         <View style={s.sumIcon}><InvoiceIcon size={22} color="#fff" strokeWidth={2} /></View>
         <View style={{ flex: 1 }}>
-          <Text style={s.sumSub}>Total terdaftar</Text>
+          <Text style={s.sumSub}>{tr('faktur_list_total_registered')}</Text>
           <Text style={s.sumTitle}>{total} {tr('faktur_list_total_suffix')}</Text>
         </View>
       </LinearGradient>
@@ -94,44 +99,23 @@ export default function FakturListScreen({ route, navigation }: Props) {
           keyExtractor={(it, i) => `${it.noFaktur}-${i}`}
           contentContainerStyle={items.length === 0 ? { flex: 1 } : { padding: 14, gap: 10 }}
           ListEmptyComponent={<EmptyState label={tr('faktur_list_empty')} illustration='invoices' />}
-          renderItem={({ item }) => {
-            const color = item.isLunas ? t.success : t.danger;
-            return (
-              <TouchableOpacity
-                style={s.ticket}
-                activeOpacity={0.85}
-                onPress={() => item.noFaktur && navigation.navigate('FakturDetail', { noFaktur: item.noFaktur })}
-              >
-                <View style={s.body}>
-                  <View style={[s.iconChip, { backgroundColor: color + '1A' }]}>
-                    <InvoiceIcon size={20} color={color} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={s.faktur} numberOfLines={1}>{item.noFaktur}</Text>
-                    <Text style={s.meta} numberOfLines={1}>{item.namaPelanggan ?? `ID ${item.customerId}`}</Text>
-                    <View style={s.dateChip}>
-                      <Text style={s.dateText}>{item.tanggal ? item.tanggal.slice(0, 10) : '-'}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={s.perf}>
-                  <View style={[s.notch, s.notchTop]} />
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <View key={i} style={s.perfDot} />
-                  ))}
-                  <View style={[s.notch, s.notchBottom]} />
-                </View>
-
-                <View style={s.stub}>
-                  <Text style={s.total}>{formatRupiah(item.total)}</Text>
-                  <View style={[s.badge, { backgroundColor: color + '22' }]}>
-                    <Text style={[s.badgeText, { color }]}>{item.isLunas ? tr('faktur_list_badge_paid') : tr('faktur_list_badge_unpaid')}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} colors={[t.primary]} />}
+          // FlatList performance
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews
+          renderItem={({ item }) => (
+            <FakturCard
+              item={item}
+              s={s}
+              successColor={t.success}
+              dangerColor={t.danger}
+              badgePaid={tr('faktur_list_badge_paid')}
+              badgeUnpaid={tr('faktur_list_badge_unpaid')}
+              onPress={() => item.noFaktur && navigation.navigate('FakturDetail', { noFaktur: item.noFaktur })}
+            />
+          )}
           onEndReachedThreshold={0.4}
           onEndReached={() => {
             if (!loading && canLoadMore) load(page + 1, filter);
@@ -142,6 +126,44 @@ export default function FakturListScreen({ route, navigation }: Props) {
     </View>
   );
 }
+
+// Memoized card — mencegah re-render saat parent update (filter/pagination)
+const FakturCard = memo(function FakturCard({ item, s, successColor, dangerColor, badgePaid, badgeUnpaid, onPress }: {
+  item: FakturListItem;
+  s: ReturnType<typeof createStyles>;
+  successColor: string; dangerColor: string;
+  badgePaid: string; badgeUnpaid: string;
+  onPress: () => void;
+}) {
+  const color = item.isLunas ? successColor : dangerColor;
+  return (
+    <TouchableOpacity style={s.ticket} activeOpacity={0.85} onPress={onPress}>
+      <View style={s.body}>
+        <View style={[s.iconChip, { backgroundColor: color + '1A' }]}>
+          <InvoiceIcon size={20} color={color} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.faktur} numberOfLines={1}>{item.noFaktur}</Text>
+          <Text style={s.meta} numberOfLines={1}>{item.namaPelanggan ?? `ID ${item.customerId}`}</Text>
+          <View style={s.dateChip}>
+            <Text style={s.dateText}>{item.tanggal ? item.tanggal.slice(0, 10) : '-'}</Text>
+          </View>
+        </View>
+      </View>
+      <View style={s.perf}>
+        <View style={[s.notch, s.notchTop]} />
+        {Array.from({ length: 6 }).map((_, i) => <View key={i} style={s.perfDot} />)}
+        <View style={[s.notch, s.notchBottom]} />
+      </View>
+      <View style={s.stub}>
+        <Text style={s.total}>{formatRupiah(item.total)}</Text>
+        <View style={[s.badge, { backgroundColor: color + '22' }]}>
+          <Text style={[s.badgeText, { color }]}>{item.isLunas ? badgePaid : badgeUnpaid}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 const createStyles = (t: Theme) =>
   StyleSheet.create({

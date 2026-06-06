@@ -17,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://meter-air-apps-production.up.railway.app/api",
+        "EXPO_PUBLIC_API_URL": "https://api.meterair.id/api",
         "EXPO_PUBLIC_MIDTRANS_IS_PRODUCTION": "true"
       }
     },
@@ -27,7 +27,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://meter-air-apps-production.up.railway.app/api",
+        "EXPO_PUBLIC_API_URL": "https://api.meterair.id/api",
         "EXPO_PUBLIC_MIDTRANS_IS_PRODUCTION": "true"
       }
     }

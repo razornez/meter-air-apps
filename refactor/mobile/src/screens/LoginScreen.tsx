@@ -12,8 +12,11 @@ import { useAuth } from '../auth/AuthContext';
 import { apiErrorMessage } from '../api/client';
 import { fonts, palette, radius, shadow, Theme } from '../theme';
 import { useTheme, useThemeMode } from '../ThemeContext';
+import Constants from 'expo-constants';
 import WaveBackground from '../components/ui/WaveBackground';
 import { CheckIcon, DropMark, EyeIcon, EyeOffIcon, MoonIcon, SunIcon } from '../components/ui/Icons';
+
+const APP_VERSION = Constants.expoConfig?.version ?? '1.5.0';
 
 const { height: SCREEN_H } = Dimensions.get('window');
 const REMEMBER_KEY = 'meterair_remember';
@@ -220,7 +223,7 @@ export default function LoginScreen() {
           <View style={s.footerWrap}>
             <View style={s.divider} />
             <Text style={s.footBrand}>Powered by Anugrah Solusi Digital</Text>
-            <Text style={s.footVersion}>v1.0.0  ·  {t('login_footer')} · {new Date().getFullYear()}</Text>
+            <Text style={s.footVersion}>v{APP_VERSION}  ·  {t('login_footer')} · {new Date().getFullYear()}</Text>
           </View>
         </SafeAreaView>
       </WaveBackground>

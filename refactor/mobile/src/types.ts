@@ -274,6 +274,16 @@ export interface KinerjaResponse {
   data: KinerjaItem[];
 }
 
+// Audit trail satu baris pembayaran (dari /faktur/payments).
+export interface PaymentLogItem {
+  id: number;
+  metode: string;
+  jumlah: number;
+  status: string;            // 'lunas' | 'batal' | 'pending'
+  paidAt: string | null;
+  petugasNama: string | null;
+}
+
 export interface FakturDetail {
   noFaktur: string | null;
   tanggal: string | null;

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -25,6 +25,7 @@ export default function WorklistScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
   const [filter, setFilter]   = useState<Filter>('semua');
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -32,6 +33,12 @@ export default function WorklistScreen({ navigation }: Props) {
     catch (e) { setError(apiErrorMessage(e)); }
     finally { setLoading(false); }
   }, []);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
 
   useEffect(() => {
     const unsub = navigation.addListener('focus', load);
@@ -74,6 +81,7 @@ export default function WorklistScreen({ navigation }: Props) {
       keyboardShouldPersistTaps="handled"
       style={s.container}
       data={filtered}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} colors={[t.primary]} />}
       keyExtractor={(it) => String(it.id)}
       contentContainerStyle={filtered.length === 0 ? { flexGrow: 1 } : { padding: 14, gap: 10, paddingBottom: 30 }}
       ListHeaderComponent={

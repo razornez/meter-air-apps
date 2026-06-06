@@ -353,5 +353,17 @@
     "reading_alert_record_saved_title": "Catatan Tersimpan",
     "reading_alert_offline_saved_title": "Tersimpan Offline",
     "reading_alert_offline_saved_detail": "Data akan otomatis tersinkron saat terhubung.",
-    "reading_alert_save_failed_title": "Gagal Simpan"
+    "reading_alert_save_failed_title": "Gagal Simpan",
+
+    "faktur_detail_pay_now_label":   "Bayar Sekarang",
+    "faktur_detail_wa_title":        "Reminder Tagihan",
+    "faktur_detail_wa_sub":          "Kirim via WhatsApp",
+    "faktur_detail_foto_meter":      "FOTO METERAN",
+    "faktur_detail_audit_title":     "RIWAYAT PEMBAYARAN",
+    "faktur_detail_audit_by":        "oleh",
+    "faktur_detail_audit_status_lunas":  "Lunas",
+    "faktur_detail_audit_status_batal":  "Batal",
+    "faktur_detail_audit_status_pending":"Pending",
+    "faktur_detail_audit_officer_unknown": "petugas",
+    "faktur_list_total_registered":  "Total terdaftar"
 }

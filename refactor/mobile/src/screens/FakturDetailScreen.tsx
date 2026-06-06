@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -8,9 +8,9 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
-import { apiFakturDetail, apiGetConfig, apiSetFakturLunas } from '../api/services';
+import { apiFakturDetail, apiGetConfig, apiListPayments, apiSetFakturLunas } from '../api/services';
 import { apiErrorMessage } from '../api/client';
-import { AppConfig, FakturDetail } from '../types';
+import { AppConfig, FakturDetail, PaymentLogItem } from '../types';
 import { fonts, formatRupiah, pastels, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { fotoMeterUrl } from '../config';
@@ -27,17 +27,24 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   const { noFaktur } = route.params;
   const [data, setData] = useState<FakturDetail | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
+  const [payments, setPayments] = useState<PaymentLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [d, c] = await Promise.all([apiFakturDetail(noFaktur), apiGetConfig()]);
+      const [d, c, p] = await Promise.all([
+        apiFakturDetail(noFaktur),
+        apiGetConfig(),
+        apiListPayments(noFaktur).catch(() => []),
+      ]);
       setData(d);
       setConfig(c);
+      setPayments(p);
     } catch (e) {
       setError(apiErrorMessage(e));
     } finally {
@@ -54,6 +61,12 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     const unsub = navigation.addListener('focus', load);
     return unsub;
   }, [navigation, load]);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
 
   function onToggleLunas() {
     if (!data) return;
@@ -159,7 +172,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   if (error || !data) return <ErrorState message={error ?? tr('faktur_detail_error_no_data')} onRetry={load} />;
 
   return (
-    <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 16 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} colors={[t.primary]} />}>
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
         <Text style={s.heroLabel}>{tr('faktur_detail_hero_label')}</Text>
         <Text style={s.heroTotal}>{formatRupiah(data.total ?? 0)}</Text>
@@ -225,7 +238,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
               <Ionicons name="wallet-outline" size={24} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.payBtnLabel}>Bayar Sekarang</Text>
+              <Text style={s.payBtnLabel}>{tr('faktur_detail_pay_now_label')}</Text>
               <Text style={s.payBtnAmount}>{formatRupiah(data.total ?? 0)}</Text>
             </View>
             <View style={s.payChevron}>
@@ -247,8 +260,8 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
             <MaterialCommunityIcons name="whatsapp" size={26} color="#22C55E" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.waBtnTitle}>Reminder Tagihan</Text>
-            <Text style={s.waBtnSub}>Kirim via WhatsApp</Text>
+            <Text style={s.waBtnTitle}>{tr('faktur_detail_wa_title')}</Text>
+            <Text style={s.waBtnSub}>{tr('faktur_detail_wa_sub')}</Text>
           </View>
           <Ionicons name="arrow-forward" size={18} color="#86EFAC" />
         </TouchableOpacity>
@@ -296,16 +309,53 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
         ))}
         {!!data.catatan && <Row s={s} label={tr('faktur_detail_row_note')} value={data.catatan} />}
 
-        {/* Foto meteran */}
-        {!!fotoMeterUrl(data.fotoMeter) && (
+        {/* Foto meteran — flag dari fotoMeter, URL dibangun dari noFaktur */}
+        {!!data.fotoMeter && !!data.noFaktur && (
           <>
             <DashedLine color={t.border} />
-            <Text style={s.rTitle}>FOTO METERAN</Text>
+            <Text style={s.rTitle}>{tr('faktur_detail_foto_meter')}</Text>
             <Image
-              source={{ uri: fotoMeterUrl(data.fotoMeter)! }}
+              source={{ uri: fotoMeterUrl(data.noFaktur)! }}
               style={s.fotoMeter}
               resizeMode="cover"
             />
+          </>
+        )}
+
+        {/* Audit trail pembayaran */}
+        {payments.length > 0 && (
+          <>
+            <DashedLine color={t.border} />
+            <Text style={s.rTitle}>{tr('faktur_detail_audit_title')}</Text>
+            {payments.map((p) => {
+              const paid = p.status === 'lunas';
+              const cancelled = p.status === 'batal';
+              const color = paid ? t.success : cancelled ? t.danger : t.warning;
+              const statusLabel = paid
+                ? tr('faktur_detail_audit_status_lunas')
+                : cancelled
+                  ? tr('faktur_detail_audit_status_batal')
+                  : tr('faktur_detail_audit_status_pending');
+              const when = p.paidAt
+                ? new Date(p.paidAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+                : '-';
+              return (
+                <View key={p.id} style={s.auditRow}>
+                  <View style={[s.auditDot, { backgroundColor: color }]}>
+                    <Ionicons name={paid ? 'checkmark' : cancelled ? 'close' : 'time'} size={11} color="#fff" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.auditMain}>
+                      {statusLabel} · {p.metode.toUpperCase()}
+                    </Text>
+                    <Text style={s.auditSub} numberOfLines={1}>
+                      {tr('faktur_detail_audit_by')} {p.petugasNama ?? tr('faktur_detail_audit_officer_unknown')} · {when}
+                    </Text>
+                  </View>
+                  {p.jumlah > 0 && <Text style={[s.auditAmount, { color }]}>{formatRupiah(p.jumlah)}</Text>}
+                </View>
+              );
+            })}
           </>
         )}
 
@@ -354,6 +404,12 @@ const createStyles = (t: Theme) =>
     rNotchR: { right: -9 },
     rTitle: { fontFamily: fonts.extrabold, color: t.muted, fontSize: 11, letterSpacing: tracking.overline, marginBottom: 8, marginTop: 4 },
     fotoMeter: { width: '100%', height: 200, borderRadius: radius.md, marginTop: 8, backgroundColor: t.surfaceAlt },
+    // Audit trail
+    auditRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+    auditDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+    auditMain: { color: t.text, fontFamily: fonts.bold, fontSize: 13 },
+    auditSub: { color: t.muted, fontFamily: fonts.regular, fontSize: 11, marginTop: 1 },
+    auditAmount: { fontFamily: fonts.displayBold, fontSize: 13 },
     barcode: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 44, marginTop: 18 },
     bar: { height: '100%', backgroundColor: t.text, marginRight: 2, opacity: 0.82 },
     barcodeText: { textAlign: 'center', color: t.muted, fontFamily: fonts.medium, fontSize: 11, marginTop: 6, letterSpacing: 2 },

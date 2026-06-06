@@ -20,9 +20,6 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
       ? `https://app.midtrans.com/snap/v4/redirection/${snapToken}`
       : `https://app.sandbox.midtrans.com/snap/v4/redirection/${snapToken}`);
 
-  // Debug: log URL agar mudah diverifikasi
-  console.log('[Midtrans] Loading URL:', snapUrl);
-
   function onNavigationChange(state: WebViewNavigation) {
     const url = state.url;
 

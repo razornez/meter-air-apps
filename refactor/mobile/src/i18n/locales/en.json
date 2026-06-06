@@ -353,5 +353,17 @@
     "reading_alert_record_saved_title": "Record Saved",
     "reading_alert_offline_saved_title": "Saved Offline",
     "reading_alert_offline_saved_detail": "Data will sync automatically when connected.",
-    "reading_alert_save_failed_title": "Save Failed"
+    "reading_alert_save_failed_title": "Save Failed",
+
+    "faktur_detail_pay_now_label":   "Pay Now",
+    "faktur_detail_wa_title":        "Payment Reminder",
+    "faktur_detail_wa_sub":          "Send via WhatsApp",
+    "faktur_detail_foto_meter":      "METER PHOTO",
+    "faktur_detail_audit_title":     "PAYMENT HISTORY",
+    "faktur_detail_audit_by":        "by",
+    "faktur_detail_audit_status_lunas":  "Paid",
+    "faktur_detail_audit_status_batal":  "Cancelled",
+    "faktur_detail_audit_status_pending":"Pending",
+    "faktur_detail_audit_officer_unknown": "officer",
+    "faktur_list_total_registered":  "Total registered"
 }

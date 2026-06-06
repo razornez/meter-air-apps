@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -26,6 +26,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fotoModal, setFotoModal] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -42,6 +43,12 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
   }, [id]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
 
   if (loading) return <Loading />;
   if (error || !detail) return <ErrorState message={error ?? tr('customer_detail_error_no_data')} onRetry={load} />;
@@ -74,6 +81,7 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{ padding: 14, paddingBottom: 36 }}
       showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} colors={[t.primary]} />}
     >
       {/* ── Hero identity card ── */}
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
@@ -233,10 +241,10 @@ export default function CustomerDetailScreen({ route, navigation }: Props) {
 
                 {/* Content card */}
                 <View style={s.histCard}>
-                  {/* Thumbnail foto meteran */}
-                  {!!fotoMeterUrl(h.fotoMeter) && (
-                    <TouchableOpacity onPress={() => setFotoModal(fotoMeterUrl(h.fotoMeter)!)} activeOpacity={0.85}>
-                      <Image source={{ uri: fotoMeterUrl(h.fotoMeter)! }} style={s.histPhoto} resizeMode="cover" />
+                  {/* Thumbnail foto meteran — flag fotoMeter, URL dari noFaktur */}
+                  {!!h.fotoMeter && !!h.noFaktur && (
+                    <TouchableOpacity onPress={() => setFotoModal(fotoMeterUrl(h.noFaktur)!)} activeOpacity={0.85}>
+                      <Image source={{ uri: fotoMeterUrl(h.noFaktur)! }} style={s.histPhoto} resizeMode="cover" />
                     </TouchableOpacity>
                   )}
                   <View style={{ flex: 1 }}>
