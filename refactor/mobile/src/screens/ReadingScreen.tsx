@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -248,6 +250,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
 
   // ---- Form ----
   return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <ScrollView keyboardShouldPersistTaps="handled" style={{ backgroundColor: 'transparent' }} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.custHero, shadow.glow]}>
         <Text style={s.custHeroLabel}>{tr('reading_label_customer')}</Text>
@@ -405,6 +408,7 @@ export default function ReadingScreen({ route, navigation }: Props) {
         </View>
       </Modal>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

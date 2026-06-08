@@ -2,6 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -62,6 +64,7 @@ export default function CashPaymentScreen({ route, navigation }: Props) {
   }, [noFaktur, amount, receivedNum, kembalian, isValid, navigation]);
 
   return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
     <ScrollView style={s.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       {/* Tagihan */}
       <View style={s.billCard}>
@@ -123,6 +126,7 @@ export default function CashPaymentScreen({ route, navigation }: Props) {
         }
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

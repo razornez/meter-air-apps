@@ -1,6 +1,7 @@
 ﻿import React from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, View } from 'react-native';
+import { ActivityIndicator, AppState, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as NavigationBar from 'expo-navigation-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   NavigationContainer,
@@ -135,6 +136,17 @@ export default function App() {
 
   React.useEffect(() => {
     initI18n().then(() => setI18nReady(true));
+  }, []);
+
+  // Sembunyikan navbar sistem Android (mode immersive) — muncul sementara saat swipe.
+  React.useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    NavigationBar.setVisibilityAsync('hidden').catch(() => {});
+    NavigationBar.setBehaviorAsync('overlay-swipe').catch(() => {});
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'active') NavigationBar.setVisibilityAsync('hidden').catch(() => {});
+    });
+    return () => sub.remove();
   }, []);
 
   const [fontsLoaded] = useFonts({

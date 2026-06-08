@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
@@ -42,7 +43,10 @@ export default function MapScreen() {
     finally { setLocating(false); }
   }
 
-  useEffect(() => { load(); locateOfficer(); }, []);
+  // GPS petugas: cukup sekali saat mount
+  useEffect(() => { locateOfficer(); }, []);
+  // Marker pelanggan: refresh tiap kali tab Peta dibuka (mis. setelah update lokasi)
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const center = useMemo(() => {
     if (officerPos) return officerPos;
