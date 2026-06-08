@@ -1,0 +1,22 @@
+# systemd unit untuk API NestJS mobile (konsisten dengan stack web admin).
+# Pasang: sudo cp meter-air-api.service /etc/systemd/system/
+#         sudo systemctl daemon-reload && sudo systemctl enable --now meter-air-api
+# Ganti User= bila perlu (default www-data — samakan dgn pemilik /var/www/meter-air-api).
+[Unit]
+Description=Meter Air NestJS API (mobile backend)
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/meter-air-api/refactor/api
+ExecStart=/usr/bin/node dist/main.js
+Environment=NODE_ENV=production
+# .env dibaca otomatis (dotenv) dari WorkingDirectory di atas.
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/var/log/meter-air-api/out.log
+StandardError=append:/var/log/meter-air-api/err.log
+
+[Install]
+WantedBy=multi-user.target

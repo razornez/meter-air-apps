@@ -54,10 +54,12 @@ import { SeedModule } from './seed/seed.module';
         port: parseInt(config.get('DB_PORT', '3306'), 10),
         username: config.get('DB_USERNAME', 'root'),
         password: config.get('DB_PASSWORD', ''),
-        database: config.get('DB_DATABASE', 'pdam'),
+        database: config.get('DB_DATABASE', 'meterair'),
         autoLoadEntities: true,
         synchronize: false,
-        charset: 'latin1_swedish_ci',
+        // DB meterair (Laravel) = utf8mb4. WAJIB cocok agar nama dgn karakter
+        // khusus tidak rusak (mojibake). Bisa di-override via DB_CHARSET.
+        charset: config.get('DB_CHARSET', 'utf8mb4'),
         // Connection pool — Railway membatasi koneksi MySQL, jaga di bawah 10.
         // (acquireTimeout dihapus: bukan opsi mysql2 yang valid.)
         extra: {

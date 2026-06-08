@@ -1,133 +1,119 @@
-# Runbook Migrasi ke VPS — Meter Air
+# Runbook Migrasi ke VPS — Meter Air (API mobile NestJS)
 
-Tujuan: web admin (Laravel) + API mobile (NestJS) + MySQL jadi **satu** di VPS,
-berbagi **satu database** (`meterair`). Domain API mobile: `api.meterair.id`.
+Tujuan: API mobile NestJS jadi satu di VPS yang sama dengan web admin Laravel,
+**berbagi database `meterair` yang sama**. Konsisten dgn pola web admin
+(systemd + GitHub Actions auto-deploy).
 
-Ganti yang HURUF BESAR: `IP_VPS`, `USER_VPS`, `DB_USER`, `DB_PASS`, `DB_NAME`.
+- Web admin (Laravel) : `https://meterair.online`  → `/var/www/meter-air`
+- API mobile (NestJS) : `https://api.meterair.online` → `/var/www/meter-air-api`
+- Database (sama)     : `meterair` / user `meterair_user` / localhost / utf8mb4
+
+Ganti yang HURUF BESAR: `IP_VPS`, `USER_VPS`, `DB_PASS`.
 
 ---
 
 ## Prasyarat (sekali)
 
-1. **DNS:** di pengelola domain meterair.id, tambah record:
-   `A   api   ->  IP_VPS`   (tunggu propagasi ~5–30 menit)
-2. **Push kode terbaru** (dari laptop) supaya VPS bisa tarik:
+1. **DNS:** tambah record `A   api.meterair.online  ->  IP_VPS`
+2. **GitHub Secrets** di repo `meter-air-apps` (Settings → Secrets → Actions):
+   `DEPLOY_HOST=IP_VPS`, `DEPLOY_USER=USER_VPS`, `DEPLOY_KEY=<private key SSH>`
+3. Di VPS, beri user deploy sudo tanpa password untuk restart service:
    ```bash
-   # repo web admin (ada migrasi meter_photo baru)
-   cd /c/xampp/htdocs/meter-air && git add -A && git commit -m "feat(db): migrasi meter_photo" && git push
-
-   # repo mobile+api (semua perubahan terbaru: foto BLOB, audit, dll)
-   cd /c/xampp/htdocs/meter-air-apps && git add -A && git commit -m "feat: foto BLOB, audit trail, kompres, config VPS" && git push
+   echo "USER_VPS ALL=(ALL) NOPASSWD: /bin/systemctl restart meter-air-api" | sudo tee /etc/sudoers.d/meter-air-api
    ```
 
 ---
 
-## STEP 1 — Backup database TERBARU (di laptop)
+## STEP 1 — Import database (sumber: backup lokal terbaru)
 
+**Di laptop** — dump segar + kirim:
 ```bash
-# Dump segar langsung dari MySQL XAMPP (paling update)
-"C:\xampp\mysql\bin\mysqldump.exe" -u root meterair > "%USERPROFILE%\Desktop\meterair_migrasi.sql"
-```
-> Kalau lebih suka pakai file yang sudah ada:
-> `c:\xampp\htdocs\meter-air\storage\app\backups\meterair_LOCAL_2026-06-06.sql`
-
----
-
-## STEP 2 — Kirim backup ke VPS (di laptop)
-
-```bash
-scp "%USERPROFILE%\Desktop\meterair_migrasi.sql" USER_VPS@IP_VPS:/tmp/meterair.sql
+"C:\xampp\mysql\bin\mysqldump.exe" -u root meterair > "%USERPROFILE%\Desktop\meterair.sql"
+scp "%USERPROFILE%\Desktop\meterair.sql" USER_VPS@IP_VPS:/tmp/meterair.sql
 ```
 
----
-
-## STEP 3 — Import database (di VPS, via SSH)
-
+**Di VPS** — cek kosong lalu import:
 ```bash
 ssh USER_VPS@IP_VPS
-
-# Cek dulu DB web admin (nama/user dari .env web admin)
-cat /var/www/meter-air/.env | grep DB_
-
-# Cek apakah sudah ada data bisnis (harusnya 0 / error)
-mysql -u DB_USER -p DB_NAME -e "SELECT COUNT(*) FROM customer;" 2>&1
-
-# Import (akan replace tabel dengan data lokal — aman karena VPS belum ada data bisnis)
-mysql -u DB_USER -p DB_NAME < /tmp/meterair.sql
-
+# Cek (harus 0 / error "doesn't exist")
+mysql -u meterair_user -p meterair -e "SELECT COUNT(*) FROM customer;" 2>&1
+# Import
+mysql -u meterair_user -p meterair < /tmp/meterair.sql
 # Verifikasi
-mysql -u DB_USER -p DB_NAME -e "SELECT (SELECT COUNT(*) FROM customer) AS cust, (SELECT COUNT(*) FROM faktur) AS faktur, (SELECT COUNT(*) FROM meter_photo) AS foto;"
+mysql -u meterair_user -p meterair -e "SELECT (SELECT COUNT(*) FROM customer) cust,(SELECT COUNT(*) FROM faktur) faktur,(SELECT COUNT(*) FROM meter_photo) foto;"
 ```
-Hasil yang diharapkan: `cust=658, faktur=3330, foto=0`.
+Harapan: `cust=658, faktur=3330, foto=0`.
 
 ---
 
-## STEP 4 — Sinkron migrasi Laravel + bersihkan cache (di VPS)
+## STEP 2 — Sinkron migrasi web admin (di VPS)
 
 ```bash
-cd /var/www/meter-air
-git pull
+cd /var/www/meter-air && git pull origin main
 php artisan migrate --force      # mencatat migrasi meter_photo (tabel sudah ada → aman)
 php artisan optimize:clear
 ```
 
 ---
 
-## STEP 5 — Deploy API NestJS (di VPS)
+## STEP 3 — Siapkan API NestJS (di VPS, sekali)
 
 ```bash
-# Node.js 20 (lewati bila sudah ada)
+# Node.js 20 + git (lewati bila sudah ada)
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-sudo npm install -g pm2
+sudo apt install -y nodejs git
 
-# Ambil kode API
+# Clone repo (seluruh meter-air-apps; API ada di refactor/api)
 sudo mkdir -p /var/www/meter-air-api && sudo chown $USER:$USER /var/www/meter-air-api
-git clone https://github.com/razornez/meter-air-apps.git /tmp/mair
-cp -r /tmp/mair/refactor/api/* /var/www/meter-air-api/
-cd /var/www/meter-air-api
+git clone https://github.com/razornez/meter-air-apps.git /var/www/meter-air-api
+cd /var/www/meter-air-api/refactor/api
 
 # Dependencies + build
-npm install
+npm ci
 npm run build
 
-# Konfigurasi
+# Konfigurasi .env (DB sama dengan web admin)
 cp .env.production.example .env
-nano .env     # isi DB_*, JWT_SECRET (openssl rand -base64 48), Midtrans
+nano .env
+#   DB_DATABASE=meterair  DB_USERNAME=meterair_user  DB_PASSWORD=DB_PASS
+#   JWT_SECRET=$(openssl rand -base64 48)   ← isi
+#   Midtrans SERVER/CLIENT key, SEED_SECRET dikosongkan
+#   DB_CHARSET=utf8mb4 (default — biarkan)
 
 # Folder log
-sudo mkdir -p /var/log/meter-air-api && sudo chown $USER:$USER /var/log/meter-air-api
+sudo mkdir -p /var/log/meter-air-api && sudo chown www-data:www-data /var/log/meter-air-api
 ```
 
 ---
 
-## STEP 6 — Jalankan API dengan PM2 (di VPS)
+## STEP 4 — Jalankan via systemd (di VPS)
 
 ```bash
-cd /var/www/meter-air-api
-pm2 start ecosystem.config.cjs
-pm2 save
-pm2 startup     # jalankan perintah yang muncul (agar auto-start saat VPS reboot)
+sudo cp /var/www/meter-air-api/refactor/api/deploy/meter-air-api.service /etc/systemd/system/
+# (sesuaikan User= di file bila pemilik folder bukan www-data)
+sudo chown -R www-data:www-data /var/www/meter-air-api
+sudo systemctl daemon-reload
+sudo systemctl enable --now meter-air-api
 
 # Cek jalan di port 4000
-curl http://127.0.0.1:4000/api/health
+curl http://127.0.0.1:4000/api/health     # → {"status":"ok","db":"ok",...}
+sudo systemctl status meter-air-api --no-pager
 ```
-Harus balas: `{"status":"ok","db":"ok",...}`
 
 ---
 
-## STEP 7 — nginx reverse proxy (di VPS)
+## STEP 5 — nginx + SSL untuk api.meterair.online (di VPS)
 
 ```bash
-sudo nano /etc/nginx/sites-available/api.meterair.id
+sudo nano /etc/nginx/sites-available/api.meterair.online
 ```
-Isi:
 ```nginx
 server {
     listen 80;
-    server_name api.meterair.id;
+    listen [::]:80;
+    server_name api.meterair.online;
 
-    client_max_body_size 12M;   # untuk upload foto meter
+    client_max_body_size 20M;   # samakan web admin (upload foto)
 
     location / {
         proxy_pass http://127.0.0.1:4000;
@@ -139,51 +125,47 @@ server {
     }
 }
 ```
-Aktifkan:
 ```bash
-sudo ln -s /etc/nginx/sites-available/api.meterair.id /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/api.meterair.online /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d api.meterair.online      # SSL (pilih redirect HTTPS)
+
+# Verifikasi publik
+curl https://api.meterair.online/api/health
 ```
 
 ---
 
-## STEP 8 — SSL HTTPS (di VPS)
+## STEP 6 — Auto-deploy aktif
 
-```bash
-sudo certbot --nginx -d api.meterair.id
-```
-Pilih redirect HTTP→HTTPS bila ditanya.
-
-Verifikasi dari mana saja:
-```bash
-curl https://api.meterair.id/api/health
-```
+Workflow `.github/workflows/deploy-api.yml` sudah ada. Mulai sekarang:
+**push ke `main` yang menyentuh `refactor/api/**` → otomatis deploy** (git pull, npm ci,
+build, restart systemd). Sama persis pola web admin.
 
 ---
 
-## STEP 9 — Rebuild APK (di laptop)
+## STEP 7 — Rebuild APK (di laptop)
 
-`eas.json` sudah diarahkan ke `https://api.meterair.id/api`.
+`eas.json` sudah → `https://api.meterair.online/api`.
 ```bash
 cd /c/xampp/htdocs/meter-air-apps/refactor/mobile
 eas build --profile preview --platform android
 ```
-Install APK baru → aplikasi konek ke VPS.
 
 ---
 
-## STEP 10 — Bereskan (opsional)
+## STEP 8 — Bereskan
 
-- Pastikan `SEED_SECRET` di `.env` VPS **kosong** (matikan endpoint seed di produksi).
-- Matikan layanan Railway (sudah tidak dipakai).
-- Cron auto-cleanup data demo tetap jalan harian (aman, hanya hapus `SED/%`).
+- Pastikan `SEED_SECRET` di `.env` VPS **kosong** (matikan endpoint seed).
+- Matikan Railway (tidak dipakai lagi).
+- Cron auto-cleanup data demo jalan harian (hanya hapus `SED/%`).
 
 ---
 
-## Verifikasi akhir (checklist)
+## Verifikasi akhir
 
-- [ ] `https://api.meterair.id/api/health` → `db:ok`
-- [ ] Login di APK baru berhasil (akun dari data lokal)
+- [ ] `https://api.meterair.online/api/health` → `db:ok`
+- [ ] Login APK baru berhasil
 - [ ] Catat meter + foto → muncul di riwayat (foto dari DB)
-- [ ] Web admin VPS tampil data sama (658 pelanggan)
-- [ ] Cetak/bagikan PDF jalan
+- [ ] Nama pelanggan karakter khusus tampil benar (charset utf8mb4)
+- [ ] Web admin & mobile lihat data sama (658 pelanggan)

@@ -1,0 +1,36 @@
+# Auto-deploy API NestJS ke VPS — pola sama dgn web admin (appleboy/ssh-action).
+# Trigger hanya saat folder API berubah (push mobile-only tidak ikut deploy).
+#
+# WAJIB set Secrets di repo meter-air-apps (Settings → Secrets → Actions):
+#   DEPLOY_HOST  = IP VPS
+#   DEPLOY_USER  = user SSH (yang punya akses ke /var/www/meter-air-api)
+#   DEPLOY_KEY   = private key SSH
+# Dan di VPS: user tsb punya sudo NOPASSWD untuk: systemctl restart meter-air-api
+name: Deploy API to VPS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'refactor/api/**'
+      - '.github/workflows/deploy-api.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -e
+            cd /var/www/meter-air-api
+            git pull origin main
+            cd refactor/api
+            npm ci
+            npm run build
+            sudo systemctl restart meter-air-api
+            echo "✅ API deployed at $(date)"
