@@ -4,6 +4,7 @@ export type RootStackParamList = {
   Login: undefined;
   Main: undefined;
   Home: undefined;
+  About: undefined;
   Scan: undefined;
   Reading: { meterInfo: MeterInfo };
   // Fase 2

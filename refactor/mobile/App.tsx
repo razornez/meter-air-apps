@@ -41,6 +41,7 @@ import AnomalyScreen from './src/screens/AnomalyScreen';
 import WorklistScreen from './src/screens/WorklistScreen';
 import TunggakanScreen from './src/screens/TunggakanScreen';
 import KinerjaScreen from './src/screens/KinerjaScreen';
+import AboutScreen from './src/screens/AboutScreen';
 import FakturListScreen from './src/screens/FakturListScreen';
 import CustomersListScreen from './src/screens/CustomersListScreen';
 import PaymentWebViewScreen from './src/screens/PaymentWebViewScreen';
@@ -92,6 +93,7 @@ function RootNavigator() {
           <Stack.Screen name="Worklist" component={WorklistScreen} options={{ title: 'Worklist Pencatatan' }} />
           <Stack.Screen name="Tunggakan" component={TunggakanScreen} options={{ title: 'Tunggakan & Denda' }} />
           <Stack.Screen name="Kinerja" component={KinerjaScreen} options={{ title: 'Rekap Kinerja' }} />
+          <Stack.Screen name="About" component={AboutScreen} options={{ title: 'Tentang & Yang Baru' }} />
           {/* Layar yang bisa diakses dari mana saja (termasuk dari Tunggakan, Anomali dll) */}
           <Stack.Screen name="FakturList" component={FakturListScreen} options={{ title: 'Tagihan' }} />
           <Stack.Screen name="CustomersList" component={CustomersListScreen} options={{ title: 'Pelanggan' }} />

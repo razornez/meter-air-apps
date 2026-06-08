@@ -365,5 +365,19 @@
     "faktur_detail_audit_status_batal":  "Cancelled",
     "faktur_detail_audit_status_pending":"Pending",
     "faktur_detail_audit_officer_unknown": "officer",
-    "faktur_list_total_registered":  "Total registered"
+    "faktur_list_total_registered":  "Total registered",
+
+    "about_update_check":        "Check for Updates",
+    "about_update_checking":     "Checking…",
+    "about_update_title":        "Update",
+    "about_update_latest":       "Your app is already up to date.",
+    "about_update_ready_title":  "Update Ready",
+    "about_update_ready_msg":    "Update downloaded. Reload the app now?",
+    "about_update_reload":       "Reload",
+    "about_update_failed":       "Failed to check for updates. Try again later.",
+    "about_update_dev":          "Automatic updates only work in a built app.",
+    "about_changelog_title":     "Update History",
+    "about_new_tag":             "NEW",
+    "about_new_modal_title":     "What's New",
+    "about_new_modal_ok":        "Got it"
 }

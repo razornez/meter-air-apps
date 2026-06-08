@@ -365,5 +365,19 @@
     "faktur_detail_audit_status_batal":  "Batal",
     "faktur_detail_audit_status_pending":"Pending",
     "faktur_detail_audit_officer_unknown": "petugas",
-    "faktur_list_total_registered":  "Total terdaftar"
+    "faktur_list_total_registered":  "Total terdaftar",
+
+    "about_update_check":        "Cek Pembaruan",
+    "about_update_checking":     "Memeriksa…",
+    "about_update_title":        "Pembaruan",
+    "about_update_latest":       "Aplikasi Anda sudah versi terbaru.",
+    "about_update_ready_title":  "Pembaruan Siap",
+    "about_update_ready_msg":    "Pembaruan sudah diunduh. Muat ulang aplikasi sekarang?",
+    "about_update_reload":       "Muat Ulang",
+    "about_update_failed":       "Gagal memeriksa pembaruan. Coba lagi nanti.",
+    "about_update_dev":          "Pembaruan otomatis hanya aktif di aplikasi yang sudah di-build.",
+    "about_changelog_title":     "Riwayat Pembaruan",
+    "about_new_tag":             "BARU",
+    "about_new_modal_title":     "Yang Baru",
+    "about_new_modal_ok":        "Oke, Mengerti"
 }

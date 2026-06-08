@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,7 +10,9 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { CHANGELOG, CHANGELOG_MARKER, changelogLines } from '../data/changelog';
 import { fetchWeather, WeatherData } from '../utils/weather';
 import i18nInstance, { LANG_KEY, Language } from '../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -67,6 +70,23 @@ export default function HomeScreen({ navigation }: Props) {
 
   const [clock, setClock] = useState('');
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [whatsNew, setWhatsNew] = useState(false);
+
+  // "Yang Baru" — tampil sekali tiap rilis (termasuk update OTA)
+  const WHATSNEW_KEY = 'meterair_whatsnew_marker';
+  useEffect(() => {
+    (async () => {
+      try {
+        const seen = await AsyncStorage.getItem(WHATSNEW_KEY);
+        if (seen !== CHANGELOG_MARKER) setWhatsNew(true);
+      } catch {}
+    })();
+  }, []);
+
+  async function dismissWhatsNew() {
+    setWhatsNew(false);
+    try { await AsyncStorage.setItem(WHATSNEW_KEY, CHANGELOG_MARKER); } catch {}
+  }
 
   async function toggleLang() {
     const next: Language = lang === 'id' ? 'en' : 'id';
@@ -168,6 +188,7 @@ export default function HomeScreen({ navigation }: Props) {
   const progress = wl && wl.total > 0 ? wl.done / wl.total : 0;
 
   return (
+    <>
     <ScrollView keyboardShouldPersistTaps="handled"
       style={{ backgroundColor: 'transparent' }}
       contentContainerStyle={{ paddingBottom: 28 }}
@@ -186,6 +207,10 @@ export default function HomeScreen({ navigation }: Props) {
               {/* Language toggle */}
               <TouchableOpacity onPress={toggleLang} style={s.langBtn} activeOpacity={0.8}>
                 <Text style={s.langText}>{lang === 'id' ? '🇮🇩' : '🇺🇸'}</Text>
+              </TouchableOpacity>
+              {/* Tentang & Yang Baru */}
+              <TouchableOpacity onPress={() => navigation.navigate('About')} style={s.iconBtn} activeOpacity={0.8}>
+                <Ionicons name="information-circle-outline" size={21} color={palette.white} />
               </TouchableOpacity>
               {/* Dark mode toggle */}
               <TouchableOpacity onPress={toggle} style={s.iconBtn} activeOpacity={0.8}>
@@ -325,6 +350,29 @@ export default function HomeScreen({ navigation }: Props) {
         </Animated.View>
       </View>
     </ScrollView>
+
+    {/* Modal "Yang Baru" — muncul sekali tiap rilis/update */}
+    <Modal visible={whatsNew} transparent animationType="fade" onRequestClose={dismissWhatsNew}>
+      <View style={s.wnOverlay}>
+        <View style={s.wnCard}>
+          <View style={s.wnIcon}><Ionicons name="sparkles" size={26} color={t.primary} /></View>
+          <Text style={s.wnTitle}>{i18n('about_new_modal_title')}</Text>
+          <Text style={s.wnVer}>v{CHANGELOG[0].version}</Text>
+          <ScrollView style={{ maxHeight: 260, alignSelf: 'stretch' }} contentContainerStyle={{ paddingVertical: 4 }}>
+            {changelogLines(CHANGELOG[0], lang).map((line, i) => (
+              <View key={i} style={s.wnLine}>
+                <Text style={s.wnBullet}>•</Text>
+                <Text style={s.wnLineText}>{line}</Text>
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={s.wnBtn} onPress={dismissWhatsNew} activeOpacity={0.85}>
+            <Text style={s.wnBtnText}>{i18n('about_new_modal_ok')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
@@ -509,6 +557,18 @@ const createStyles = (t: Theme) =>
     cacheText: { flex: 1, color: t.muted, fontFamily: fonts.regular, fontSize: 11.5 },
     cacheBtn: { backgroundColor: t.accent, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
     cacheBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 11 },
+
+    // Modal "Yang Baru"
+    wnOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+    wnCard: { width: '100%', maxWidth: 380, backgroundColor: t.surface, borderRadius: radius.xl, padding: 22, alignItems: 'center', ...shadow.float },
+    wnIcon: { width: 56, height: 56, borderRadius: 20, backgroundColor: t.badgeBg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+    wnTitle: { color: t.text, fontFamily: fonts.displayBold, fontSize: 19 },
+    wnVer: { color: t.primary, fontFamily: fonts.bold, fontSize: 13, marginTop: 2, marginBottom: 12 },
+    wnLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 4, paddingHorizontal: 4 },
+    wnBullet: { color: t.primary, fontFamily: fonts.bold, fontSize: 15, lineHeight: 19 },
+    wnLineText: { flex: 1, color: t.text, fontFamily: fonts.regular, fontSize: 13.5, lineHeight: 19 },
+    wnBtn: { alignSelf: 'stretch', marginTop: 14, backgroundColor: t.primary, borderRadius: radius.md, paddingVertical: 13, alignItems: 'center' },
+    wnBtnText: { color: '#fff', fontFamily: fonts.bold, fontSize: 15 },
   });
 
 
