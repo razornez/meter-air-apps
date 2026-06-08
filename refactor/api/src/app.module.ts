@@ -30,6 +30,7 @@ import { ReportsModule } from './reports/reports.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { PaymentModule } from './payment/payment.module';
 import { SeedModule } from './seed/seed.module';
+import { AuditConnectionTagger } from './audit/audit-connection.tagger';
 
 @Module({
   imports: [
@@ -83,6 +84,8 @@ import { SeedModule } from './seed/seed.module';
   providers: [
     // Terapkan rate limit ke seluruh endpoint.
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Tandai koneksi DB sebagai 'nest:api' untuk audit trail lintas-app.
+    AuditConnectionTagger,
   ],
 })
 export class AppModule {}
