@@ -143,6 +143,8 @@
     "faktur_detail_button_wa_reminder":  "Kirim Reminder via WhatsApp",
     "faktur_detail_processing":  " Memproses…",
     "faktur_detail_alert_mark_paid_title":  "Tandai Lunas",
+    "faktur_detail_alert_marked_paid":  "✅ Faktur ditandai LUNAS",
+    "faktur_detail_alert_marked_unpaid":  "Status dikembalikan ke BELUM LUNAS",
     "faktur_detail_alert_cancel_paid_title":  "Batal Lunas",
     "faktur_detail_alert_status_message":  "Ubah status faktur {{noFaktur}}?",
     "faktur_detail_alert_cancel":  "Batal",

@@ -84,6 +84,10 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     try {
       await apiSetFakturLunas(noFaktur, toLunas);
       await load();
+      alertDialog(
+        toLunas ? tr('faktur_detail_alert_marked_paid') : tr('faktur_detail_alert_marked_unpaid'),
+        noFaktur,
+      );
     } catch (e) {
       alertDialog(tr('faktur_detail_alert_failed'), apiErrorMessage(e));
     } finally {
@@ -124,14 +128,24 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     if (!data) return;
     const cfg = config ?? ({ perusahaan: 'Meter Air', alamat: '', telp: '' } as AppConfig);
 
-    // Web: expo-print/expo-sharing native-only → buka HTML di tab baru lalu cetak.
+    // Web: expo-print/expo-sharing native-only. Share → Web Share API bila ada;
+    // Print/fallback → buka HTML via Blob URL (andal, tak blank seperti document.write).
     if (Platform.OS === 'web') {
+      const html = buildFakturHtml(data, cfg);
+      const nav: any = typeof navigator !== 'undefined' ? navigator : null;
+      if (share && nav && typeof nav.share === 'function') {
+        try {
+          await nav.share({ title: `Faktur ${data.noFaktur}`, text: `Tagihan ${data.noFaktur}: ${formatRupiah(data.total ?? 0)}` });
+          return;
+        } catch { /* user batal / tak didukung → lanjut fallback buka HTML */ }
+      }
       try {
-        const html = buildFakturHtml(data, cfg);
-        const w = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const w = window.open(url, '_blank');
         if (!w) { alertDialog('Popup diblokir', 'Izinkan popup untuk mencetak/membagikan faktur.'); return; }
-        w.document.open(); w.document.write(html); w.document.close();
-        if (!share) { w.focus(); setTimeout(() => { try { w.print(); } catch {} }, 500); }
+        if (!share) setTimeout(() => { try { w.print(); } catch {} }, 700);
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 60000);
       } catch (e: any) {
         alertDialog('Gagal', e?.message ?? String(e));
       }

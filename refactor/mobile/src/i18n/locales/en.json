@@ -143,6 +143,8 @@
     "faktur_detail_button_wa_reminder":  "Send Reminder via WhatsApp",
     "faktur_detail_processing":  " Processing…",
     "faktur_detail_alert_mark_paid_title":  "Mark as Paid",
+    "faktur_detail_alert_marked_paid":  "✅ Invoice marked as PAID",
+    "faktur_detail_alert_marked_unpaid":  "Status reverted to UNPAID",
     "faktur_detail_alert_cancel_paid_title":  "Cancel Paid",
     "faktur_detail_alert_status_message":  "Change status for invoice {{noFaktur}}?",
     "faktur_detail_alert_cancel":  "Cancel",
