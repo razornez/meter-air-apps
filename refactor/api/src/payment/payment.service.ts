@@ -124,12 +124,12 @@ export class PaymentService {
       this.logger.error(`kasugai pay error (${noFaktur}): ${err}`);
       throw new Error(`kasugai pay: ${err}`);
     }
-    const payData = await payRes.json() as { redirectUrl?: string; snapToken?: string };
+    const payData = await payRes.json() as { redirectUrl?: string; token?: string; snapToken?: string };
 
     this.logger.log(`kasugai payment created: ${noFaktur} orderId=${orderId} amount=${total}`);
     return {
       alreadyPaid: false,
-      token: payData.snapToken ?? null,
+      token: payData.token ?? payData.snapToken ?? null,
       redirectUrl: payData.redirectUrl ?? null,
       orderId,
     };
