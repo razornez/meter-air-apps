@@ -379,5 +379,8 @@
     "about_changelog_title":     "Riwayat Pembaruan",
     "about_new_tag":             "BARU",
     "about_new_modal_title":     "Yang Baru",
-    "about_new_modal_ok":        "Oke, Mengerti"
+    "about_new_modal_ok":        "Oke, Mengerti",
+    "about_req_title":           "Persyaratan Perangkat",
+    "about_req_os":              "Android 7.0 (Nougat) ke atas",
+    "about_req_cpu":             "Prosesor ARM (64-bit / 32-bit)"
 }

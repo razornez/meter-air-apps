@@ -379,5 +379,8 @@
     "about_changelog_title":     "Update History",
     "about_new_tag":             "NEW",
     "about_new_modal_title":     "What's New",
-    "about_new_modal_ok":        "Got it"
+    "about_new_modal_ok":        "Got it",
+    "about_req_title":           "Device Requirements",
+    "about_req_os":              "Android 7.0 (Nougat) or newer",
+    "about_req_cpu":             "ARM processor (64-bit / 32-bit)"
 }

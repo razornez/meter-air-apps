@@ -59,6 +59,22 @@ export default function AboutScreen() {
         <Text style={s.updateBtnText}>{checking ? tr('about_update_checking') : tr('about_update_check')}</Text>
       </TouchableOpacity>
 
+      {/* Persyaratan perangkat */}
+      <View style={s.reqCard}>
+        <View style={s.reqRow}>
+          <Ionicons name="phone-portrait-outline" size={16} color={t.primary} />
+          <Text style={s.reqTitle}>{tr('about_req_title')}</Text>
+        </View>
+        <View style={s.reqLine}>
+          <Ionicons name="logo-android" size={14} color={t.muted} />
+          <Text style={s.reqText}>{tr('about_req_os')}</Text>
+        </View>
+        <View style={s.reqLine}>
+          <Ionicons name="hardware-chip-outline" size={14} color={t.muted} />
+          <Text style={s.reqText}>{tr('about_req_cpu')}</Text>
+        </View>
+      </View>
+
       {/* Changelog */}
       <Text style={s.sectionTitle}>{tr('about_changelog_title')}</Text>
       {CHANGELOG.map((entry, idx) => (
@@ -101,6 +117,15 @@ const createStyles = (t: Theme) =>
       ...shadow.soft,
     },
     updateBtnText: { color: t.primary, fontFamily: fonts.bold, fontSize: 14 },
+
+    reqCard: {
+      backgroundColor: t.surface, borderRadius: radius.lg, padding: 14, marginBottom: 22,
+      borderWidth: 1, borderColor: t.border, ...shadow.soft,
+    },
+    reqRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    reqTitle: { color: t.text, fontFamily: fonts.bold, fontSize: 14 },
+    reqLine: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 },
+    reqText: { color: t.muted, fontFamily: fonts.regular, fontSize: 13 },
 
     sectionTitle: { color: t.text, fontFamily: fonts.displayBold, fontSize: 17, marginBottom: 12 },
     entry: {
