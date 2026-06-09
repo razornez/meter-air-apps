@@ -9,6 +9,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.6.2',
+    date: '2026-06-09',
+    id: [
+      'Label metode bayar lebih jelas (Nomor GoPay, No. Rek BCA, dll)',
+      'Dialog konfirmasi & notifikasi lebih rapi (bukan popup bawaan)',
+      'Tombol Tandai Lunas, Bagikan, & Reminder WA lebih responsif + ada umpan balik',
+      'Salin nominal di halaman transfer; perbaikan logo bank',
+    ],
+    en: [
+      'Clearer payment method labels (GoPay Number, BCA Account No., etc.)',
+      'Cleaner in-app confirm & notification dialogs (no native popups)',
+      'Mark as Paid, Share, & WA Reminder more responsive + with feedback',
+      'Copy amount on transfer page; bank logo fix',
+    ],
+  },
+  {
     version: '1.6.1',
     date: '2026-06-09',
     id: [
