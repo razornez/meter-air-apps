@@ -128,13 +128,14 @@ export class PaymentService {
       this.logger.error(`kasugai pay error (${noFaktur}): ${err}`);
       throw new Error(`kasugai pay: ${err}`);
     }
-    const payData = await payRes.json() as { redirectUrl?: string; token?: string; snapToken?: string };
+    const payData = await payRes.json() as { redirectUrl?: string; token?: string; snapToken?: string; clientKey?: string };
 
     this.logger.log(`kasugai payment created: ${noFaktur} orderId=${orderId} amount=${total}`);
     return {
       alreadyPaid: false,
       token: payData.token ?? payData.snapToken ?? null,
       redirectUrl: payData.redirectUrl ?? null,
+      clientKey: payData.clientKey ?? null, // utk Snap.js in-app popup di web
       orderId,
     };
   }

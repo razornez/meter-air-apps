@@ -208,6 +208,7 @@ export async function apiSnapToken(noFaktur: string) {
     alreadyPaid: boolean;
     token: string | null;
     redirectUrl: string | null;
+    clientKey: string | null;
     orderId?: string;
   }>('/payment/snap-token', { noFaktur });
   return data;

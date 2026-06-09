@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Clipboard,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiPay, apiSnapToken } from '../api/services';
 import { apiErrorMessage } from '../api/client';
+import { alertDialog, confirmDialog } from '../utils/dialog';
+import { snapPayWeb } from '../utils/snapPay';
 import { BrandLogo } from '../components/BrandLogo';
 import { colors } from '../theme';
 
@@ -38,15 +40,30 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
     setConfirming(true);
     try {
       if (isMidtrans) {
-        // Midtrans: buat snap token lalu buka WebView
         const res = await apiSnapToken(noFaktur);
         if (res.alreadyPaid) {
-          Alert.alert(tr('account_payment_alert_already_paid_title'), tr('account_payment_alert_already_paid_message'));
+          alertDialog(tr('account_payment_alert_already_paid_title'), tr('account_payment_alert_already_paid_message'));
           navigation.pop(2);
           return;
         }
-        // Buka WebView bila ADA redirectUrl ATAU token (redirectUrl = yang sebenarnya
-        // dipakai; token bisa null tergantung gateway). Tambah else agar tak "diam".
+
+        // WEB: popup Snap.js in-app (tak buka tab baru, balik ke app otomatis).
+        if (Platform.OS === 'web' && res.token && res.clientKey) {
+          try {
+            await snapPayWeb(res.token, res.clientKey, {
+              onSuccess: () => { alertDialog(tr('account_payment_alert_paid_title'), tr('account_payment_alert_paid_message')); navigation.pop(2); },
+              onPending: () => { alertDialog(tr('account_payment_snap_pending_title'), tr('account_payment_snap_pending_msg')); navigation.pop(2); },
+              onError: () => { alertDialog(tr('account_payment_alert_failed_title'), tr('account_payment_snap_error_msg')); },
+              onClose: () => { /* user menutup popup tanpa menyelesaikan — biarkan di halaman ini */ },
+            });
+            return;
+          } catch {
+            // Snap.js gagal dimuat → fallback buka redirectUrl di tab baru
+            if (res.redirectUrl && typeof window !== 'undefined') { window.open(res.redirectUrl, '_blank'); return; }
+          }
+        }
+
+        // NATIVE (atau fallback): buka WebView bila ada redirectUrl/token.
         if (res.redirectUrl || res.token) {
           navigation.replace('PaymentWebView', {
             noFaktur,
@@ -54,37 +71,31 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
             snapUrl: res.redirectUrl ?? undefined,
           });
         } else {
-          Alert.alert(tr('account_payment_alert_failed_title'), tr('account_payment_alert_no_url'));
+          alertDialog(tr('account_payment_alert_failed_title'), tr('account_payment_alert_no_url'));
         }
       } else {
         // E-wallet / bank: konfirmasi manual → tandai lunas
         const res = await apiPay(noFaktur, method.code);
         if (res.type === 'transfer' || res.type === 'ewallet' || res.type === 'bank_static') {
-          // Transfer belum otomatis lunas — petugas konfirmasi menerima
-          Alert.alert(
+          const ok = await confirmDialog(
             tr('account_payment_alert_confirm_title'),
             tr('account_payment_alert_confirm_message', { noFaktur }),
-            [
-              { text: tr('account_payment_alert_confirm_cancel'), style: 'cancel' },
-              {
-                text: tr('account_payment_alert_confirm_ok'),
-                onPress: async () => {
-                  try {
-                    await apiPay(noFaktur, 'cash'); // tandai lunas via cash flow
-                    Alert.alert(tr('account_payment_alert_paid_title'), tr('account_payment_alert_paid_message'), [
-                      { text: 'OK', onPress: () => navigation.pop(2) },
-                    ]);
-                  } catch (e) {
-                    Alert.alert(tr('account_payment_alert_failed_title'), apiErrorMessage(e));
-                  }
-                },
-              },
-            ],
+            tr('account_payment_alert_confirm_ok'),
+            tr('account_payment_alert_confirm_cancel'),
           );
+          if (ok) {
+            try {
+              await apiPay(noFaktur, 'cash'); // tandai lunas via cash flow
+              alertDialog(tr('account_payment_alert_paid_title'), tr('account_payment_alert_paid_message'));
+              navigation.pop(2);
+            } catch (e) {
+              alertDialog(tr('account_payment_alert_failed_title'), apiErrorMessage(e));
+            }
+          }
         }
       }
     } catch (e) {
-      Alert.alert(tr('account_payment_alert_failed_title'), apiErrorMessage(e));
+      alertDialog(tr('account_payment_alert_failed_title'), apiErrorMessage(e));
     } finally {
       setConfirming(false);
     }
