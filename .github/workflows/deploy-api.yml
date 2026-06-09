@@ -27,8 +27,12 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             set -e
+            # Repo dimiliki www-data; tandai aman agar git tak tolak "dubious ownership".
+            git config --global --add safe.directory /var/www/meter-air-api
             cd /var/www/meter-air-api
-            git pull origin main
+            # Fetch + reset --hard (pola sama web admin) — hindari konflik merge.
+            git fetch origin main
+            git reset --hard origin/main
             cd refactor/api
             npm ci
             npm run build
