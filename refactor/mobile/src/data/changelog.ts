@@ -10,6 +10,22 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.5.0',
+    date: '2026-06-09',
+    id: [
+      'Pembayaran QRIS lewat payment gateway baru — lebih stabil',
+      'Perbaikan: halaman bayar (widget QRIS) kini tampil benar',
+      'Kartu Persyaratan Perangkat di layar Tentang',
+      'Cek pembaruan otomatis saat membuka layar Tentang',
+    ],
+    en: [
+      'QRIS payment via new payment gateway — more reliable',
+      'Fix: payment page (QRIS widget) now displays correctly',
+      'Device Requirements card on the About screen',
+      'Automatic update check when opening the About screen',
+    ],
+  },
+  {
+    version: '1.5.0',
     date: '2026-06-08',
     id: [
       'Tema aqua/tirta baru — tampilan lebih segar',

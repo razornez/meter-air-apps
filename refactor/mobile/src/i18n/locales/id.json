@@ -382,5 +382,9 @@
     "about_new_modal_ok":        "Oke, Mengerti",
     "about_req_title":           "Persyaratan Perangkat",
     "about_req_os":              "Android 7.0 (Nougat) ke atas",
-    "about_req_cpu":             "Prosesor ARM (64-bit / 32-bit)"
+    "about_req_cpu":             "Prosesor ARM (64-bit / 32-bit)",
+    "about_update_available":    "Update tersedia — ketuk untuk perbarui",
+    "about_update_uptodate":     "Aplikasi sudah versi terbaru",
+    "about_update_downloading":  "Mengunduh pembaruan…",
+    "account_payment_alert_failed_title":   "Pembayaran Gagal"
 }
