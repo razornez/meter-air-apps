@@ -369,6 +369,7 @@
     "faktur_list_total_registered":  "Total registered",
 
     "about_update_check":        "Check for Updates",
+    "about_update_open_web":     "Open meterair.online to download the latest version.",
     "about_update_checking":     "Checking…",
     "about_update_title":        "Update",
     "about_update_latest":       "Your app is already up to date.",

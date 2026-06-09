@@ -2,14 +2,14 @@
   "expo": {
     "name": "Meter Air",
     "slug": "meter-air",
-    "version": "1.6.0",
+    "version": "1.6.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "updates": {
       "url": "https://u.expo.dev/aebe7f38-0ca8-4e58-b104-d74287fe5547",
-      "checkAutomatically": "ON_LOAD",
+      "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0
     },
     "runtimeVersion": {
@@ -21,7 +21,7 @@
     },
     "android": {
       "package": "com.bumdes.meterair",
-      "versionCode": 7,
+      "versionCode": 8,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

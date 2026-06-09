@@ -1,9 +1,7 @@
 ﻿import React from 'react';
-import { ActivityIndicator, AppState, KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, AppState, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
-import * as Updates from 'expo-updates';
-import { useUpdates } from 'expo-updates';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   NavigationContainer,
@@ -113,50 +111,6 @@ function RootNavigator() {
   );
 }
 
-// Banner update mulus: muncul saat versi baru SUDAH terunduh → satu ketuk muat ulang.
-// Tanpa tutup-buka berulang. Update diunduh otomatis (ON_LOAD) + saat app kembali aktif.
-function UpdateBanner() {
-  const t = useTheme();
-  const { isUpdatePending } = useUpdates();
-  const [reloading, setReloading] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!Updates.isEnabled) return;
-    const check = () => {
-      Updates.checkForUpdateAsync()
-        .then((r) => (r.isAvailable ? Updates.fetchUpdateAsync() : undefined))
-        .catch(() => undefined);
-    };
-    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') check(); });
-    return () => sub.remove();
-  }, []);
-
-  async function apply() {
-    if (reloading) return;
-    setReloading(true);
-    try { await Updates.reloadAsync(); } catch { setReloading(false); }
-  }
-
-  if (!isUpdatePending) return null;
-  return (
-    <TouchableOpacity
-      onPress={apply}
-      disabled={reloading}
-      activeOpacity={0.9}
-      style={{
-        position: 'absolute', left: 12, right: 12, bottom: 18,
-        backgroundColor: t.primary, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16,
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, elevation: 8,
-        shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
-      }}
-    >
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>
-        {reloading ? '⏳ Memperbarui…' : '✨ Versi baru siap — Ketuk untuk perbarui'}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
 function ThemedApp() {
   const t = useTheme();
   const base = t.isDark ? DarkTheme : DefaultTheme;
@@ -173,7 +127,6 @@ function ThemedApp() {
       <NavigationContainer theme={navTheme}>
         <RootNavigator />
       </NavigationContainer>
-      <UpdateBanner />
     </KeyboardAvoidingView>
   );
 }

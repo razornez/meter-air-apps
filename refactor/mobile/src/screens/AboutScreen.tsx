@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
-import * as Updates from 'expo-updates';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -16,69 +15,13 @@ export default function AboutScreen() {
   const { t: tr } = useTranslation();
   const s = useMemo(() => createStyles(t), [t]);
   const lang = i18n.language;
-  // 'checking' | 'available' | 'latest' | 'dev' | 'idle'
-  const [status, setStatus] = useState<'idle' | 'checking' | 'available' | 'latest' | 'dev'>('idle');
-  const [busy, setBusy] = useState(false);
 
-  async function lookForUpdate(silent: boolean) {
-    if (!Updates.isEnabled) {
-      setStatus('dev');
-      return;
-    }
-    setStatus('checking');
-    try {
-      const res = await Updates.checkForUpdateAsync();
-      setStatus(res.isAvailable ? 'available' : 'latest');
-    } catch {
-      setStatus('idle');
-      if (!silent) Alert.alert(tr('about_update_title'), tr('about_update_failed'));
-    }
+  // Update via download APK (andal) — OTA dimatikan karena tak stabil di app ini.
+  function onCheckUpdate() {
+    Linking.openURL('https://meterair.online').catch(() =>
+      Alert.alert(tr('about_update_title'), tr('about_update_open_web')),
+    );
   }
-
-  // Auto-cek begitu layar dibuka — user langsung tahu ada update atau tidak.
-  useEffect(() => {
-    lookForUpdate(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function onPressUpdate() {
-    if (busy) return;
-    if (status === 'available') {
-      // Unduh + muat ulang langsung (tanpa reinstall).
-      setBusy(true);
-      try {
-        await Updates.fetchUpdateAsync();
-        await Updates.reloadAsync();
-      } catch {
-        setBusy(false);
-        Alert.alert(tr('about_update_title'), tr('about_update_failed'));
-      }
-    } else {
-      lookForUpdate(false);
-    }
-  }
-
-  const updIcon = busy
-    ? 'sync'
-    : status === 'available'
-      ? 'arrow-down-circle'
-      : status === 'checking'
-        ? 'sync'
-        : status === 'latest'
-          ? 'checkmark-circle'
-          : 'cloud-download-outline';
-  const updLabel = busy
-    ? tr('about_update_downloading')
-    : status === 'available'
-      ? tr('about_update_available')
-      : status === 'checking'
-        ? tr('about_update_checking')
-        : status === 'latest'
-          ? tr('about_update_uptodate')
-          : status === 'dev'
-            ? tr('about_update_dev')
-            : tr('about_update_check');
-  const isHot = status === 'available' && !busy;
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
@@ -92,15 +35,10 @@ export default function AboutScreen() {
         <Text style={s.publisher}>Anugrah Solusi Digital</Text>
       </View>
 
-      {/* Cek / terapkan pembaruan (auto-cek saat buka) */}
-      <TouchableOpacity
-        style={[s.updateBtn, isHot && s.updateBtnHot, (status === 'checking' || busy) && { opacity: 0.6 }]}
-        onPress={onPressUpdate}
-        disabled={status === 'checking' || busy}
-        activeOpacity={0.85}
-      >
-        <Ionicons name={updIcon as any} size={20} color={isHot ? '#fff' : t.primary} />
-        <Text style={[s.updateBtnText, isHot && { color: '#fff' }]}>{updLabel}</Text>
+      {/* Cek pembaruan — buka halaman download (install APK terbaru, andal) */}
+      <TouchableOpacity style={s.updateBtn} onPress={onCheckUpdate} activeOpacity={0.85}>
+        <Ionicons name="cloud-download-outline" size={20} color={t.primary} />
+        <Text style={s.updateBtnText}>{tr('about_update_check')}</Text>
       </TouchableOpacity>
 
       {/* Persyaratan perangkat */}

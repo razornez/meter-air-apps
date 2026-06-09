@@ -9,19 +9,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '1.6.0',
+    version: '1.6.1',
     date: '2026-06-09',
     id: [
-      'Pembaruan mulus — versi baru cukup satu ketuk, tanpa pasang ulang',
-      'Pembayaran via gateway (QRIS/GoPay/VA/Kartu) lebih stabil',
+      'Perbaikan bayar: tombol bayar kini selalu membuka halaman, pesan lebih rapi',
+      'Pembayaran via gateway (QRIS/GoPay/VA/Kartu)',
       'Setelah bayar, otomatis kembali ke aplikasi',
-      'Kartu Persyaratan Perangkat & cek pembaruan di layar Tentang',
+      'Pembaruan via unduh APK terbaru — lebih andal & stabil',
     ],
     en: [
-      'Smooth updates — new version in one tap, no reinstall',
-      'Gateway payments (QRIS/GoPay/VA/Card) more reliable',
+      'Payment fix: pay button always opens the page, cleaner messages',
+      'Gateway payments (QRIS/GoPay/VA/Card)',
       'Auto return to the app after payment',
-      'Device Requirements card & update check on the About screen',
+      'Updates via downloading the latest APK — more reliable',
     ],
   },
   {
