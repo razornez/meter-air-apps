@@ -11,6 +11,7 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
   const { noFaktur, snapToken, snapUrl: snapUrlFromParam } = route.params;
   const [loading, setLoading] = useState(true);
   const webviewRef = useRef<WebView>(null);
+  const handledRef = useRef(false);
 
   // Pakai snapUrl (redirectUrl) dari backend bila ada — sudah pasti benar.
   // Fallback ke v4/redirection bila tidak ada.
@@ -22,30 +23,29 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
 
   function onNavigationChange(state: WebViewNavigation) {
     const url = state.url;
+    // URL penyelesaian: finishUrl meter-air (/payment/return), fallback kasugai (snap-return),
+    // atau callback Midtrans (/finish, /unfinish, /error). Cek di navigation start → tangkap
+    // sebelum WebView mencoba load (juga aman bila URL-nya http → tak sampai ERR_CLEARTEXT).
+    const isReturn =
+      url.includes('/payment/return') || url.includes('snap-return') ||
+      url.includes('/finish') || url.includes('/unfinish') || url.includes('/error');
+    if (!isReturn || handledRef.current) return;
+    handledRef.current = true;
 
-    if (url.includes('/finish')) {
-      Alert.alert(
-        '✅ Pembayaran Berhasil',
-        `Faktur ${noFaktur} telah dibayar.\nStatus akan diperbarui otomatis.`,
-        [{ text: 'OK', onPress: () => navigation.goBack() }],
-      );
-      return;
-    }
-    if (url.includes('/unfinish')) {
-      Alert.alert(
-        'ℹ️ Pembayaran Tertunda',
-        'Pembayaran belum selesai. Silakan coba lagi.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }],
-      );
-      return;
-    }
-    if (url.includes('/error')) {
-      Alert.alert(
-        '❌ Pembayaran Gagal',
-        'Terjadi kesalahan saat memproses pembayaran.',
-        [{ text: 'OK', onPress: () => navigation.goBack() }],
-      );
-    }
+    const m = url.match(/[?&](?:transaction_status|status_code|order_status)=([^&]+)/i);
+    const status = decodeURIComponent(m?.[1] ?? '').toLowerCase();
+    const failed = url.includes('/error') || /deny|cancel|expire|failure/.test(status);
+    const pending = url.includes('/unfinish') || /pending/.test(status);
+
+    Alert.alert(
+      failed ? '❌ Pembayaran Gagal' : pending ? 'ℹ️ Pembayaran Tertunda' : '✅ Pembayaran Diproses',
+      failed
+        ? 'Pembayaran tidak selesai. Silakan coba lagi.'
+        : pending
+          ? 'Pembayaran belum selesai. Selesaikan lalu cek status tagihan.'
+          : `Faktur ${noFaktur} sedang diproses.\nStatus tagihan diperbarui otomatis.`,
+      [{ text: 'OK', onPress: () => navigation.goBack() }],
+    );
   }
 
   return (

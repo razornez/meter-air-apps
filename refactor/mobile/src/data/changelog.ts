@@ -9,19 +9,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '1.5.0',
+    version: '1.6.0',
     date: '2026-06-09',
     id: [
-      'Pembayaran QRIS lewat payment gateway baru — lebih stabil',
-      'Perbaikan: halaman bayar (widget QRIS) kini tampil benar',
-      'Kartu Persyaratan Perangkat di layar Tentang',
-      'Cek pembaruan otomatis saat membuka layar Tentang',
+      'Pembaruan mulus — versi baru cukup satu ketuk, tanpa pasang ulang',
+      'Pembayaran via gateway (QRIS/GoPay/VA/Kartu) lebih stabil',
+      'Setelah bayar, otomatis kembali ke aplikasi',
+      'Kartu Persyaratan Perangkat & cek pembaruan di layar Tentang',
     ],
     en: [
-      'QRIS payment via new payment gateway — more reliable',
-      'Fix: payment page (QRIS widget) now displays correctly',
-      'Device Requirements card on the About screen',
-      'Automatic update check when opening the About screen',
+      'Smooth updates — new version in one tap, no reinstall',
+      'Gateway payments (QRIS/GoPay/VA/Card) more reliable',
+      'Auto return to the app after payment',
+      'Device Requirements card & update check on the About screen',
     ],
   },
   {
