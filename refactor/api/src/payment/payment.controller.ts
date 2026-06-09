@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, Post, Req, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -31,5 +31,14 @@ export class PaymentController {
   webhook(@Req() req: { rawBody?: Buffer }, @Headers('x-kasugai-signature') sig: string) {
     const raw = req.rawBody ?? Buffer.alloc(0);
     return this.payment.handleWebhook(raw, sig ?? '');
+  }
+
+  // Publik (tanpa auth): tujuan redirect Midtrans/kasugai setelah bayar.
+  // WebView app menangkap URL ini lalu menutup; halaman ini fallback bila ter-load.
+  @SkipThrottle()
+  @Get('return')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  paymentReturn() {
+    return this.payment.returnPageHtml();
   }
 }

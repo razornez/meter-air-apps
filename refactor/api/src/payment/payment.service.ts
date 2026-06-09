@@ -16,6 +16,7 @@ export class PaymentService {
   private readonly kasugaiBase: string;
   private readonly kasugaiSecretKey: string;
   private readonly kasugaiWebhookSecret: string;
+  private readonly paymentReturnUrl: string;
 
   constructor(
     private readonly config: ConfigService,
@@ -30,6 +31,8 @@ export class PaymentService {
     this.kasugaiBase = config.get('KASUGAI_BASE_URL', 'http://127.0.0.1:3099');
     this.kasugaiSecretKey = config.get('KASUGAI_SECRET_KEY', '');
     this.kasugaiWebhookSecret = config.get('KASUGAI_WEBHOOK_SECRET', '');
+    // URL tujuan Midtrans/kasugai redirect setelah bayar (HTTPS, dideteksi WebView app).
+    this.paymentReturnUrl = config.get('PAYMENT_RETURN_URL', 'https://api.meterair.online/payment/return');
   }
 
   async getMethods() {
@@ -117,7 +120,7 @@ export class PaymentService {
     const payRes = await fetch(`${this.kasugaiBase}/v1/payment/pay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
-      body: JSON.stringify({ orderId, method: kasugaiMethod }),
+      body: JSON.stringify({ orderId, method: kasugaiMethod, finishUrl: this.paymentReturnUrl }),
     });
     if (!payRes.ok) {
       const err = await payRes.text();
@@ -171,5 +174,14 @@ export class PaymentService {
 
     this.logger.log(`Faktur ${noFaktur} ditandai lunas via kasugai`);
     return { ok: true, paid: true, noFaktur };
+  }
+
+  /** Halaman tujuan redirect setelah bayar — WebView app menangkap URL ini lalu menutup. */
+  returnPageHtml(): string {
+    return `<!doctype html><html lang="id"><head><meta charset="utf-8">`
+      + `<meta name="viewport" content="width=device-width,initial-scale=1"><title>Pembayaran Selesai</title>`
+      + `<style>body{font-family:system-ui,sans-serif;display:flex;min-height:100vh;margin:0;align-items:center;justify-content:center;background:#0e7490;color:#fff;text-align:center}div{padding:24px}h1{font-size:20px;margin:8px 0}p{opacity:.85;line-height:1.5}</style>`
+      + `</head><body><div><div style="font-size:48px">✅</div><h1>Pembayaran diproses</h1>`
+      + `<p>Anda bisa kembali ke aplikasi Meter Air.<br>Status tagihan diperbarui otomatis.</p></div></body></html>`;
   }
 }
