@@ -157,17 +157,24 @@ export class PaymentService {
 
     const body = JSON.parse(rawBody.toString('utf8')) as Record<string, unknown>;
     const event = body['event'] as string;
-    this.logger.log(`Webhook diterima: event=${event}`);
     const data = body['data'] as Record<string, unknown> | undefined;
-    const orderId = (data?.['orderId'] ?? data?.['order_id']) as string | undefined;
+    // Cari orderId di banyak kemungkinan lokasi (data.orderId/order_id, top-level, metadata).
+    const meta = (data?.['metadata'] ?? {}) as Record<string, unknown>;
+    const orderId = (data?.['orderId'] ?? data?.['order_id'] ?? body['orderId'] ?? body['order_id']
+      ?? meta['orderId'] ?? meta['order_id']) as string | undefined;
+    this.logger.log(`Webhook: event=${event} orderId=${orderId ?? '(none)'} bodyKeys=[${Object.keys(body).join(',')}] dataKeys=[${data ? Object.keys(data).join(',') : '-'}]`);
 
-    if (event !== 'payment.paid') return { ok: true, paid: false, event };
-    if (!orderId) return { ok: false, reason: 'missing_orderId' };
+    // Terima beragam nama event sukses (paid/settlement/capture/success).
+    const paidEvent = /paid|settle|capture|success/i.test(event ?? '');
+    if (!paidEvent) return { ok: true, paid: false, event };
+    if (!orderId) { this.logger.warn('Webhook: orderId tidak ditemukan di payload'); return { ok: false, reason: 'missing_orderId' }; }
 
-    // orderId format: "noFaktur-timestamp"
+    // orderId format: "noFaktur-timestamp" (slash → dash). Balikkan.
     const noFaktur = orderId.replace(/-\d+$/, '').replace(/-/g, '/');
     const f = await this.faktur.findOne({ where: { noFaktur } });
-    if (!f || f.isLunas === 1) return { ok: true, paid: false, reason: 'already_paid_or_not_found' };
+    this.logger.log(`Webhook map: ${orderId} -> ${noFaktur} | fakturFound=${!!f} isLunas=${f?.isLunas ?? '-'}`);
+    if (!f) return { ok: true, paid: false, reason: 'faktur_not_found', noFaktur };
+    if (f.isLunas === 1) return { ok: true, paid: false, reason: 'already_paid', noFaktur };
 
     const tenantId = f.tenantId ?? 1;
     const dibayar = f.total ?? 0;
