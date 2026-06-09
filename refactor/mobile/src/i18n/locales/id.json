@@ -244,6 +244,7 @@
     "account_payment_alert_paid_message":  "Faktur ditandai lunas.",
     "account_payment_alert_ok":  "OK",
     "account_payment_alert_failed":  "Gagal",
+    "account_payment_alert_no_url":  "Tidak dapat membuka halaman pembayaran. Silakan coba lagi.",
     "cash_payment_bill_label":  "TOTAL TAGIHAN",
     "cash_payment_input_label":  "Uang Diterima",
     "cash_payment_change_label":  "Kembalian",

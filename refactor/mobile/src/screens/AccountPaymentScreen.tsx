@@ -45,13 +45,16 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
           navigation.pop(2);
           return;
         }
-        if (res.token) {
-          // Gunakan redirectUrl dari Midtrans (format URL sudah benar: /snap/v4/redirection/...)
+        // Buka WebView bila ADA redirectUrl ATAU token (redirectUrl = yang sebenarnya
+        // dipakai; token bisa null tergantung gateway). Tambah else agar tak "diam".
+        if (res.redirectUrl || res.token) {
           navigation.replace('PaymentWebView', {
             noFaktur,
             snapToken: res.token ?? '',
             snapUrl: res.redirectUrl ?? undefined,
           });
+        } else {
+          Alert.alert(tr('account_payment_alert_failed_title'), tr('account_payment_alert_no_url'));
         }
       } else {
         // E-wallet / bank: konfirmasi manual → tandai lunas

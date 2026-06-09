@@ -21,22 +21,20 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
       ? `https://app.midtrans.com/snap/v4/redirection/${snapToken}`
       : `https://app.sandbox.midtrans.com/snap/v4/redirection/${snapToken}`);
 
-  function onNavigationChange(state: WebViewNavigation) {
-    const url = state.url;
-    // URL penyelesaian: finishUrl meter-air (/payment/return), fallback kasugai (snap-return),
-    // atau callback Midtrans (/finish, /unfinish, /error). Cek di navigation start → tangkap
-    // sebelum WebView mencoba load (juga aman bila URL-nya http → tak sampai ERR_CLEARTEXT).
-    const isReturn =
-      url.includes('/payment/return') || url.includes('snap-return') ||
+  // URL penyelesaian: finishUrl meter-air (/payment/return), fallback kasugai (snap-return),
+  // atau callback Midtrans (/finish, /unfinish, /error).
+  function isCompletionUrl(url: string) {
+    return url.includes('/payment/return') || url.includes('snap-return') ||
       url.includes('/finish') || url.includes('/unfinish') || url.includes('/error');
-    if (!isReturn || handledRef.current) return;
-    handledRef.current = true;
+  }
 
+  function handleCompletion(url: string) {
+    if (handledRef.current) return;
+    handledRef.current = true;
     const m = url.match(/[?&](?:transaction_status|status_code|order_status)=([^&]+)/i);
     const status = decodeURIComponent(m?.[1] ?? '').toLowerCase();
     const failed = url.includes('/error') || /deny|cancel|expire|failure/.test(status);
     const pending = url.includes('/unfinish') || /pending/.test(status);
-
     Alert.alert(
       failed ? '❌ Pembayaran Gagal' : pending ? 'ℹ️ Pembayaran Tertunda' : '✅ Pembayaran Diproses',
       failed
@@ -46,6 +44,16 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
           : `Faktur ${noFaktur} sedang diproses.\nStatus tagihan diperbarui otomatis.`,
       [{ text: 'OK', onPress: () => navigation.goBack() }],
     );
+  }
+
+  function onNavigationChange(state: WebViewNavigation) {
+    if (isCompletionUrl(state.url)) handleCompletion(state.url);
+  }
+
+  // Cegat URL penyelesaian SEBELUM di-load → tak ada flash halaman JSON/return yang jelek.
+  function onShouldStart(req: { url: string }): boolean {
+    if (isCompletionUrl(req.url)) { handleCompletion(req.url); return false; }
+    return true;
   }
 
   return (
@@ -61,6 +69,7 @@ export default function PaymentWebViewScreen({ route, navigation }: Props) {
         onLoadStart={() => setLoading(true)}
         onLoadEnd={() => setLoading(false)}
         onNavigationStateChange={onNavigationChange}
+        onShouldStartLoadWithRequest={onShouldStart}
         onError={(e) => {
           console.error('[Midtrans] WebView error:', e.nativeEvent);
           Alert.alert('Koneksi gagal', `Tidak dapat membuka halaman pembayaran.\n${e.nativeEvent.description}`, [
