@@ -1,8 +1,8 @@
-﻿import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import * as MidtransClient from 'midtrans-client';
+import { createHmac } from 'crypto';
 import { Faktur } from '../meter/entities/faktur.entity';
 import { Transaksi } from '../meter/entities/transaksi.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
@@ -10,16 +10,12 @@ import { Pembayaran } from '../faktur/entities/pembayaran.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
 
-const MIDTRANS_ENABLED: Record<string, string[]> = {
-  midtrans_qris: ['other_qris', 'qris'],
-  midtrans_card: ['credit_card'],
-};
-
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
-  private readonly snap: MidtransClient.Snap;
-  private readonly serverKey: string;
+  private readonly kasugaiBase: string;
+  private readonly kasugaiSecretKey: string;
+  private readonly kasugaiWebhookSecret: string;
 
   constructor(
     private readonly config: ConfigService,
@@ -31,12 +27,9 @@ export class PaymentService {
     @InjectRepository(Pembayaran) private readonly pembayaran: Repository<Pembayaran>,
     @InjectRepository(PaymentMethod) private readonly methods: Repository<PaymentMethod>,
   ) {
-    const isProduction = config.get('MIDTRANS_IS_PRODUCTION', 'false') === 'true';
-    this.serverKey = config.get('MIDTRANS_SERVER_KEY', '');
-    this.snap = new MidtransClient.Snap({
-      isProduction, serverKey: this.serverKey,
-      clientKey: config.get('MIDTRANS_CLIENT_KEY', ''),
-    });
+    this.kasugaiBase = config.get('KASUGAI_BASE_URL', 'http://127.0.0.1:3099');
+    this.kasugaiSecretKey = config.get('KASUGAI_SECRET_KEY', '');
+    this.kasugaiWebhookSecret = config.get('KASUGAI_WEBHOOK_SECRET', '');
   }
 
   async getMethods() {
@@ -50,7 +43,7 @@ export class PaymentService {
 
     switch (method.type) {
       case 'cash': return this.payCash(noFaktur, method, kasirId, tenantId);
-      case 'midtrans': return this.payMidtrans(noFaktur, method, kasirId, tenantId);
+      case 'midtrans': return this.payKasugai(noFaktur, method, kasirId, tenantId);
       case 'ewallet':
       case 'bank_static': return this.payTransfer(noFaktur, method, kasirId, tenantId);
       default: throw new BadRequestException(`Tipe metode tidak dikenal: ${method.type}`);
@@ -72,8 +65,8 @@ export class PaymentService {
     return { type: 'cash', success: true, noFaktur, jumlah: dibayar };
   }
 
-  private async payMidtrans(noFaktur: string, method: PaymentMethod, kasirId: number, tenantId: number) {
-    const result = await this.createSnapToken(noFaktur, kasirId, tenantId, method.code);
+  private async payKasugai(noFaktur: string, method: PaymentMethod, kasirId: number, tenantId: number) {
+    const result = await this.createKasugaiPayment(noFaktur, kasirId, tenantId, method.code);
     return { type: 'midtrans', ...result };
   }
 
@@ -88,7 +81,7 @@ export class PaymentService {
     };
   }
 
-  async createSnapToken(noFaktur: string, kasirId: number, tenantId: number, methodCode?: string) {
+  async createKasugaiPayment(noFaktur: string, kasirId: number, tenantId: number, methodCode?: string) {
     const f = await this.faktur.findOne({ where: { noFaktur, tenantId } });
     if (!f) throw new NotFoundException('Faktur tidak ditemukan');
     if (f.isLunas === 1) return { alreadyPaid: true, token: null, redirectUrl: null };
@@ -100,54 +93,72 @@ export class PaymentService {
     if (total <= 0) throw new Error(`Total faktur tidak valid: ${total}`);
 
     const orderId = `${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
-    const enabledPayments = methodCode ? (MIDTRANS_ENABLED[methodCode] ?? []) : [];
+    const kasugaiMethod = methodCode === 'midtrans_qris' ? 'midtrans_qris' : 'midtrans_qris';
+    const authHeader = `Bearer ${this.kasugaiSecretKey}`;
 
-    const parameter: Record<string, unknown> = {
-      transaction_details: { order_id: orderId, gross_amount: total },
-      customer_details: {
-        first_name: (cust?.nama ?? 'Pelanggan').slice(0, 255),
-        phone: (cust?.telp ?? '').replace(/[^0-9+]/g, '').slice(0, 19) || undefined,
-      },
-      item_details: [{ id: 'tagihan-air', price: total, quantity: 1, name: `Tagihan Air - ${noFaktur}` }],
-      ...(enabledPayments.length > 0 && { enabled_payments: enabledPayments }),
-      custom_field1: noFaktur,
-      custom_field2: String(kasirId),
-    };
-
-    this.logger.log(`Snap token request: ${noFaktur} gross_amount=${total}`);
-    let transaction: { token: string; redirect_url: string };
-    try {
-      transaction = await this.snap.createTransaction(parameter);
-    } catch (err: any) {
-      const detail = err?.ApiResponse ?? err?.message ?? String(err);
-      this.logger.error(`Midtrans error (${noFaktur}): ${JSON.stringify(detail)}`);
-      throw new Error(`Midtrans: ${JSON.stringify(detail)}`);
+    // 1. Buat order di kasugai
+    const orderRes = await fetch(`${this.kasugaiBase}/v1/payment/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+      body: JSON.stringify({
+        orderId,
+        amount: total,
+        currency: 'IDR',
+        customerName: (cust?.nama ?? 'Pelanggan').slice(0, 255),
+      }),
+    });
+    if (!orderRes.ok) {
+      const err = await orderRes.text();
+      this.logger.error(`kasugai create order error (${noFaktur}): ${err}`);
+      throw new Error(`kasugai order: ${err}`);
     }
 
-    return { alreadyPaid: false, token: transaction.token, redirectUrl: transaction.redirect_url, orderId };
+    // 2. Inisiasi pembayaran
+    const payRes = await fetch(`${this.kasugaiBase}/v1/payment/pay`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
+      body: JSON.stringify({ orderId, method: kasugaiMethod }),
+    });
+    if (!payRes.ok) {
+      const err = await payRes.text();
+      this.logger.error(`kasugai pay error (${noFaktur}): ${err}`);
+      throw new Error(`kasugai pay: ${err}`);
+    }
+    const payData = await payRes.json() as { redirectUrl?: string; snapToken?: string };
+
+    this.logger.log(`kasugai payment created: ${noFaktur} orderId=${orderId} amount=${total}`);
+    return {
+      alreadyPaid: false,
+      token: payData.snapToken ?? null,
+      redirectUrl: payData.redirectUrl ?? null,
+      orderId,
+    };
   }
 
-  async handleWebhook(body: Record<string, string>) {
-    const { order_id, transaction_status, fraud_status, custom_field1: noFaktur, custom_field2: kasirIdStr, gross_amount, signature_key, status_code } = body;
+  async handleWebhook(rawBody: Buffer, signature: string) {
+    // Kasugai signature format: "sha256=<hex>"
+    const expected = 'sha256=' + createHmac('sha256', this.kasugaiWebhookSecret)
+      .update(rawBody).digest('hex');
 
-    const crypto = await import('crypto');
-    const expected = crypto.createHash('sha512').update(`${order_id}${status_code}${gross_amount}${this.serverKey}`).digest('hex');
-
-    if (signature_key !== expected) {
-      this.logger.warn(`Webhook signature tidak valid untuk order ${order_id}`);
+    if (signature !== expected) {
+      this.logger.warn(`Webhook signature tidak valid: got=${signature}`);
       return { ok: false, reason: 'invalid_signature' };
     }
 
-    const paid = (transaction_status === 'capture' && fraud_status === 'accept') || transaction_status === 'settlement';
-    if (!paid) return { ok: true, paid: false };
-    if (!noFaktur) return { ok: false, reason: 'missing_no_faktur' };
+    const body = JSON.parse(rawBody.toString('utf8')) as Record<string, unknown>;
+    const event = body['event'] as string;
+    const data = body['data'] as Record<string, unknown> | undefined;
+    const orderId = (data?.['orderId'] ?? data?.['order_id']) as string | undefined;
 
-    // Cari faktur tanpa filter tenantId (webhook tidak bawa tenantId)
+    if (event !== 'payment.paid') return { ok: true, paid: false, event };
+    if (!orderId) return { ok: false, reason: 'missing_orderId' };
+
+    // orderId format: "noFaktur-timestamp"
+    const noFaktur = orderId.replace(/-\d+$/, '').replace(/-/g, '/');
     const f = await this.faktur.findOne({ where: { noFaktur } });
     if (!f || f.isLunas === 1) return { ok: true, paid: false, reason: 'already_paid_or_not_found' };
 
     const tenantId = f.tenantId ?? 1;
-    const kasirId = kasirIdStr ? Number(kasirIdStr) : 0;
     const dibayar = f.total ?? 0;
 
     await this.dataSource.transaction(async (mgr) => {
@@ -155,10 +166,10 @@ export class PaymentService {
       await mgr.update(Transaksi, { faktur: noFaktur, tenantId }, { dibayar });
     });
 
-    await this.logs.insert({ tenantId, idUser: kasirId, aktivitas: `Pembayaran Midtrans berhasil — ${noFaktur} (order: ${order_id})`, jenis: 'pembayaran', waktu: new Date() }).catch(() => {});
-    await this.pembayaran.insert({ tenantId, noFaktur, metode: 'midtrans', jumlah: dibayar, status: 'lunas', paidAt: new Date(), petugas: kasirId || null }).catch(() => {});
+    await this.logs.insert({ tenantId, idUser: 0, aktivitas: `Pembayaran kasugai berhasil — ${noFaktur} (order: ${orderId})`, jenis: 'pembayaran', waktu: new Date() }).catch(() => {});
+    await this.pembayaran.insert({ tenantId, noFaktur, metode: 'midtrans_qris', jumlah: dibayar, status: 'lunas', paidAt: new Date(), petugas: null }).catch(() => {});
 
-    this.logger.log(`Faktur ${noFaktur} ditandai lunas via Midtrans`);
+    this.logger.log(`Faktur ${noFaktur} ditandai lunas via kasugai`);
     return { ok: true, paid: true, noFaktur };
   }
 }

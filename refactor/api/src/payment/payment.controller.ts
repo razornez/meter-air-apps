@@ -1,4 +1,4 @@
-﻿import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Post, Req, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -16,19 +16,20 @@ export class PaymentController {
 
   @UseGuards(JwtAuthGuard)
   @Post('pay')
-  pay(@Body('noFaktur') noFaktur: string, @Body('methodCode') methodCode: string, @CurrentUser() user: AuthUser, @Request() req) {
+  pay(@Body('noFaktur') noFaktur: string, @Body('methodCode') methodCode: string, @CurrentUser() user: AuthUser, @Req() req: { tenantId: number }) {
     return this.payment.pay(noFaktur, methodCode, user.id, req.tenantId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('snap-token')
-  snapToken(@Body('noFaktur') noFaktur: string, @CurrentUser() user: AuthUser, @Request() req) {
-    return this.payment.createSnapToken(noFaktur, user.id, req.tenantId);
+  snapToken(@Body('noFaktur') noFaktur: string, @CurrentUser() user: AuthUser, @Req() req: { tenantId: number }) {
+    return this.payment.createKasugaiPayment(noFaktur, user.id, req.tenantId);
   }
 
   @SkipThrottle()
   @Post('webhook')
-  webhook(@Body() body: Record<string, string>) {
-    return this.payment.handleWebhook(body);
+  webhook(@Req() req: { rawBody?: Buffer }, @Headers('x-kasugai-signature') sig: string) {
+    const raw = req.rawBody ?? Buffer.alloc(0);
+    return this.payment.handleWebhook(raw, sig ?? '');
   }
 }
