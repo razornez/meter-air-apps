@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Headers, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Headers, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -38,7 +38,7 @@ export class PaymentController {
   @SkipThrottle()
   @Get('return')
   @Header('Content-Type', 'text/html; charset=utf-8')
-  paymentReturn() {
-    return this.payment.returnPageHtml();
+  paymentReturn(@Query('transaction_status') status?: string, @Query('status_code') statusCode?: string) {
+    return this.payment.returnPageHtml(status ?? statusCode);
   }
 }

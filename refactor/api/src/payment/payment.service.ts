@@ -32,7 +32,8 @@ export class PaymentService {
     this.kasugaiSecretKey = config.get('KASUGAI_SECRET_KEY', '');
     this.kasugaiWebhookSecret = config.get('KASUGAI_WEBHOOK_SECRET', '');
     // URL tujuan Midtrans/kasugai redirect setelah bayar (HTTPS, dideteksi WebView app).
-    this.paymentReturnUrl = config.get('PAYMENT_RETURN_URL', 'https://api.meterair.online/payment/return');
+    // WAJIB termasuk prefix /api (global prefix NestJS) — tanpa itu 404.
+    this.paymentReturnUrl = config.get('PAYMENT_RETURN_URL', 'https://api.meterair.online/api/payment/return');
   }
 
   async getMethods() {
@@ -139,17 +140,19 @@ export class PaymentService {
   }
 
   async handleWebhook(rawBody: Buffer, signature: string) {
-    // Kasugai signature format: "sha256=<hex>"
-    const expected = 'sha256=' + createHmac('sha256', this.kasugaiWebhookSecret)
-      .update(rawBody).digest('hex');
+    // Kasugai mengirim signature sbg HEX polos (tanpa prefix). Terima dua-duanya:
+    // "<hex>" maupun "sha256=<hex>". Bandingkan case-insensitive.
+    const hmacHex = createHmac('sha256', this.kasugaiWebhookSecret).update(rawBody).digest('hex');
+    const got = (signature || '').replace(/^sha256=/i, '').trim().toLowerCase();
 
-    if (signature !== expected) {
-      this.logger.warn(`Webhook signature tidak valid: got=${signature}`);
+    if (got !== hmacHex.toLowerCase()) {
+      this.logger.warn(`Webhook signature tidak valid (got len=${got.length}, expect len=${hmacHex.length})`);
       return { ok: false, reason: 'invalid_signature' };
     }
 
     const body = JSON.parse(rawBody.toString('utf8')) as Record<string, unknown>;
     const event = body['event'] as string;
+    this.logger.log(`Webhook diterima: event=${event}`);
     const data = body['data'] as Record<string, unknown> | undefined;
     const orderId = (data?.['orderId'] ?? data?.['order_id']) as string | undefined;
 
@@ -176,12 +179,26 @@ export class PaymentService {
     return { ok: true, paid: true, noFaktur };
   }
 
-  /** Halaman tujuan redirect setelah bayar — WebView app menangkap URL ini lalu menutup. */
-  returnPageHtml(): string {
+  /**
+   * Halaman tujuan redirect setelah bayar. WebView app native menangkap URL ini lalu
+   * menutup; di web/browser halaman ini ditampilkan sesuai status transaksi Midtrans.
+   */
+  returnPageHtml(status?: string): string {
+    const st = (status || '').toLowerCase();
+    const success = /capture|settlement|success|paid/.test(st);
+    const pending = /pending|deny|authorize/.test(st) && !success;
+    const icon = success ? '✅' : pending ? '⏳' : '❌';
+    const title = success ? 'Pembayaran Berhasil' : pending ? 'Menunggu Pembayaran' : 'Pembayaran Tidak Selesai';
+    const msg = success
+      ? 'Pembayaran Anda berhasil diterima. Status tagihan diperbarui otomatis.'
+      : pending
+        ? 'Pembayaran sedang diproses. Selesaikan lalu cek status tagihan di aplikasi.'
+        : 'Pembayaran tidak selesai atau dibatalkan. Anda bisa mencoba lagi dari aplikasi.';
+    const bg = success ? '#0e7490' : pending ? '#b45309' : '#b91c1c';
     return `<!doctype html><html lang="id"><head><meta charset="utf-8">`
-      + `<meta name="viewport" content="width=device-width,initial-scale=1"><title>Pembayaran Selesai</title>`
-      + `<style>body{font-family:system-ui,sans-serif;display:flex;min-height:100vh;margin:0;align-items:center;justify-content:center;background:#0e7490;color:#fff;text-align:center}div{padding:24px}h1{font-size:20px;margin:8px 0}p{opacity:.85;line-height:1.5}</style>`
-      + `</head><body><div><div style="font-size:48px">✅</div><h1>Pembayaran diproses</h1>`
-      + `<p>Anda bisa kembali ke aplikasi Meter Air.<br>Status tagihan diperbarui otomatis.</p></div></body></html>`;
+      + `<meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>`
+      + `<style>body{font-family:system-ui,sans-serif;display:flex;min-height:100vh;margin:0;align-items:center;justify-content:center;background:${bg};color:#fff;text-align:center}.c{padding:24px;max-width:360px}h1{font-size:20px;margin:10px 0}p{opacity:.9;line-height:1.5}a{display:inline-block;margin-top:18px;background:#fff;color:${bg};text-decoration:none;font-weight:700;padding:11px 22px;border-radius:12px}</style>`
+      + `</head><body><div class="c"><div style="font-size:52px">${icon}</div><h1>${title}</h1>`
+      + `<p>${msg}</p><a href="https://meterair.online/app/index.html">Kembali ke Aplikasi</a></div></body></html>`;
   }
 }
