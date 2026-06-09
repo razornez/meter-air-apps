@@ -31,9 +31,13 @@ export class PaymentService {
     this.kasugaiBase = config.get('KASUGAI_BASE_URL', 'http://127.0.0.1:3099');
     this.kasugaiSecretKey = config.get('KASUGAI_SECRET_KEY', '');
     this.kasugaiWebhookSecret = config.get('KASUGAI_WEBHOOK_SECRET', '');
-    // URL tujuan Midtrans/kasugai redirect setelah bayar (HTTPS, dideteksi WebView app).
-    // WAJIB termasuk prefix /api (global prefix NestJS) — tanpa itu 404.
-    this.paymentReturnUrl = config.get('PAYMENT_RETURN_URL', 'https://api.meterair.online/api/payment/return');
+    // finishUrl → snap-return kasugai (punya tombol "Tutup" yang benar) dengan returnUrl
+    // balik ke endpoint kita. WebView native menangkap "snap-return"; web/redirect mendarat
+    // di snap-return lalu diteruskan ke /api/payment/return (status-aware) kita.
+    this.paymentReturnUrl = config.get(
+      'PAYMENT_RETURN_URL',
+      'https://kasugai.razornez.net/v1/payment/snap-return?returnUrl=https://api.meterair.online/api/payment/return',
+    );
   }
 
   async getMethods() {
