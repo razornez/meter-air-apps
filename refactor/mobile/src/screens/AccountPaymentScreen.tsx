@@ -107,6 +107,11 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
       <View style={s.amountCard}>
         <Text style={s.amountLabel}>{tr('account_payment_amount_label')}</Text>
         <Text style={s.amountValue}>Rp {amount.toLocaleString('id-ID')}</Text>
+        {!isMidtrans && (
+          <TouchableOpacity style={s.copyAmountBtn} onPress={() => copyToClipboard(String(amount), 'nominal')} activeOpacity={0.8}>
+            <Text style={s.copyAmountText}>{copied === 'nominal' ? tr('account_payment_button_copied') : tr('account_payment_button_copy_amount')}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Info rekening (bila ada) */}
@@ -117,7 +122,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
           {/* Nomor rekening */}
           <View style={s.fieldRow}>
             <View style={{ flex: 1 }}>
-              <Text style={s.fieldLabel}>{method.type === 'ewallet' ? tr('account_payment_field_account_number_ewallet') : tr('account_payment_field_account_number_bank')}</Text>
+              <Text style={s.fieldLabel}>{tr(method.type === 'ewallet' ? 'account_payment_field_account_number_ewallet' : 'account_payment_field_account_number_bank', { name: method.name })}</Text>
               <Text style={s.fieldValue}>{method.accountNumber}</Text>
             </View>
             <TouchableOpacity
@@ -197,6 +202,8 @@ const s = StyleSheet.create({
   },
   amountLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
   amountValue: { color: '#fff', fontSize: 32, fontWeight: '900', marginTop: 6, letterSpacing: -0.5 },
+  copyAmountBtn: { alignSelf: 'flex-start', marginTop: 12, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 },
+  copyAmountText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   accountCard: { backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 16, gap: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   accountTitle: { fontSize: 13, fontWeight: '800', color: '#374151', marginBottom: 4 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },

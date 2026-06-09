@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -17,6 +17,7 @@ import { fotoMeterUrl } from '../config';
 import { ErrorState, Loading } from '../components/ScreenStates';
 import { buildFakturHtml } from '../utils/fakturHtml';
 import { buildWAMessage, openWA } from '../utils/whatsapp';
+import { alertDialog, confirmDialog } from '../utils/dialog';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FakturDetail'>;
 
@@ -68,30 +69,26 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     setRefreshing(false);
   }
 
-  function onToggleLunas() {
+  async function onToggleLunas() {
     if (!data) return;
     const toLunas = !data.isLunas;
-    Alert.alert(
+    // confirmDialog: Alert.alert(tombol) tak jalan di web → pakai window.confirm di web.
+    const ok = await confirmDialog(
       toLunas ? tr('faktur_detail_alert_mark_paid_title') : tr('faktur_detail_alert_cancel_paid_title'),
       tr('faktur_detail_alert_status_message', { noFaktur: data.noFaktur }),
-      [
-        { text: tr('faktur_detail_alert_cancel'), style: 'cancel' },
-        {
-          text: tr('faktur_detail_alert_confirm'),
-          onPress: async () => {
-            setActing(true);
-            try {
-              await apiSetFakturLunas(noFaktur, toLunas);
-              await load();
-            } catch (e) {
-              Alert.alert(tr('faktur_detail_alert_failed'), apiErrorMessage(e));
-            } finally {
-              setActing(false);
-            }
-          },
-        },
-      ],
+      tr('faktur_detail_alert_confirm'),
+      tr('faktur_detail_alert_cancel'),
     );
+    if (!ok) return;
+    setActing(true);
+    try {
+      await apiSetFakturLunas(noFaktur, toLunas);
+      await load();
+    } catch (e) {
+      alertDialog(tr('faktur_detail_alert_failed'), apiErrorMessage(e));
+    } finally {
+      setActing(false);
+    }
   }
 
   function openPayment() {
@@ -106,6 +103,10 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   async function onSendWA() {
     if (!data) return;
     const phone = data.pelanggan?.telp;
+    if (!phone) {
+      alertDialog(tr('faktur_detail_alert_wa_failed_title'), tr('faktur_detail_alert_wa_no_phone'));
+      return;
+    }
     const msg = buildWAMessage({
       namaCustomer: data.pelanggan?.nama ?? null,
       noFaktur: data.noFaktur,
@@ -115,20 +116,30 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     });
     const ok = await openWA(phone, msg);
     if (!ok) {
-      Alert.alert(
-        tr('faktur_detail_alert_wa_failed_title'),
-        phone
-          ? `Nomor "${phone}" tidak dapat diproses. Pastikan WhatsApp terpasang.`
-          : tr('faktur_detail_alert_wa_no_phone'),
-      );
+      alertDialog(tr('faktur_detail_alert_wa_failed_title'), `Nomor "${phone}" tidak dapat diproses. Pastikan WhatsApp terpasang.`);
     }
   }
 
   async function onPrintOrShare(share: boolean) {
     if (!data) return;
+    const cfg = config ?? ({ perusahaan: 'Meter Air', alamat: '', telp: '' } as AppConfig);
+
+    // Web: expo-print/expo-sharing native-only → buka HTML di tab baru lalu cetak.
+    if (Platform.OS === 'web') {
+      try {
+        const html = buildFakturHtml(data, cfg);
+        const w = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+        if (!w) { alertDialog('Popup diblokir', 'Izinkan popup untuk mencetak/membagikan faktur.'); return; }
+        w.document.open(); w.document.write(html); w.document.close();
+        if (!share) { w.focus(); setTimeout(() => { try { w.print(); } catch {} }, 500); }
+      } catch (e: any) {
+        alertDialog('Gagal', e?.message ?? String(e));
+      }
+      return;
+    }
+
     setActing(true);
     try {
-      const cfg = config ?? ({ perusahaan: 'Meter Air', alamat: '', telp: '' } as AppConfig);
       const html = buildFakturHtml(data, cfg);
 
       // Step 1: Generate PDF ke temp file
@@ -162,7 +173,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
       }
     } catch (e: any) {
       const msg = e?.message ?? String(e);
-      Alert.alert('Gagal', `Tidak dapat memproses PDF.\n\n${msg}`);
+      alertDialog('Gagal', `Tidak dapat memproses PDF.\n\n${msg}`);
     } finally {
       setActing(false);
     }
@@ -251,7 +262,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
       {/* ── WA Reminder — hanya bila belum lunas ── */}
       {!data.isLunas && (
         <TouchableOpacity
-          style={[s.waBtn, acting && s.dimmed]}
+          style={[s.waBtn, (acting || !data.pelanggan?.telp) && s.dimmed]}
           activeOpacity={0.88}
           onPress={onSendWA}
           disabled={acting}
@@ -261,7 +272,9 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.waBtnTitle}>{tr('faktur_detail_wa_title')}</Text>
-            <Text style={s.waBtnSub}>{tr('faktur_detail_wa_sub')}</Text>
+            <Text style={s.waBtnSub}>
+              {data.pelanggan?.telp ? tr('faktur_detail_wa_sub') : tr('faktur_detail_wa_no_phone_sub')}
+            </Text>
           </View>
           <Ionicons name="arrow-forward" size={18} color="#86EFAC" />
         </TouchableOpacity>
