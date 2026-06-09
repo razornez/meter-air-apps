@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,7 @@ import i18n from '../i18n';
 import { fonts, pastels, radius, shadow, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { CHANGELOG, changelogLines } from '../data/changelog';
+import { alertDialog } from '../utils/dialog';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.5.0';
 
@@ -19,7 +20,7 @@ export default function AboutScreen() {
   // Update via download APK (andal) — OTA dimatikan karena tak stabil di app ini.
   function onCheckUpdate() {
     Linking.openURL('https://meterair.online').catch(() =>
-      Alert.alert(tr('about_update_title'), tr('about_update_open_web')),
+      alertDialog(tr('about_update_title'), tr('about_update_open_web')),
     );
   }
 

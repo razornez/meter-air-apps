@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Dimensions, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n, { LANG_KEY, Language } from '../i18n';
 import { useAuth } from '../auth/AuthContext';
 import { apiErrorMessage } from '../api/client';
+import { alertDialog } from '../utils/dialog';
 import { fonts, palette, radius, shadow, Theme } from '../theme';
 import { useTheme, useThemeMode } from '../ThemeContext';
 import Constants from 'expo-constants';
@@ -65,7 +66,7 @@ export default function LoginScreen() {
   }
 
   function onForgotPassword() {
-    Alert.alert(t('login_forgot_title'), t('login_forgot_message'), [{ text: t('login_forgot_ok') }]);
+    alertDialog(t('login_forgot_title'), t('login_forgot_message'));
   }
 
   async function onSubmit() {

@@ -1,6 +1,5 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { CHANGELOG, CHANGELOG_MARKER, changelogLines } from '../data/changelog';
+import { alertDialog } from '../utils/dialog';
 import { fetchWeather, WeatherData } from '../utils/weather';
 import i18nInstance, { LANG_KEY, Language } from '../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -147,7 +147,7 @@ export default function HomeScreen({ navigation }: Props) {
   async function onSync() {
     const res = await sync();
     if (res) {
-      Alert.alert(
+      alertDialog(
         i18n('home_alert_sync_title'),
         `${res.synced} terkirim` + (res.remaining > 0 ? `, ${res.remaining} masih menunggu` : ''),
       );
@@ -169,10 +169,10 @@ export default function HomeScreen({ navigation }: Props) {
           setManualCode('');
           navigation.navigate('Reading', { meterInfo: offline });
         } else {
-          Alert.alert(i18n('home_alert_offline_title'), i18n('home_alert_offline_message'));
+          alertDialog(i18n('home_alert_offline_title'), i18n('home_alert_offline_message'));
         }
       } else {
-        Alert.alert(i18n('home_alert_not_found_title'), apiErrorMessage(e));
+        alertDialog(i18n('home_alert_not_found_title'), apiErrorMessage(e));
       }
     } finally {
       setLoading(false);

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { apiPaymentMethods, apiPay } from '../api/services';
 import { apiErrorMessage } from '../api/client';
+import { alertDialog } from '../utils/dialog';
 import { PaymentMethod } from '../types';
 import { colors } from '../theme';
 
@@ -50,7 +50,7 @@ export default function PaymentMethodSheet({
       const res = await apiPay(noFaktur, method.code);
 
       if (res.alreadyPaid) {
-        Alert.alert('Sudah Lunas', 'Faktur ini sudah terbayar.');
+        alertDialog('Sudah Lunas', 'Faktur ini sudah terbayar.');
         onClose();
         return;
       }
@@ -65,7 +65,7 @@ export default function PaymentMethodSheet({
       });
       onClose();
     } catch (e) {
-      Alert.alert('Gagal', apiErrorMessage(e));
+      alertDialog('Gagal', apiErrorMessage(e));
     } finally {
       setPaying(null);
     }

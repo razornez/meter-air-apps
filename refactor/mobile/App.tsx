@@ -31,6 +31,7 @@ import { ThemeProvider, useTheme } from './src/ThemeContext';
 import { RootStackParamList } from './src/navigation/types';
 import MainTabs from './src/navigation/MainTabs';
 import AppHeader from './src/components/ui/AppHeader';
+import { DialogHost } from './src/components/DialogHost';
 import LoginScreen from './src/screens/LoginScreen';
 import ScanScreen from './src/screens/ScanScreen';
 import ReadingScreen from './src/screens/ReadingScreen';
@@ -127,6 +128,7 @@ function ThemedApp() {
       <NavigationContainer theme={navTheme}>
         <RootNavigator />
       </NavigationContainer>
+      <DialogHost />
     </KeyboardAvoidingView>
   );
 }

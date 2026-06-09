@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiPay } from '../api/services';
 import { apiErrorMessage } from '../api/client';
+import { alertDialog } from '../utils/dialog';
 import { colors, formatRupiah } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CashPayment'>;
@@ -49,15 +49,15 @@ export default function CashPaymentScreen({ route, navigation }: Props) {
     setSaving(true);
     try {
       await apiPay(noFaktur, 'cash');
-      Alert.alert(
+      await alertDialog(
         tr('cash_payment_alert_success_title'),
         `Tagihan: Rp ${amount.toLocaleString('id-ID')}\n` +
         `Diterima: Rp ${receivedNum.toLocaleString('id-ID')}\n` +
         `Kembalian: Rp ${kembalian.toLocaleString('id-ID')}`,
-        [{ text: tr('cash_payment_alert_done'), onPress: () => navigation.pop(2) }],
       );
+      navigation.pop(2);
     } catch (e) {
-      Alert.alert(tr('cash_payment_alert_failed'), apiErrorMessage(e));
+      alertDialog(tr('cash_payment_alert_failed'), apiErrorMessage(e));
     } finally {
       setSaving(false);
     }

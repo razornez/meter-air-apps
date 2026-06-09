@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { apiCustomerDetail, apiGetConfig } from '../api/services';
 import { apiErrorMessage } from '../api/client';
+import { alertDialog } from '../utils/dialog';
 import { AppConfig, CustomerDetail } from '../types';
 import { colors } from '../theme';
 
@@ -31,7 +31,7 @@ export default function CustomerCardScreen({ route }: Props) {
       setCustomer(c);
       setConfig(cfg);
     } catch (e) {
-      Alert.alert('Gagal', apiErrorMessage(e));
+      alertDialog('Gagal', apiErrorMessage(e));
     } finally {
       setLoading(false);
     }

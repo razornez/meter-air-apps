@@ -1,6 +1,6 @@
 ﻿import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
 import { setAuthToken, setUnauthorizedHandler } from '../api/client';
+import { alertDialog } from '../utils/dialog';
 import { apiLogin, apiMe } from '../api/services';
 import { deleteToken, getToken, setToken as persistToken } from './tokenStorage';
 import { UserProfile, TenantInfo } from '../types';
@@ -70,10 +70,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setTenant(res.tenant);
     } catch (error: any) {
       if (error.response?.status === 403 && error.response?.data?.message === 'TENANT_EXPIRED') {
-        Alert.alert(
+        alertDialog(
           'Langganan Kedaluwarsa',
           'Masa langganan perusahaan sudah habis.\nHubungi administrator untuk perpanjangan.',
-          [{ text: 'OK' }],
         );
         return;
       }
