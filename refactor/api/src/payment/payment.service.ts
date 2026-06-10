@@ -100,7 +100,9 @@ export class PaymentService {
     const total = Math.round(f.total ?? 0);
     if (total <= 0) throw new Error(`Total faktur tidak valid: ${total}`);
 
-    const orderId = `${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
+    // Sertakan tenantId di orderId ("T<id>-...") agar webhook menandai faktur tenant yang BENAR
+    // (no_faktur bisa sama antar tenant, mis. tenant DEMO salinan dari real).
+    const orderId = `T${tenantId}-${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
     const kasugaiMethod = methodCode === 'midtrans_qris' ? 'midtrans_qris' : 'midtrans_qris';
     const authHeader = `Bearer ${this.kasugaiSecretKey}`;
 
@@ -170,9 +172,14 @@ export class PaymentService {
     if (!orderId) { this.logger.warn('Webhook: orderId tidak ditemukan di payload'); return { ok: false, reason: 'missing_orderId' }; }
 
     // orderId format: "noFaktur-timestamp" (slash → dash). Balikkan.
-    const noFaktur = orderId.replace(/-\d+$/, '').replace(/-/g, '/');
-    const f = await this.faktur.findOne({ where: { noFaktur } });
-    this.logger.log(`Webhook map: ${orderId} -> ${noFaktur} | fakturFound=${!!f} isLunas=${f?.isLunas ?? '-'}`);
+    // orderId baru: "T<tenantId>-<noFaktur dashed>-<ts>". Lama (legacy): "<noFaktur dashed>-<ts>".
+    let waTenantId: number | undefined;
+    let rest = orderId;
+    const tm = orderId.match(/^T(\d+)-(.+)$/);
+    if (tm) { waTenantId = parseInt(tm[1], 10); rest = tm[2]; }
+    const noFaktur = rest.replace(/-\d+$/, '').replace(/-/g, '/');
+    const f = await this.faktur.findOne({ where: waTenantId ? { noFaktur, tenantId: waTenantId } : { noFaktur } });
+    this.logger.log(`Webhook map: ${orderId} -> tenant=${waTenantId ?? '-'} noFaktur=${noFaktur} | fakturFound=${!!f} isLunas=${f?.isLunas ?? '-'}`);
     if (!f) return { ok: true, paid: false, reason: 'faktur_not_found', noFaktur };
     if (f.isLunas === 1) return { ok: true, paid: false, reason: 'already_paid', noFaktur };
 
