@@ -252,6 +252,8 @@
     "account_payment_alert_ok":  "OK",
     "account_payment_alert_failed":  "Gagal",
     "account_payment_alert_no_url":  "Tidak dapat membuka halaman pembayaran. Silakan coba lagi.",
+    "account_payment_snap_success_title":  "✅ Pembayaran Diterima",
+    "account_payment_snap_success_msg":  "Pembayaran berhasil. Status tagihan diperbarui otomatis dalam beberapa saat.",
     "account_payment_snap_pending_title":  "Menunggu Pembayaran",
     "account_payment_snap_pending_msg":  "Pembayaran sedang diproses. Status tagihan diperbarui otomatis.",
     "account_payment_snap_error_msg":  "Pembayaran gagal atau dibatalkan. Silakan coba lagi.",

@@ -51,7 +51,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         if (Platform.OS === 'web' && res.token && res.clientKey) {
           try {
             await snapPayWeb(res.token, res.clientKey, {
-              onSuccess: () => { alertDialog(tr('account_payment_alert_paid_title'), tr('account_payment_alert_paid_message')); navigation.pop(2); },
+              onSuccess: () => { alertDialog(tr('account_payment_snap_success_title'), tr('account_payment_snap_success_msg')); navigation.pop(2); },
               onPending: () => { alertDialog(tr('account_payment_snap_pending_title'), tr('account_payment_snap_pending_msg')); navigation.pop(2); },
               onError: () => { alertDialog(tr('account_payment_alert_failed_title'), tr('account_payment_snap_error_msg')); },
               onClose: () => { /* user menutup popup tanpa menyelesaikan — biarkan di halaman ini */ },

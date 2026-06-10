@@ -1,4 +1,5 @@
-﻿import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { memo, useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -55,7 +56,8 @@ export default function FakturListScreen({ route, navigation }: Props) {
     [customerId],
   );
 
-  useEffect(() => { load(1, filter); }, [filter, load]);
+  // Re-fetch tiap layar kembali fokus (mis. balik dari bayar) → status terbaru.
+  useFocusEffect(useCallback(() => { load(1, filter); }, [filter, load]));
 
   async function onRefresh() {
     setRefreshing(true);
