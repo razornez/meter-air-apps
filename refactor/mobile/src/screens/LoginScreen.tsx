@@ -69,6 +69,14 @@ export default function LoginScreen() {
     alertDialog(t('login_forgot_title'), t('login_forgot_message'));
   }
 
+  // Auto-isi kredensial demo (tenant DEMO, di-reset tiap malam).
+  function demoLogin(user: string) {
+    setKode('DEMO');
+    setUsername(user);
+    setPassword('password123');
+    setError(null);
+  }
+
   async function onSubmit() {
     if (!kode.trim()) { setError(t('login_error_company_code_required')); return; }
     if (!username) { setError(t('login_error_credentials_required')); return; }
@@ -215,6 +223,19 @@ export default function LoginScreen() {
                     }
                   </LinearGradient>
                 </TouchableOpacity>
+
+                {/* Panel akun demo */}
+                <View style={s.demoPanel}>
+                  <Text style={s.demoTitle}>🎬 {t('login_demo_title')}</Text>
+                  <Text style={s.demoHint}>{t('login_demo_hint')}</Text>
+                  <View style={s.demoGrid}>
+                    {(['demo_admin', 'demo_manajer', 'demo_kasir', 'demo_petugas'] as const).map((u) => (
+                      <TouchableOpacity key={u} style={s.demoBtn} onPress={() => demoLogin(u)} activeOpacity={0.85}>
+                        <Text style={s.demoBtnText}>{u.replace('demo_', '').replace(/^\w/, (c) => c.toUpperCase())}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
               </View>
 
               </View>{/* end flex center */}
@@ -235,6 +256,12 @@ export default function LoginScreen() {
 const createStyles = (t: Theme) =>
   StyleSheet.create({
     topBar: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingHorizontal: 18, paddingTop: 6, gap: 8 },
+    demoPanel: { marginTop: 18, padding: 12, borderRadius: 14, backgroundColor: 'rgba(16,185,129,0.10)', borderWidth: 1, borderColor: 'rgba(16,185,129,0.35)' },
+    demoTitle: { fontFamily: fonts.bold, fontSize: 13, color: t.text },
+    demoHint: { fontFamily: fonts.regular, fontSize: 11.5, color: t.muted, marginTop: 2, marginBottom: 8 },
+    demoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    demoBtn: { flexGrow: 1, minWidth: '46%', alignItems: 'center', paddingVertical: 9, borderRadius: 10, backgroundColor: '#15803d' },
+    demoBtnText: { color: '#fff', fontFamily: fonts.semibold, fontSize: 12.5 },
     langBtn: {
       paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12,
       backgroundColor: 'rgba(255,255,255,0.18)',

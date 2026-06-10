@@ -9,6 +9,8 @@
     "login_placeholder_password":  "••••••",
     "login_button_submit":  "Masuk",
     "login_footer":  "Koneksi aman · TIRTA",
+    "login_demo_title":  "Akun Demo — Coba Langsung",
+    "login_demo_hint":  "Kode: DEMO · Sandi: password123 · reset tiap malam",
     "login_error_company_code_required":  "Kode perusahaan wajib diisi",
     "login_error_credentials_required":  "Username dan password wajib diisi",
     "login_error_login_failed":  "Login gagal",

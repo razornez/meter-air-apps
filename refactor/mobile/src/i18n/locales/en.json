@@ -9,6 +9,8 @@
     "login_placeholder_password":  "••••••",
     "login_button_submit":  "Sign In",
     "login_footer":  "Secure connection · TIRTA",
+    "login_demo_title":  "Demo Accounts — Try Now",
+    "login_demo_hint":  "Code: DEMO · Password: password123 · resets nightly",
     "login_error_company_code_required":  "Company code is required",
     "login_error_credentials_required":  "Username and password are required",
     "login_error_login_failed":  "Login failed",
