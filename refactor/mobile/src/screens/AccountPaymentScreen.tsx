@@ -12,7 +12,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
-import { apiPay, apiSnapToken } from '../api/services';
+import { apiFakturDetail, apiPay, apiSnapToken } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { alertDialog, confirmDialog } from '../utils/dialog';
 import { snapPayWeb } from '../utils/snapPay';
@@ -26,6 +26,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
   const { noFaktur, amount, method } = route.params;
   const [confirming, setConfirming] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   const isMidtrans = method.type === 'midtrans';
   const hasAccount = !!method.accountNumber;
@@ -34,6 +35,26 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
     Clipboard.setString(text);
     setCopied(label);
     setTimeout(() => setCopied(null), 2000);
+  }
+
+  // Setelah Snap sukses: webhook menandai lunas asinkron (~10-15 dtk). Poll status sampai
+  // lunas (atau ~30 dtk) supaya UI otomatis flip — tak perlu reload manual.
+  async function verifyPaymentThenBack() {
+    setVerifying(true);
+    let lunas = false;
+    for (let i = 0; i < 12; i++) {
+      try {
+        const d = await apiFakturDetail(noFaktur);
+        if (d?.isLunas) { lunas = true; break; }
+      } catch { /* abaikan, coba lagi */ }
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+    setVerifying(false);
+    alertDialog(
+      tr('account_payment_snap_success_title'),
+      lunas ? tr('account_payment_paid_confirmed_msg') : tr('account_payment_snap_success_msg'),
+    );
+    navigation.pop(2);
   }
 
   async function onConfirm() {
@@ -51,7 +72,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         if (Platform.OS === 'web' && res.token && res.clientKey) {
           try {
             await snapPayWeb(res.token, res.clientKey, {
-              onSuccess: () => { alertDialog(tr('account_payment_snap_success_title'), tr('account_payment_snap_success_msg')); navigation.pop(2); },
+              onSuccess: () => { verifyPaymentThenBack(); },
               onPending: () => { alertDialog(tr('account_payment_snap_pending_title'), tr('account_payment_snap_pending_msg')); navigation.pop(2); },
               onError: () => { alertDialog(tr('account_payment_alert_failed_title'), tr('account_payment_snap_error_msg')); },
               onClose: () => { /* user menutup popup tanpa menyelesaikan — biarkan di halaman ini */ },
@@ -102,6 +123,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
   }
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView style={s.container} contentContainerStyle={{ padding: 20, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       {/* Header brand */}
       <View style={[s.brandHeader, { backgroundColor: method.logoBg + '18' }]}>
@@ -198,6 +220,13 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         <Text style={s.footNote}>{tr('account_payment_footnote')}</Text>
       )}
     </ScrollView>
+      {verifying && (
+        <View style={s.verifyOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={s.verifyText}>{tr('account_payment_verifying')}</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -231,4 +260,6 @@ const s = StyleSheet.create({
   actionDisabled: { opacity: 0.5, shadowOpacity: 0 },
   actionText: { color: '#fff', fontSize: 17, fontWeight: '900', letterSpacing: 0.3 },
   footNote: { textAlign: 'center', color: '#9CA3AF', fontSize: 12, marginTop: 12, lineHeight: 18 },
+  verifyOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(17,24,39,0.82)', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
+  verifyText: { color: '#fff', fontSize: 15, fontWeight: '700', textAlign: 'center' },
 });
