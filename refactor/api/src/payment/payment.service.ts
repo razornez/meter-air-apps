@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Cron } from '@nestjs/schedule';
+import { Between, DataSource, Repository } from 'typeorm';
 import { createHmac } from 'crypto';
 import { Faktur } from '../meter/entities/faktur.entity';
 import { Transaksi } from '../meter/entities/transaksi.entity';
@@ -9,6 +10,7 @@ import { ActivityLog } from '../auth/entities/activity-log.entity';
 import { Pembayaran } from '../faktur/entities/pembayaran.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
+import { PaymentIntent } from './entities/payment-intent.entity';
 
 @Injectable()
 export class PaymentService {
@@ -27,6 +29,7 @@ export class PaymentService {
     @InjectRepository(ActivityLog) private readonly logs: Repository<ActivityLog>,
     @InjectRepository(Pembayaran) private readonly pembayaran: Repository<Pembayaran>,
     @InjectRepository(PaymentMethod) private readonly methods: Repository<PaymentMethod>,
+    @InjectRepository(PaymentIntent) private readonly intents: Repository<PaymentIntent>,
   ) {
     this.kasugaiBase = config.get('KASUGAI_BASE_URL', 'http://127.0.0.1:3099');
     this.kasugaiSecretKey = config.get('KASUGAI_SECRET_KEY', '');
@@ -137,6 +140,9 @@ export class PaymentService {
     const payData = await payRes.json() as { redirectUrl?: string; token?: string; snapToken?: string; clientKey?: string };
 
     this.logger.log(`kasugai payment created: ${noFaktur} orderId=${orderId} amount=${total}`);
+    // Catat intent untuk REKONSILIASI (jaring pengaman bila webhook terlewat).
+    await this.intents.insert({ tenantId, orderId, noFaktur, amount: total, status: 'pending' })
+      .catch((e) => this.logger.warn(`payment_intent insert gagal (${orderId}): ${String(e)}`));
     return {
       alreadyPaid: false,
       token: payData.token ?? payData.snapToken ?? null,
@@ -181,21 +187,69 @@ export class PaymentService {
     const f = await this.faktur.findOne({ where: waTenantId ? { noFaktur, tenantId: waTenantId } : { noFaktur } });
     this.logger.log(`Webhook map: ${orderId} -> tenant=${waTenantId ?? '-'} noFaktur=${noFaktur} | fakturFound=${!!f} isLunas=${f?.isLunas ?? '-'}`);
     if (!f) return { ok: true, paid: false, reason: 'faktur_not_found', noFaktur };
-    if (f.isLunas === 1) return { ok: true, paid: false, reason: 'already_paid', noFaktur };
+    if (f.isLunas === 1) {
+      await this.intents.update({ orderId }, { status: 'paid' }).catch(() => {});
+      return { ok: true, paid: false, reason: 'already_paid', noFaktur };
+    }
 
     const tenantId = f.tenantId ?? 1;
-    const dibayar = f.total ?? 0;
+    await this.markFakturPaidViaKasugai(f, noFaktur, tenantId, orderId, 'webhook');
+    await this.intents.update({ orderId }, { status: 'paid' }).catch(() => {});
+    return { ok: true, paid: true, noFaktur };
+  }
 
+  /** Tandai faktur lunas via kasugai (dipakai webhook & rekonsiliasi). Pemanggil cek isLunas dulu. */
+  private async markFakturPaidViaKasugai(f: Faktur, noFaktur: string, tenantId: number, orderId: string, source: string): Promise<void> {
+    const dibayar = f.total ?? 0;
     await this.dataSource.transaction(async (mgr) => {
       await mgr.update(Faktur, { id: f.id }, { isLunas: 1 });
       await mgr.update(Transaksi, { faktur: noFaktur, tenantId }, { dibayar });
     });
-
-    await this.logs.insert({ tenantId, idUser: 0, aktivitas: `Pembayaran kasugai berhasil — ${noFaktur} (order: ${orderId})`, jenis: 'pembayaran', waktu: new Date() }).catch(() => {});
+    await this.logs.insert({ tenantId, idUser: 0, aktivitas: `Pembayaran kasugai berhasil — ${noFaktur} (order: ${orderId}, ${source})`, jenis: 'pembayaran', waktu: new Date() }).catch(() => {});
     await this.pembayaran.insert({ tenantId, noFaktur, metode: 'midtrans_qris', jumlah: dibayar, status: 'lunas', paidAt: new Date(), petugas: null }).catch(() => {});
+    this.logger.log(`Faktur ${noFaktur} ditandai lunas via kasugai (${source})`);
+  }
 
-    this.logger.log(`Faktur ${noFaktur} ditandai lunas via kasugai`);
-    return { ok: true, paid: true, noFaktur };
+  /**
+   * REKONSILIASI: tiap 10 menit cek order 'pending' (umur 2 menit–24 jam) ke kasugai.
+   * Bila status 'paid' tapi faktur belum lunas (webhook terlewat) → tandai lunas. Jaring pengaman.
+   */
+  @Cron('0 */10 * * * *')
+  async reconcilePendingPayments(): Promise<void> {
+    const now = Date.now();
+    // Tandai kedaluwarsa intent pending yang sudah >24 jam (jangan dicek selamanya).
+    await this.intents.createQueryBuilder().update().set({ status: 'expired' })
+      .where('status = :s AND created_at < :cut', { s: 'pending', cut: new Date(now - 24 * 3600_000) })
+      .execute().catch(() => {});
+
+    const pendings = await this.intents.find({
+      where: { status: 'pending', createdAt: Between(new Date(now - 24 * 3600_000), new Date(now - 2 * 60_000)) },
+      take: 100,
+    });
+    if (!pendings.length) return;
+    this.logger.log(`Reconcile: cek ${pendings.length} pembayaran pending`);
+
+    for (const it of pendings) {
+      try {
+        const res = await fetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(it.orderId)}`, {
+          headers: { Authorization: `Bearer ${this.kasugaiSecretKey}` },
+        });
+        if (!res.ok) continue;
+        const order = await res.json() as { status?: string };
+        if (/paid|settle|capture|success/i.test(order.status ?? '')) {
+          const f = await this.faktur.findOne({ where: { noFaktur: it.noFaktur ?? '', tenantId: it.tenantId } });
+          if (f && f.isLunas !== 1) {
+            await this.markFakturPaidViaKasugai(f, it.noFaktur ?? '', it.tenantId, it.orderId, 'reconcile');
+            this.logger.warn(`RECONCILE: faktur ${it.noFaktur} ditandai lunas — webhook terlewat (order=${it.orderId})`);
+          }
+          await this.intents.update({ id: it.id }, { status: 'paid' });
+        } else if (/fail|expire|cancel|deny/i.test(order.status ?? '')) {
+          await this.intents.update({ id: it.id }, { status: 'expired' });
+        }
+      } catch (e) {
+        this.logger.error(`Reconcile error ${it.orderId}: ${String(e)}`);
+      }
+    }
   }
 
   /**

@@ -8,10 +8,11 @@ import { Customer } from '../customers/entities/customer.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
 import { Pembayaran } from '../faktur/entities/pembayaran.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
+import { PaymentIntent } from './entities/payment-intent.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Faktur, Transaksi, Customer, ActivityLog, Pembayaran, PaymentMethod]),
+    TypeOrmModule.forFeature([Faktur, Transaksi, Customer, ActivityLog, Pembayaran, PaymentMethod, PaymentIntent]),
   ],
   controllers: [PaymentController],
   providers: [PaymentService],
