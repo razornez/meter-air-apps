@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Clipboard,
@@ -27,6 +27,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const verifyCancel = useRef(false);
 
   const isMidtrans = method.type === 'midtrans';
   const hasAccount = !!method.accountNumber;
@@ -40,20 +41,29 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
   // Setelah Snap sukses: webhook menandai lunas asinkron (~10-15 dtk). Poll status sampai
   // lunas (atau ~30 dtk) supaya UI otomatis flip — tak perlu reload manual.
   async function verifyPaymentThenBack() {
+    verifyCancel.current = false;
     setVerifying(true);
     let lunas = false;
     for (let i = 0; i < 12; i++) {
+      if (verifyCancel.current) { setVerifying(false); return; } // user tekan Tutup
       try {
         const d = await apiFakturDetail(noFaktur);
         if (d?.isLunas) { lunas = true; break; }
       } catch { /* abaikan, coba lagi */ }
       await new Promise((r) => setTimeout(r, 2500));
     }
+    if (verifyCancel.current) { setVerifying(false); return; }
     setVerifying(false);
     alertDialog(
       tr('account_payment_snap_success_title'),
       lunas ? tr('account_payment_paid_confirmed_msg') : tr('account_payment_snap_success_msg'),
     );
+    navigation.pop(2);
+  }
+
+  function cancelVerify() {
+    verifyCancel.current = true;
+    setVerifying(false);
     navigation.pop(2);
   }
 
@@ -72,10 +82,12 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         if (Platform.OS === 'web' && res.token && res.clientKey) {
           try {
             await snapPayWeb(res.token, res.clientKey, {
+              // Apa pun cara keluar Snap → cek status faktur otomatis (webhook menandai lunas
+              // server-side; user TAK perlu klik "check status"). Overlay punya tombol Tutup.
               onSuccess: () => { verifyPaymentThenBack(); },
-              onPending: () => { alertDialog(tr('account_payment_snap_pending_title'), tr('account_payment_snap_pending_msg')); navigation.pop(2); },
+              onPending: () => { verifyPaymentThenBack(); },
               onError: () => { alertDialog(tr('account_payment_alert_failed_title'), tr('account_payment_snap_error_msg')); },
-              onClose: () => { /* user menutup popup tanpa menyelesaikan — biarkan di halaman ini */ },
+              onClose: () => { verifyPaymentThenBack(); },
             });
             return;
           } catch {
@@ -224,6 +236,9 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
         <View style={s.verifyOverlay}>
           <ActivityIndicator size="large" color="#fff" />
           <Text style={s.verifyText}>{tr('account_payment_verifying')}</Text>
+          <TouchableOpacity onPress={cancelVerify} style={s.verifyClose} activeOpacity={0.8}>
+            <Text style={s.verifyCloseText}>{tr('account_payment_verify_close')}</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -262,4 +277,6 @@ const s = StyleSheet.create({
   footNote: { textAlign: 'center', color: '#9CA3AF', fontSize: 12, marginTop: 12, lineHeight: 18 },
   verifyOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(17,24,39,0.82)', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   verifyText: { color: '#fff', fontSize: 15, fontWeight: '700', textAlign: 'center' },
+  verifyClose: { marginTop: 10, paddingHorizontal: 22, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.45)' },
+  verifyCloseText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });
