@@ -31,7 +31,7 @@ export class FakturService {
       await this.pembayaran.insert({
         tenantId, noFaktur, metode: 'manual',
         jumlah, status: lunas ? 'lunas' : 'batal',
-        paidAt: lunas ? new Date() : null, petugas: userId,
+        paidAt: new Date(), petugas: userId, // selalu catat waktu aksi (termasuk batal)
       });
     } catch (e) {
       this.logger.warn(`Gagal mencatat pembayaran ${noFaktur}: ${(e as Error).message}`);
