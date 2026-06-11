@@ -214,6 +214,12 @@ export async function apiSnapToken(noFaktur: string) {
   return data;
 }
 
+// Konfirmasi aktif: backend cek status ke kasugai & tandai lunas seketika (tanpa nunggu webhook).
+export async function apiConfirmPayment(noFaktur: string) {
+  const { data } = await api.post<{ lunas: boolean; status?: string }>('/payment/confirm', { noFaktur });
+  return data;
+}
+
 export async function apiOcrMeter(photoUri: string) {
   const form = new FormData();
   form.append('photo', {

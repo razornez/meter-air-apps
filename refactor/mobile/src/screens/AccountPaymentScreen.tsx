@@ -12,7 +12,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
-import { apiFakturDetail, apiPay, apiSnapToken } from '../api/services';
+import { apiConfirmPayment, apiPay, apiSnapToken } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { alertDialog, confirmDialog } from '../utils/dialog';
 import { snapPayWeb } from '../utils/snapPay';
@@ -47,10 +47,10 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
     for (let i = 0; i < 12; i++) {
       if (verifyCancel.current) { setVerifying(false); return; } // user tekan Tutup
       try {
-        const d = await apiFakturDetail(noFaktur);
-        if (d?.isLunas) { lunas = true; break; }
+        const r = await apiConfirmPayment(noFaktur); // backend verifikasi ke kasugai + tandai lunas
+        if (r?.lunas) { lunas = true; break; }
       } catch { /* abaikan, coba lagi */ }
-      await new Promise((r) => setTimeout(r, 2500));
+      await new Promise((r) => setTimeout(r, 2000));
     }
     if (verifyCancel.current) { setVerifying(false); return; }
     setVerifying(false);

@@ -211,6 +211,36 @@ export class PaymentService {
   }
 
   /**
+   * Konfirmasi AKTIF: cek status order terakhir faktur langsung ke kasugai & tandai lunas
+   * seketika bila sudah dibayar. Dipanggil app saat Snap sukses → tak perlu menunggu webhook.
+   * Aman: status diverifikasi ke gateway (bukan percaya klien).
+   */
+  async confirmPayment(noFaktur: string, tenantId: number): Promise<{ lunas: boolean; status?: string }> {
+    const f = await this.faktur.findOne({ where: { noFaktur, tenantId } });
+    if (!f) return { lunas: false };
+    if (f.isLunas === 1) return { lunas: true };
+
+    const intent = await this.intents.findOne({ where: { noFaktur, tenantId }, order: { createdAt: 'DESC' } });
+    if (!intent) return { lunas: false };
+
+    try {
+      const res = await fetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(intent.orderId)}`, {
+        headers: { Authorization: `Bearer ${this.kasugaiSecretKey}` },
+      });
+      if (!res.ok) return { lunas: false };
+      const order = await res.json() as { status?: string };
+      if (/paid|settle|capture|success/i.test(order.status ?? '')) {
+        await this.markFakturPaidViaKasugai(f, noFaktur, tenantId, intent.orderId, 'confirm');
+        await this.intents.update({ id: intent.id }, { status: 'paid' });
+        return { lunas: true };
+      }
+      return { lunas: false, status: order.status };
+    } catch {
+      return { lunas: false };
+    }
+  }
+
+  /**
    * REKONSILIASI: tiap 10 menit cek order 'pending' (umur 2 menit–24 jam) ke kasugai.
    * Bila status 'paid' tapi faktur belum lunas (webhook terlewat) → tandai lunas. Jaring pengaman.
    */

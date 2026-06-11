@@ -26,6 +26,14 @@ export class PaymentController {
     return this.payment.createKasugaiPayment(noFaktur, user.id, req.tenantId);
   }
 
+  // Konfirmasi aktif: app panggil ini saat Snap sukses → backend cek status ke kasugai
+  // & tandai lunas SEKETIKA (tak menunggu webhook). Aman: status diverifikasi ke gateway.
+  @UseGuards(JwtAuthGuard)
+  @Post('confirm')
+  confirm(@Body('noFaktur') noFaktur: string, @Req() req: { tenantId: number }) {
+    return this.payment.confirmPayment(noFaktur, req.tenantId);
+  }
+
   @SkipThrottle()
   @Post('webhook')
   webhook(@Req() req: { rawBody?: Buffer }, @Headers('x-kasugai-signature') sig: string) {
