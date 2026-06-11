@@ -15,7 +15,12 @@ export class SeedController {
   ) {}
 
   private checkSecret(secret: string) {
-    const expected = this.config.get<string>('SEED_SECRET', 'seed-meterair-demo-2025');
+    const expected = this.config.get<string>('SEED_SECRET');
+    // Fail closed: tanpa SEED_SECRET (kuat) di env, SEMUA operasi seed/cleanup/DDL diblokir.
+    // Mencegah wipe/seed tak sah oleh siapa pun yang membaca source (tak ada default rahasia).
+    if (!expected || expected.length < 16) {
+      throw new ForbiddenException('Seed dinonaktifkan: SEED_SECRET belum dikonfigurasi / terlalu lemah');
+    }
     if (secret !== expected) throw new ForbiddenException('Invalid seed secret');
   }
 

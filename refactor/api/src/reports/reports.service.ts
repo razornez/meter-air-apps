@@ -51,7 +51,8 @@ export class ReportsService {
       .select('f.kasir', 'kasirId')
       .addSelect('COALESCE(u.name, u.username, "Tidak dikenal")', 'nama')
       .addSelect('COUNT(f.id)', 'jumlah')
-      .where('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
+      .where('f.tenant_id = :tid', { tid: tenantId })
+      .andWhere('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
       .andWhere('f.kasir IS NOT NULL')
       .groupBy('f.kasir')
       .addGroupBy('u.name')
@@ -74,7 +75,7 @@ export class ReportsService {
     return {
       periode: `${y}-${String(m).padStart(2, '0')}`,
       total,
-      totalPelanggan: await this.customers.count(),
+      totalPelanggan: await this.customers.count({ where: { tenantId } }),
       data,
     };
   }
@@ -94,7 +95,8 @@ export class ReportsService {
       .addSelect('f.total', 'total')
       .addSelect('COALESCE(f.denda, 0)', 'denda')
       .addSelect('DATEDIFF(NOW(), f.tgl_jatuh_tempo)', 'hariTelat')
-      .where('f.is_lunas = 0')
+      .where('f.tenant_id = :tid', { tid: tenantId })
+      .andWhere('f.is_lunas = 0')
       .andWhere('f.tgl_jatuh_tempo IS NOT NULL')
       .andWhere('f.tgl_jatuh_tempo < NOW()')
       .getRawMany()) as RawTunggakanRow[];
@@ -125,7 +127,8 @@ export class ReportsService {
     const recRows = await this.faktur
       .createQueryBuilder('f')
       .select('DISTINCT f.customer', 'customer')
-      .where('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
+      .where('f.tenant_id = :tid', { tid: tenantId })
+      .andWhere('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
       .getRawMany<{ customer: string | null }>();
     const recorded = new Set(
       recRows.map((r) => String(r.customer)).filter((s) => s !== 'null'),
@@ -145,6 +148,7 @@ export class ReportsService {
         'mx.idp = c.id',
       )
       .leftJoin(HistoryMeter, 'lm', 'lm.id = mx.maxid')
+      .where('c.tenant_id = :tid', { tid: tenantId })
       .select('c.id', 'id')
       .addSelect('c.nama', 'nama')
       .addSelect('c.alamat', 'alamat')
@@ -194,6 +198,7 @@ export class ReportsService {
       .select('h.id_pelanggan', 'idPelanggan')
       .addSelect('h.meter', 'meter')
       .addSelect('h.tanggal_catat', 'tanggal')
+      .where('h.tenant_id = :tid', { tid: tenantId })
       .orderBy('h.id_pelanggan', 'ASC')
       .addOrderBy('h.id', 'ASC')
       .getRawMany<{
@@ -215,6 +220,7 @@ export class ReportsService {
     const custRows = await this.customers
       .createQueryBuilder('c')
       .select(['c.id', 'c.nama', 'c.alamat'])
+      .where('c.tenant_id = :tid', { tid: tenantId })
       .getMany();
     const custMap = new Map(custRows.map((c) => [c.id, c]));
 
@@ -268,7 +274,8 @@ export class ReportsService {
         'COALESCE(SUM(CASE WHEN f.is_lunas=1 THEN f.total ELSE 0 END),0)',
         'totalTerbayar',
       )
-      .where('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
+      .where('f.tenant_id = :tid', { tid: tenantId })
+      .andWhere('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
       .getRawOne<{
         jumlahFaktur: string;
         totalTagihan: string;
@@ -277,9 +284,10 @@ export class ReportsService {
 
     const usage = await this.transaksi
       .createQueryBuilder('t')
-      .innerJoin(Faktur, 'f', 'f.no_faktur = t.faktur')
+      .innerJoin(Faktur, 'f', 'f.no_faktur = t.faktur AND f.tenant_id = t.tenant_id')
       .select('COALESCE(SUM(CAST(t.quantity AS UNSIGNED)),0)', 'pemakaian')
-      .where('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
+      .where('t.tenant_id = :tid', { tid: tenantId })
+      .andWhere('MONTH(f.tanggal) = :m AND YEAR(f.tanggal) = :y', { m, y })
       .getRawOne<{ pemakaian: string }>();
 
     const totalTagihan = Number(agg?.totalTagihan ?? 0);
