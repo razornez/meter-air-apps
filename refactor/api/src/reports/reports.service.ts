@@ -47,7 +47,7 @@ export class ReportsService {
 
     const rows = await this.faktur
       .createQueryBuilder('f')
-      .leftJoin(User, 'u', 'u.id = f.kasir')
+      .leftJoin(User, 'u', 'u.id = f.kasir AND u.tenant_id = f.tenant_id')
       .select('f.kasir', 'kasirId')
       .addSelect('COALESCE(u.name, u.username, "Tidak dikenal")', 'nama')
       .addSelect('COUNT(f.id)', 'jumlah')
