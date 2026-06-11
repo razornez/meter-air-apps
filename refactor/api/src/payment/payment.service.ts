@@ -12,6 +12,10 @@ import { Customer } from '../customers/entities/customer.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
 import { PaymentIntent } from './entities/payment-intent.entity';
 
+/** Status order kasugai/Midtrans yang dianggap LUNAS vs GAGAL (dipakai webhook, reconcile, confirm). */
+const PAID_STATUS_RE = /paid|settle|capture|success/i;
+const FAILED_STATUS_RE = /fail|expire|cancel|deny/i;
+
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
@@ -101,12 +105,12 @@ export class PaymentService {
     const cust = customerId ? await this.customers.findOne({ where: { id: customerId, tenantId } }) : null;
 
     const total = Math.round(f.total ?? 0);
-    if (total <= 0) throw new Error(`Total faktur tidak valid: ${total}`);
+    if (total <= 0) throw new BadRequestException(`Total faktur tidak valid: ${total}`);
 
     // Sertakan tenantId di orderId ("T<id>-...") agar webhook menandai faktur tenant yang BENAR
     // (no_faktur bisa sama antar tenant, mis. tenant DEMO salinan dari real).
     const orderId = `T${tenantId}-${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
-    const kasugaiMethod = methodCode === 'midtrans_qris' ? 'midtrans_qris' : 'midtrans_qris';
+    const kasugaiMethod = 'midtrans_qris'; // saat ini gateway hanya pakai Snap Midtrans
     const authHeader = `Bearer ${this.kasugaiSecretKey}`;
 
     // 1. Buat order di kasugai
@@ -173,7 +177,7 @@ export class PaymentService {
     this.logger.log(`Webhook: event=${event} orderId=${orderId ?? '(none)'} bodyKeys=[${Object.keys(body).join(',')}] dataKeys=[${data ? Object.keys(data).join(',') : '-'}]`);
 
     // Terima beragam nama event sukses (paid/settlement/capture/success).
-    const paidEvent = /paid|settle|capture|success/i.test(event ?? '');
+    const paidEvent = PAID_STATUS_RE.test(event ?? '');
     if (!paidEvent) return { ok: true, paid: false, event };
     if (!orderId) { this.logger.warn('Webhook: orderId tidak ditemukan di payload'); return { ok: false, reason: 'missing_orderId' }; }
 
@@ -229,7 +233,7 @@ export class PaymentService {
       });
       if (!res.ok) return { lunas: false };
       const order = await res.json() as { status?: string };
-      if (/paid|settle|capture|success/i.test(order.status ?? '')) {
+      if (PAID_STATUS_RE.test(order.status ?? '')) {
         await this.markFakturPaidViaKasugai(f, noFaktur, tenantId, intent.orderId, 'confirm');
         await this.intents.update({ id: intent.id }, { status: 'paid' });
         return { lunas: true };
@@ -266,14 +270,14 @@ export class PaymentService {
         });
         if (!res.ok) continue;
         const order = await res.json() as { status?: string };
-        if (/paid|settle|capture|success/i.test(order.status ?? '')) {
+        if (PAID_STATUS_RE.test(order.status ?? '')) {
           const f = await this.faktur.findOne({ where: { noFaktur: it.noFaktur ?? '', tenantId: it.tenantId } });
           if (f && f.isLunas !== 1) {
             await this.markFakturPaidViaKasugai(f, it.noFaktur ?? '', it.tenantId, it.orderId, 'reconcile');
             this.logger.warn(`RECONCILE: faktur ${it.noFaktur} ditandai lunas — webhook terlewat (order=${it.orderId})`);
           }
           await this.intents.update({ id: it.id }, { status: 'paid' });
-        } else if (/fail|expire|cancel|deny/i.test(order.status ?? '')) {
+        } else if (FAILED_STATUS_RE.test(order.status ?? '')) {
           await this.intents.update({ id: it.id }, { status: 'expired' });
         }
       } catch (e) {

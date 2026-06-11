@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -6,8 +6,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiTunggakan } from '../api/services';
-import { apiErrorMessage } from '../api/client';
-import { TunggakanItem, TunggakanResponse } from '../types';
+import { TunggakanItem } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { buildWAMessage, formatPhoneWA, openWA } from '../utils/whatsapp';
 import { fonts, formatRupiah, gradients, pastels, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
@@ -27,32 +27,10 @@ export default function TunggakanScreen({ navigation }: Props) {
   const t = useTheme();
   const { t: tr } = useTranslation();
   const s = useMemo(() => createStyles(t), [t]);
-  const [res, setRes]         = useState<TunggakanResponse | null>(null);
-  const [items, setItems]     = useState<TunggakanItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const [search, setSearch]   = useState('');
-  const [filter, setFilter]   = useState<Filter>('semua');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    try {
-      const data = await apiTunggakan(1, LIMIT);
-      setRes(data); setItems(data.data);
-    } catch (e) { setError(apiErrorMessage(e)); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function onRefresh() {
-    setRefreshing(true);
-    setItems([]);
-    setRes(null);
-    await load();
-    setRefreshing(false);
-  }
+  const { data: res, loading, error, refreshing, reload, onRefresh } = useAsyncData(() => apiTunggakan(1, LIMIT));
+  const items: TunggakanItem[] = res?.data ?? [];
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<Filter>('semua');
 
   const filtered = useMemo(() => {
     let list = items;
@@ -66,7 +44,7 @@ export default function TunggakanScreen({ navigation }: Props) {
   }, [items, search, filter]);
 
   if (loading && !res) return <Loading label={tr('tunggakan_loading')} />;
-  if (error && !res)   return <ErrorState message={error} onRetry={load} />;
+  if (error && !res)   return <ErrorState message={error} onRetry={() => reload()} />;
   if (!res) return null;
 
   const FILTERS: { key: Filter; label: string; icon: string }[] = [

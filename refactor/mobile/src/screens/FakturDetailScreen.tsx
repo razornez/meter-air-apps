@@ -1,8 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
+import { ActivityIndicator, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -15,7 +12,7 @@ import { fonts, formatRupiah, pastels, radius, shadow, tracking, Theme } from '.
 import { useTheme } from '../ThemeContext';
 import { fotoMeterUrl } from '../config';
 import { ErrorState, Loading } from '../components/ScreenStates';
-import { buildFakturHtml } from '../utils/fakturHtml';
+import { printOrShareFaktur } from '../utils/printFaktur';
 import { buildWAMessage, openWA } from '../utils/whatsapp';
 import { alertDialog, confirmDialog } from '../utils/dialog';
 
@@ -126,71 +123,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
 
   async function onPrintOrShare(share: boolean) {
     if (!data) return;
-    const cfg = config ?? ({ perusahaan: 'Meter Air', alamat: '', telp: '' } as AppConfig);
-
-    // Web: expo-print/expo-sharing native-only. Share → Web Share API bila ada;
-    // Print/fallback → buka HTML via Blob URL (andal, tak blank seperti document.write).
-    if (Platform.OS === 'web') {
-      const html = buildFakturHtml(data, cfg);
-      const nav: any = typeof navigator !== 'undefined' ? navigator : null;
-      if (share && nav && typeof nav.share === 'function') {
-        try {
-          await nav.share({ title: `Faktur ${data.noFaktur}`, text: `Tagihan ${data.noFaktur}: ${formatRupiah(data.total ?? 0)}` });
-          return;
-        } catch { /* user batal / tak didukung → lanjut fallback buka HTML */ }
-      }
-      try {
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const w = window.open(url, '_blank');
-        if (!w) { alertDialog('Popup diblokir', 'Izinkan popup untuk mencetak/membagikan faktur.'); return; }
-        if (!share) setTimeout(() => { try { w.print(); } catch {} }, 700);
-        setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 60000);
-      } catch (e: any) {
-        alertDialog('Gagal', e?.message ?? String(e));
-      }
-      return;
-    }
-
-    setActing(true);
-    try {
-      const html = buildFakturHtml(data, cfg);
-
-      // Step 1: Generate PDF ke temp file
-      const { uri: tmpUri } = await Print.printToFileAsync({ html });
-
-      // Step 2: Copy ke cache dir dengan nama yang jelas
-      const safeName = (data.noFaktur ?? 'faktur').replace(/\//g, '-');
-      const destUri = `${FileSystem.cacheDirectory}Faktur-${safeName}.pdf`;
-      await FileSystem.copyAsync({ from: tmpUri, to: destUri });
-
-      if (share) {
-        // Bagikan — native share sheet (WhatsApp, email, Drive, dll)
-        await Sharing.shareAsync(destUri, {
-          mimeType: 'application/pdf',
-          dialogTitle: `Faktur ${data.noFaktur}`,
-          UTI: 'com.adobe.pdf',
-        });
-      } else {
-        // Cetak — iOS: print dialog langsung | Android: share sheet (pilih Print / PDF viewer)
-        if (Platform.OS === 'ios') {
-          await Print.printAsync({ uri: destUri });
-        } else {
-          // Android: Print.printAsync sering gagal tanpa printer service,
-          // pakai share sheet agar user bisa buka di PDF viewer / print dari sana
-          await Sharing.shareAsync(destUri, {
-            mimeType: 'application/pdf',
-            dialogTitle: `Cetak Faktur ${data.noFaktur}`,
-            UTI: 'com.adobe.pdf',
-          });
-        }
-      }
-    } catch (e: any) {
-      const msg = e?.message ?? String(e);
-      alertDialog('Gagal', `Tidak dapat memproses PDF.\n\n${msg}`);
-    } finally {
-      setActing(false);
-    }
+    await printOrShareFaktur(data, config, share, setActing);
   }
 
   if (loading) return <Loading />;

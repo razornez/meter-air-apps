@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiAnomalies } from '../api/services';
-import { apiErrorMessage } from '../api/client';
 import { Anomaly } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { fonts, pastels, radius, shadow, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
@@ -30,28 +30,11 @@ export default function AnomalyScreen({ navigation }: Props) {
     turun:    tr('anomaly_type_drop'),
   };
 
-  const [items, setItems]     = useState<Anomaly[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    try { setItems(await apiAnomalies(100)); }
-    catch (e) { setError(apiErrorMessage(e)); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  async function onRefresh() {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }
+  const { data, loading, error, refreshing, reload, onRefresh } = useAsyncData(() => apiAnomalies(100));
+  const items = data ?? [];
 
   if (loading) return <Loading label={tr('anomaly_loading')} />;
-  if (error)   return <ErrorState message={error} onRetry={load} />;
+  if (error)   return <ErrorState message={error} onRetry={() => reload()} />;
   if (items.length === 0) return <EmptyState label={tr('anomaly_empty')} illustration="anomaly" />;
 
   const tinggi = items.filter(i => i.severity === 'tinggi').length;

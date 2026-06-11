@@ -215,7 +215,7 @@ export default function AccountPaymentScreen({ route, navigation }: Props) {
 
       {/* Tombol aksi */}
       <TouchableOpacity
-        style={[s.actionBtn, { backgroundColor: isMidtrans ? method.logoBg : method.logoBg }, confirming && s.actionDisabled]}
+        style={[s.actionBtn, { backgroundColor: method.logoBg }, confirming && s.actionDisabled]}
         onPress={onConfirm}
         disabled={confirming}
         activeOpacity={0.85}
