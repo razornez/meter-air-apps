@@ -263,26 +263,43 @@ export class PaymentService {
     if (!pendings.length) return;
     this.logger.log(`Reconcile: cek ${pendings.length} pembayaran pending`);
 
-    for (const it of pendings) {
-      try {
-        const res = await fetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(it.orderId)}`, {
-          headers: { Authorization: `Bearer ${this.kasugaiSecretKey}` },
-        });
-        if (!res.ok) continue;
-        const order = await res.json() as { status?: string };
-        if (PAID_STATUS_RE.test(order.status ?? '')) {
-          const f = await this.faktur.findOne({ where: { noFaktur: it.noFaktur ?? '', tenantId: it.tenantId } });
-          if (f && f.isLunas !== 1) {
-            await this.markFakturPaidViaKasugai(f, it.noFaktur ?? '', it.tenantId, it.orderId, 'reconcile');
-            this.logger.warn(`RECONCILE: faktur ${it.noFaktur} ditandai lunas — webhook terlewat (order=${it.orderId})`);
-          }
-          await this.intents.update({ id: it.id }, { status: 'paid' });
-        } else if (FAILED_STATUS_RE.test(order.status ?? '')) {
-          await this.intents.update({ id: it.id }, { status: 'expired' });
+    // Paralel dgn cap konkurensi — call gateway tak lagi serial (dulu ≤100 berurutan ~menitan).
+    // Tiap intent = faktur berbeda → transaksi tak saling tabrak; aman diparalelkan.
+    const CONCURRENCY = 8;
+    let paid = 0;
+    for (let i = 0; i < pendings.length; i += CONCURRENCY) {
+      const results = await Promise.all(pendings.slice(i, i + CONCURRENCY).map((it) => this.reconcileOne(it)));
+      paid += results.filter(Boolean).length;
+    }
+    if (paid) this.logger.warn(`RECONCILE: ${paid} faktur ditandai lunas (webhook terlewat)`);
+  }
+
+  /** Proses satu intent: cek status ke kasugai → tandai lunas bila perlu. Return true bila menandai. */
+  private async reconcileOne(it: PaymentIntent): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(it.orderId)}`, {
+        headers: { Authorization: `Bearer ${this.kasugaiSecretKey}` },
+      });
+      if (!res.ok) return false;
+      const order = await res.json() as { status?: string };
+      if (PAID_STATUS_RE.test(order.status ?? '')) {
+        const f = await this.faktur.findOne({ where: { noFaktur: it.noFaktur ?? '', tenantId: it.tenantId } });
+        let marked = false;
+        if (f && f.isLunas !== 1) {
+          await this.markFakturPaidViaKasugai(f, it.noFaktur ?? '', it.tenantId, it.orderId, 'reconcile');
+          this.logger.warn(`RECONCILE: faktur ${it.noFaktur} ditandai lunas — webhook terlewat (order=${it.orderId})`);
+          marked = true;
         }
-      } catch (e) {
-        this.logger.error(`Reconcile error ${it.orderId}: ${String(e)}`);
+        await this.intents.update({ id: it.id }, { status: 'paid' });
+        return marked;
       }
+      if (FAILED_STATUS_RE.test(order.status ?? '')) {
+        await this.intents.update({ id: it.id }, { status: 'expired' });
+      }
+      return false;
+    } catch (e) {
+      this.logger.error(`Reconcile error ${it.orderId}: ${String(e)}`);
+      return false;
     }
   }
 

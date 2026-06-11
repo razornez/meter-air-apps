@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { apiReportMonthly, apiReportSummary } from '../api/services';
-import { apiErrorMessage } from '../api/client';
 import { MonthlyReport, ReportSummary } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { fonts, formatRupiah, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { ErrorState, Loading } from '../components/ScreenStates';
@@ -19,31 +19,15 @@ export default function ReportsScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
   const { t: i18n } = useTranslation();
-  const [summary, setSummary] = useState<ReportSummary | null>(null);
-  const [monthly, setMonthly] = useState<MonthlyReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [sum, m] = await Promise.all([apiReportSummary(), apiReportMonthly(6)]);
-      setSummary(sum);
-      setMonthly(m);
-    } catch (e) {
-      setError(apiErrorMessage(e));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data, loading, error, reload } = useAsyncData(async () => {
+    const [summary, monthly] = await Promise.all([apiReportSummary(), apiReportMonthly(6)]);
+    return { summary, monthly };
+  });
+  const summary: ReportSummary | null = data?.summary ?? null;
+  const monthly: MonthlyReport[] = data?.monthly ?? [];
 
   if (loading) return <Loading />;
-  if (error || !summary) return <ErrorState message={error ?? 'Data tidak tersedia'} onRetry={load} />;
+  if (error || !summary) return <ErrorState message={error ?? 'Data tidak tersedia'} onRetry={() => reload()} />;
 
   const b = summary.bulanIni;
   const paidRatio = b.totalTagihan > 0 ? b.totalTerbayar / b.totalTagihan : 0;

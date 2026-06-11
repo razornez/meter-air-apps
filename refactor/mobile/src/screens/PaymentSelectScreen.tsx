@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,8 +12,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiPaymentMethods } from '../api/services';
-import { apiErrorMessage } from '../api/client';
 import { PaymentMethod } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { BrandLogo } from '../components/BrandLogo';
 import { colors } from '../theme';
 import { ErrorState, Loading } from '../components/ScreenStates';
@@ -25,9 +25,8 @@ const GROUP_ORDER = ['cash', 'ewallet', 'bank_static', 'midtrans'];
 export default function PaymentSelectScreen({ route, navigation }: Props) {
   const { t: tr } = useTranslation();
   const { noFaktur, amount, customerName } = route.params;
-  const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error, reload } = useAsyncData(() => apiPaymentMethods());
+  const methods: PaymentMethod[] = data ?? [];
 
   const GROUP_LABEL: Record<string, string> = {
     cash: tr('payment_select_group_cash'),
@@ -41,13 +40,6 @@ export default function PaymentSelectScreen({ route, navigation }: Props) {
     bank_static: tr('payment_select_desc_bank'),
     midtrans: tr('payment_select_desc_gateway'),
   };
-
-  useEffect(() => {
-    apiPaymentMethods()
-      .then(setMethods)
-      .catch((e) => setError(apiErrorMessage(e)))
-      .finally(() => setLoading(false));
-  }, []);
 
   const grouped = useMemo(() => {
     const g: Record<string, PaymentMethod[]> = {};
@@ -73,7 +65,7 @@ export default function PaymentSelectScreen({ route, navigation }: Props) {
   }
 
   if (loading) return <Loading label={tr('payment_select_loading')} />;
-  if (error) return <ErrorState message={error} onRetry={() => { setLoading(true); setError(null); apiPaymentMethods().then(setMethods).catch((e) => setError(apiErrorMessage(e))).finally(() => setLoading(false)); }} />;
+  if (error) return <ErrorState message={error} onRetry={() => reload()} />;
 
   return (
     <View style={s.container}>

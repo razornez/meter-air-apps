@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,8 +6,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
 import { apiWorklist } from '../api/services';
-import { apiErrorMessage } from '../api/client';
-import { Worklist, WorklistItem } from '../types';
+import { WorklistItem } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { fonts, pastels, radius, shadow, tracking, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
 import { EmptyState, ErrorState, Loading } from '../components/ScreenStates';
@@ -21,29 +21,8 @@ export default function WorklistScreen({ navigation }: Props) {
   const t = useTheme();
   const s = useMemo(() => createStyles(t), [t]);
   const { t: i18n } = useTranslation();
-  const [data, setData]       = useState<Worklist | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState<string | null>(null);
+  const { data, loading, error, refreshing, reload, onRefresh } = useAsyncData(() => apiWorklist());
   const [filter, setFilter]   = useState<Filter>('semua');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
-    try { setData(await apiWorklist()); }
-    catch (e) { setError(apiErrorMessage(e)); }
-    finally { setLoading(false); }
-  }, []);
-
-  async function onRefresh() {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }
-
-  useEffect(() => {
-    const unsub = navigation.addListener('focus', load);
-    return unsub;
-  }, [navigation, load]);
 
   function openCatat(item: WorklistItem) {
     navigation.navigate('Reading', {
@@ -63,7 +42,7 @@ export default function WorklistScreen({ navigation }: Props) {
   }, [data, filter]);
 
   if (loading && !data) return <Loading label={i18n('worklist_loading')} />;
-  if (error && !data)   return <ErrorState message={error} onRetry={load} />;
+  if (error && !data)   return <ErrorState message={error} onRetry={() => reload()} />;
   if (!data) return null;
 
   const ratio = data.total > 0 ? data.done / data.total : 0;
