@@ -39,3 +39,4 @@ instascan-master/deploy/id_rsa.pub
 application/application.zip
 refactor/TEST-USERS.md
 refactor/mobile/.env
+refactor/mobile/dist-web/
