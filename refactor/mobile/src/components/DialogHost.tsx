@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../ThemeContext';
 import { DialogRequest, _setDialogHandler } from '../utils/dialog';
 
-/** Emoji di awal judul → ikon (lingkaran berwarna) + warna tombol utama. */
-const VARIANTS: Record<string, { fg: string; bg: string }> = {
-  '✅': { fg: '#16a34a', bg: '#dcfce7' },
-  '🎉': { fg: '#16a34a', bg: '#dcfce7' },
-  '❌': { fg: '#dc2626', bg: '#fee2e2' },
-  '⚠️': { fg: '#d97706', bg: '#fef3c7' },
-  'ℹ️': { fg: '#2563eb', bg: '#dbeafe' },
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+/** Emoji di awal judul → ikon VEKTOR (crisp) + warna aksen. */
+const VARIANTS: Record<string, { fg: string; bg: string; icon: IconName }> = {
+  '✅': { fg: '#16a34a', bg: '#dcfce7', icon: 'checkmark-circle' },
+  '🎉': { fg: '#16a34a', bg: '#dcfce7', icon: 'sparkles' },
+  '❌': { fg: '#dc2626', bg: '#fee2e2', icon: 'close-circle' },
+  '⚠️': { fg: '#d97706', bg: '#fef3c7', icon: 'alert-circle' },
+  'ℹ️': { fg: '#2563eb', bg: '#dbeafe', icon: 'information-circle' },
 };
 
 /**
- * Host dialog global — modal in-app rapi (web + native) untuk confirmDialog/alertDialog/promptDialog.
+ * Host dialog global — modal in-app rapi (web + native) untuk confirm/alert/prompt.
  * Pengganti window.confirm/alert/prompt & Alert.alert.
  */
 export function DialogHost() {
@@ -26,7 +29,7 @@ export function DialogHost() {
     return () => _setDialogHandler(null);
   }, []);
 
-  useEffect(() => { setInput(''); }, [req]); // reset input tiap dialog baru
+  useEffect(() => { setInput(''); }, [req]);
 
   function close(result: boolean | string | null) {
     req?.resolve(result);
@@ -38,12 +41,11 @@ export function DialogHost() {
   const isPrompt = req.type === 'prompt';
   const hasCancel = isConfirm || isPrompt;
 
-  // Deteksi emoji di awal judul → jadikan ikon, lalu bersihkan dari teks judul.
   const rawTitle = req.title ?? '';
   const emojiKey = Object.keys(VARIANTS).find((e) => rawTitle.trimStart().startsWith(e));
   const variant = emojiKey ? VARIANTS[emojiKey] : null;
   const title = emojiKey ? rawTitle.replace(emojiKey, '').trim() : rawTitle;
-  const primary = variant?.fg ?? t.primary;
+  const accent = variant?.fg ?? t.primary;
 
   return (
     <Modal transparent animationType="fade" visible onRequestClose={() => close(isPrompt ? null : false)}>
@@ -51,7 +53,7 @@ export function DialogHost() {
         <Pressable style={[styles.card, { backgroundColor: t.surface }]} onPress={() => {}}>
           {variant && (
             <View style={[styles.iconWrap, { backgroundColor: variant.bg }]}>
-              <Text style={styles.iconText}>{emojiKey}</Text>
+              <Ionicons name={variant.icon} size={38} color={variant.fg} />
             </View>
           )}
           <Text style={[styles.title, { color: t.text }]}>{title}</Text>
@@ -70,17 +72,17 @@ export function DialogHost() {
           <View style={styles.buttons}>
             {hasCancel && (
               <Pressable
-                style={({ pressed }) => [styles.btn, styles.btnGhost, { borderColor: t.border }, pressed && { opacity: 0.55 }]}
+                style={({ pressed }) => [styles.btn, { backgroundColor: t.bg }, pressed && { opacity: 0.6 }]}
                 onPress={() => close(isPrompt ? null : false)}
               >
-                <Text style={[styles.btnGhostText, { color: t.text }]}>{req.cancelText || 'Batal'}</Text>
+                <Text style={[styles.btnText, { color: t.muted }]}>{req.cancelText || 'Batal'}</Text>
               </Pressable>
             )}
             <Pressable
-              style={({ pressed }) => [styles.btn, { backgroundColor: primary }, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [styles.btn, styles.btnPrimary, { backgroundColor: accent }, pressed && { opacity: 0.88 }]}
               onPress={() => close(isPrompt ? input.trim() : true)}
             >
-              <Text style={styles.btnText}>{req.confirmText || 'OK'}</Text>
+              <Text style={[styles.btnText, { color: '#fff' }]}>{req.confirmText || 'OK'}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -90,20 +92,18 @@ export function DialogHost() {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.55)', justifyContent: 'center', alignItems: 'center', padding: 28 },
+  overlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.5)', justifyContent: 'center', alignItems: 'center', padding: 28 },
   card: {
-    width: '100%', maxWidth: 360, borderRadius: 24, paddingTop: 26, paddingBottom: 18, paddingHorizontal: 24,
+    width: '100%', maxWidth: 352, borderRadius: 26, paddingTop: 28, paddingBottom: 18, paddingHorizontal: 22,
     alignItems: 'center',
-    shadowColor: '#0f172a', shadowOpacity: 0.3, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 16,
+    shadowColor: '#0f172a', shadowOpacity: 0.28, shadowRadius: 28, shadowOffset: { width: 0, height: 14 }, elevation: 18,
   },
-  iconWrap: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  iconText: { fontSize: 28 },
-  title: { fontSize: 18, fontWeight: '800', textAlign: 'center' },
-  message: { fontSize: 14.5, lineHeight: 22, marginTop: 8, textAlign: 'center' },
-  input: { alignSelf: 'stretch', marginTop: 14, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, minHeight: 50, textAlignVertical: 'top' },
+  iconWrap: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  title: { fontSize: 19, fontWeight: '800', textAlign: 'center', letterSpacing: -0.2 },
+  message: { fontSize: 14.5, lineHeight: 21, marginTop: 7, textAlign: 'center' },
+  input: { alignSelf: 'stretch', marginTop: 16, borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, fontSize: 15, minHeight: 52, textAlignVertical: 'top' },
   buttons: { flexDirection: 'row', gap: 10, marginTop: 22, alignSelf: 'stretch' },
-  btn: { flex: 1, paddingVertical: 13, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  btnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  btnGhost: { backgroundColor: 'transparent', borderWidth: 1.5 },
-  btnGhostText: { fontWeight: '700', fontSize: 15 },
+  btn: { flex: 1, paddingVertical: 14, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  btnPrimary: { shadowColor: '#0f172a', shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 3 },
+  btnText: { fontWeight: '800', fontSize: 15 },
 });

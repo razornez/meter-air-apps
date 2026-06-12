@@ -282,6 +282,7 @@ export interface PaymentLogItem {
   status: string;            // 'lunas' | 'batal' | 'pending'
   paidAt: string | null;
   petugasNama: string | null;
+  keterangan: string | null; // alasan (mis. batal lunas)
 }
 
 export interface FakturDetail {

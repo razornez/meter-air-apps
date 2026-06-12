@@ -26,12 +26,13 @@ export class FakturService {
     @InjectRepository(Pembayaran) private readonly pembayaran: Repository<Pembayaran>,
   ) {}
 
-  private async recordPayment(noFaktur: string, jumlah: number, lunas: boolean, userId: number, tenantId: number) {
+  private async recordPayment(noFaktur: string, jumlah: number, lunas: boolean, userId: number, tenantId: number, reason?: string) {
     try {
       await this.pembayaran.insert({
         tenantId, noFaktur, metode: 'manual',
         jumlah, status: lunas ? 'lunas' : 'batal',
         paidAt: new Date(), petugas: userId, // selalu catat waktu aksi (termasuk batal)
+        ref: reason?.trim() || null,         // alasan (terutama batal lunas) → tampil di riwayat
       });
     } catch (e) {
       this.logger.warn(`Gagal mencatat pembayaran ${noFaktur}: ${(e as Error).message}`);
@@ -49,6 +50,7 @@ export class FakturService {
         .addSelect('p.jumlah', 'jumlah')
         .addSelect('p.status', 'status')
         .addSelect('p.paid_at', 'paidAt')
+        .addSelect('p.ref', 'keterangan')
         .addSelect('u.name', 'petugasNama')
         .where('p.no_faktur = :nf AND p.tenant_id = :tid', { nf: noFaktur, tid: tenantId })
         .orderBy('p.id', 'DESC')
@@ -74,7 +76,7 @@ export class FakturService {
       jenis: 'pembayaran', waktu: new Date(),
     });
 
-    await this.recordPayment(noFaktur, dibayar, lunas, userId, tenantId);
+    await this.recordPayment(noFaktur, dibayar, lunas, userId, tenantId, reason);
     return { noFaktur, isLunas: lunas, dibayar };
   }
 

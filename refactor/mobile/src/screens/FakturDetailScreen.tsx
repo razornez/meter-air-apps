@@ -336,6 +336,9 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
                     <Text style={s.auditSub} numberOfLines={1}>
                       {tr('faktur_detail_audit_by')} {p.petugasNama ?? tr('faktur_detail_audit_officer_unknown')} · {when}
                     </Text>
+                    {!!p.keterangan && (
+                      <Text style={s.auditReason} numberOfLines={2}>Alasan: {p.keterangan}</Text>
+                    )}
                   </View>
                   {p.jumlah > 0 && <Text style={[s.auditAmount, { color }]}>{formatRupiah(p.jumlah)}</Text>}
                 </View>
@@ -403,6 +406,7 @@ const createStyles = (t: Theme) =>
     auditDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
     auditMain: { color: t.text, fontFamily: fonts.bold, fontSize: 13 },
     auditSub: { color: t.muted, fontFamily: fonts.regular, fontSize: 11, marginTop: 1 },
+    auditReason: { color: t.text, fontFamily: fonts.regular, fontSize: 11.5, marginTop: 3, fontStyle: 'italic' },
     auditAmount: { fontFamily: fonts.displayBold, fontSize: 13 },
     barcode: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 44, marginTop: 18 },
     bar: { height: '100%', backgroundColor: t.text, marginRight: 2, opacity: 0.82 },
