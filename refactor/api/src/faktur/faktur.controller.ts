@@ -12,7 +12,7 @@ export class FakturController {
 
   @Post('payment')
   payment(@CurrentUser() user: AuthUser, @Request() req, @Body() dto: PaymentDto) {
-    return this.faktur.setLunas(dto.noFaktur, dto.lunas ?? true, user.id, req.tenantId);
+    return this.faktur.setLunas(dto.noFaktur, dto.lunas ?? true, user.id, req.tenantId, dto.reason);
   }
 
   @Get('payments')

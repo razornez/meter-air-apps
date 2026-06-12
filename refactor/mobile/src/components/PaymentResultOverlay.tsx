@@ -7,24 +7,25 @@ import { formatRupiah } from '../theme';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-export type ResultStatus = 'verifying' | 'success' | 'pending' | 'error';
+export type ResultStatus = 'verifying' | 'success' | 'pending' | 'error' | 'reverted';
 
 const R = 54;
 const C = 2 * Math.PI * R;            // keliling lingkaran (utk stroke-draw)
 const CHECK = 'M40 62 L54 76 L82 44'; // path ceklist
 const CHECK_LEN = 70;
 
-const CFG: Record<Exclude<ResultStatus, 'verifying'>, { color: string; title: string; sub: string; icon: 'time' | 'close' }> = {
-  success: { color: '#16a34a', title: 'Pembayaran Berhasil', sub: 'Faktur sudah LUNAS', icon: 'time' },
-  pending: { color: '#d97706', title: 'Menunggu Pembayaran', sub: 'Status diperbarui otomatis', icon: 'time' },
-  error:   { color: '#dc2626', title: 'Pembayaran Gagal', sub: 'Silakan coba lagi', icon: 'close' },
+const CFG: Record<Exclude<ResultStatus, 'verifying'>, { color: string; title: string; sub: string; icon: 'time' | 'close' | 'arrow-undo' }> = {
+  success:  { color: '#16a34a', title: 'Pembayaran Berhasil', sub: 'Faktur sudah LUNAS', icon: 'time' },
+  pending:  { color: '#d97706', title: 'Menunggu Pembayaran', sub: 'Status diperbarui otomatis', icon: 'time' },
+  error:    { color: '#dc2626', title: 'Pembayaran Gagal', sub: 'Silakan coba lagi', icon: 'close' },
+  reverted: { color: '#d97706', title: 'Status Dikembalikan', sub: 'Faktur kembali BELUM LUNAS', icon: 'arrow-undo' },
 };
 
 /**
  * Overlay hasil pembayaran beranimasi: spinner berputar saat "mengecek", lalu lingkaran +
  * ceklist TERGAMBAR (stroke-draw) saat sukses, dengan ripple melebar. Pengganti pop-up polos.
  */
-export function PaymentResultOverlay({ status, amount, onDone }: { status: ResultStatus; amount?: number; onDone?: () => void }) {
+export function PaymentResultOverlay({ status, amount, title, sub, onDone }: { status: ResultStatus; amount?: number; title?: string; sub?: string; onDone?: () => void }) {
   const useND = Platform.OS !== 'web';
   const spin = useRef(new Animated.Value(0)).current;
   const circleOff = useRef(new Animated.Value(C)).current;        // strokeDashoffset lingkaran
@@ -96,9 +97,9 @@ export function PaymentResultOverlay({ status, amount, onDone }: { status: Resul
         )}
       </View>
 
-      <Text style={[s.title, { color: cfg.color }]}>{cfg.title}</Text>
+      <Text style={[s.title, { color: cfg.color }]}>{title ?? cfg.title}</Text>
       {status === 'success' && amount != null && <Text style={s.amount}>{formatRupiah(amount)}</Text>}
-      <Text style={s.sub}>{cfg.sub}</Text>
+      <Text style={s.sub}>{sub ?? cfg.sub}</Text>
       <Text style={s.tap}>Ketuk untuk menutup</Text>
     </Pressable>
   );

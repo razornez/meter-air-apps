@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { DialogRequest, _setDialogHandler } from '../utils/dialog';
 
@@ -13,25 +13,30 @@ const VARIANTS: Record<string, { fg: string; bg: string }> = {
 };
 
 /**
- * Host dialog global — render sekali di root. Modal in-app yang rapi (web + native)
- * untuk confirmDialog/alertDialog. Pengganti window.confirm/alert & Alert.alert.
+ * Host dialog global — modal in-app rapi (web + native) untuk confirmDialog/alertDialog/promptDialog.
+ * Pengganti window.confirm/alert/prompt & Alert.alert.
  */
 export function DialogHost() {
   const t = useTheme();
   const [req, setReq] = useState<DialogRequest | null>(null);
+  const [input, setInput] = useState('');
 
   useEffect(() => {
     _setDialogHandler((r) => setReq(r));
     return () => _setDialogHandler(null);
   }, []);
 
-  function close(ok: boolean) {
-    req?.resolve(ok);
+  useEffect(() => { setInput(''); }, [req]); // reset input tiap dialog baru
+
+  function close(result: boolean | string | null) {
+    req?.resolve(result);
     setReq(null);
   }
 
   if (!req) return null;
   const isConfirm = req.type === 'confirm';
+  const isPrompt = req.type === 'prompt';
+  const hasCancel = isConfirm || isPrompt;
 
   // Deteksi emoji di awal judul → jadikan ikon, lalu bersihkan dari teks judul.
   const rawTitle = req.title ?? '';
@@ -41,8 +46,8 @@ export function DialogHost() {
   const primary = variant?.fg ?? t.primary;
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={() => close(false)}>
-      <Pressable style={styles.overlay} onPress={() => isConfirm && close(false)}>
+    <Modal transparent animationType="fade" visible onRequestClose={() => close(isPrompt ? null : false)}>
+      <Pressable style={styles.overlay} onPress={() => hasCancel && close(isPrompt ? null : false)}>
         <Pressable style={[styles.card, { backgroundColor: t.surface }]} onPress={() => {}}>
           {variant && (
             <View style={[styles.iconWrap, { backgroundColor: variant.bg }]}>
@@ -51,18 +56,29 @@ export function DialogHost() {
           )}
           <Text style={[styles.title, { color: t.text }]}>{title}</Text>
           {!!req.message && <Text style={[styles.message, { color: t.muted }]}>{req.message}</Text>}
+          {isPrompt && (
+            <TextInput
+              style={[styles.input, { color: t.text, borderColor: t.border, backgroundColor: t.bg }]}
+              value={input}
+              onChangeText={setInput}
+              placeholder={req.placeholder}
+              placeholderTextColor={t.muted}
+              autoFocus
+              multiline
+            />
+          )}
           <View style={styles.buttons}>
-            {isConfirm && (
+            {hasCancel && (
               <Pressable
                 style={({ pressed }) => [styles.btn, styles.btnGhost, { borderColor: t.border }, pressed && { opacity: 0.55 }]}
-                onPress={() => close(false)}
+                onPress={() => close(isPrompt ? null : false)}
               >
                 <Text style={[styles.btnGhostText, { color: t.text }]}>{req.cancelText || 'Batal'}</Text>
               </Pressable>
             )}
             <Pressable
               style={({ pressed }) => [styles.btn, { backgroundColor: primary }, pressed && { opacity: 0.85 }]}
-              onPress={() => close(true)}
+              onPress={() => close(isPrompt ? input.trim() : true)}
             >
               <Text style={styles.btnText}>{req.confirmText || 'OK'}</Text>
             </Pressable>
@@ -84,7 +100,8 @@ const styles = StyleSheet.create({
   iconText: { fontSize: 28 },
   title: { fontSize: 18, fontWeight: '800', textAlign: 'center' },
   message: { fontSize: 14.5, lineHeight: 22, marginTop: 8, textAlign: 'center' },
-  buttons: { flexDirection: 'row', gap: 10, marginTop: 24, alignSelf: 'stretch' },
+  input: { alignSelf: 'stretch', marginTop: 14, borderWidth: 1.5, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, minHeight: 50, textAlignVertical: 'top' },
+  buttons: { flexDirection: 'row', gap: 10, marginTop: 22, alignSelf: 'stretch' },
   btn: { flex: 1, paddingVertical: 13, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   btnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   btnGhost: { backgroundColor: 'transparent', borderWidth: 1.5 },

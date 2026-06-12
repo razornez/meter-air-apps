@@ -14,7 +14,8 @@ import { fotoMeterUrl } from '../config';
 import { ErrorState, Loading } from '../components/ScreenStates';
 import { printOrShareFaktur } from '../utils/printFaktur';
 import { buildWAMessage, openWA } from '../utils/whatsapp';
-import { alertDialog, confirmDialog } from '../utils/dialog';
+import { alertDialog, confirmDialog, promptDialog } from '../utils/dialog';
+import { PaymentResultOverlay, ResultStatus } from '../components/PaymentResultOverlay';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FakturDetail'>;
 
@@ -30,6 +31,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [payResult, setPayResult] = useState<{ status: ResultStatus; title: string; sub: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,24 +71,36 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   async function onToggleLunas() {
     if (!data) return;
     const toLunas = !data.isLunas;
-    // confirmDialog: Alert.alert(tombol) tak jalan di web → pakai window.confirm di web.
-    const ok = await confirmDialog(
-      toLunas ? tr('faktur_detail_alert_mark_paid_title') : tr('faktur_detail_alert_cancel_paid_title'),
-      tr('faktur_detail_alert_status_message', { noFaktur: data.noFaktur }),
-      tr('faktur_detail_alert_confirm'),
-      tr('faktur_detail_alert_cancel'),
-    );
-    if (!ok) return;
+    let reason: string | undefined;
+    if (toLunas) {
+      const ok = await confirmDialog(
+        '✅ ' + tr('faktur_detail_alert_mark_paid_title'),
+        tr('faktur_detail_alert_status_message', { noFaktur: data.noFaktur }),
+        tr('faktur_detail_alert_confirm'),
+        tr('faktur_detail_alert_cancel'),
+      );
+      if (!ok) return;
+    } else {
+      // Batal lunas → minta ALASAN (dicatat di log aktivitas).
+      const r = await promptDialog(
+        '⚠️ ' + tr('faktur_detail_alert_cancel_paid_title'),
+        `Kembalikan faktur ${data.noFaktur} ke BELUM LUNAS? Tuliskan alasannya:`,
+        { placeholder: 'Mis. salah input / refund / dobel bayar', confirmText: 'Batalkan Lunas', cancelText: tr('faktur_detail_alert_cancel') },
+      );
+      if (r === null) return; // dibatalkan
+      reason = r || undefined;
+    }
     setActing(true);
     try {
-      await apiSetFakturLunas(noFaktur, toLunas);
+      await apiSetFakturLunas(noFaktur, toLunas, reason);
       await load();
-      alertDialog(
-        toLunas ? tr('faktur_detail_alert_marked_paid') : tr('faktur_detail_alert_marked_unpaid'),
-        noFaktur,
-      );
+      setPayResult({
+        status: toLunas ? 'success' : 'reverted',
+        title: toLunas ? 'Faktur ditandai LUNAS' : tr('faktur_detail_alert_marked_unpaid'),
+        sub: noFaktur,
+      });
     } catch (e) {
-      alertDialog(tr('faktur_detail_alert_failed'), apiErrorMessage(e));
+      await alertDialog('⚠️ ' + tr('faktur_detail_alert_failed'), apiErrorMessage(e));
     } finally {
       setActing(false);
     }
@@ -140,6 +154,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
   if (error || !data) return <ErrorState message={error ?? tr('faktur_detail_error_no_data')} onRetry={load} />;
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView keyboardShouldPersistTaps="handled" style={s.container} contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={t.primary} colors={[t.primary]} />}>
       <LinearGradient colors={t.hero} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[s.hero, shadow.glow]}>
         <Text style={s.heroLabel}>{tr('faktur_detail_hero_label')}</Text>
@@ -338,6 +353,15 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
       </View>
       <View style={{ height: 20 }} />
     </ScrollView>
+      {payResult && (
+        <PaymentResultOverlay
+          status={payResult.status}
+          title={payResult.title}
+          sub={payResult.sub}
+          onDone={() => setPayResult(null)}
+        />
+      )}
+    </View>
   );
 }
 

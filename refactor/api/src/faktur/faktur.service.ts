@@ -56,7 +56,7 @@ export class FakturService {
     } catch { return []; }
   }
 
-  async setLunas(noFaktur: string, lunas: boolean, userId: number, tenantId: number) {
+  async setLunas(noFaktur: string, lunas: boolean, userId: number, tenantId: number, reason?: string) {
     const f = await this.faktur.findOne({ where: { noFaktur, tenantId } });
     if (!f) throw new NotFoundException('Faktur tidak ditemukan');
 
@@ -67,9 +67,10 @@ export class FakturService {
       await manager.update(Transaksi, { faktur: noFaktur, tenantId }, { dibayar });
     });
 
+    const alasan = reason?.trim();
     await this.logs.insert({
       tenantId, idUser: userId,
-      aktivitas: `${lunas ? 'Pelunasan' : 'Batal lunas'} faktur ${noFaktur}`,
+      aktivitas: `${lunas ? 'Pelunasan' : 'Batal lunas'} faktur ${noFaktur}${alasan ? ` — alasan: ${alasan}` : ''}`,
       jenis: 'pembayaran', waktu: new Date(),
     });
 

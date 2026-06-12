@@ -141,12 +141,12 @@ export async function apiGetConfig() {
   return data;
 }
 
-export async function apiSetFakturLunas(noFaktur: string, lunas: boolean) {
+export async function apiSetFakturLunas(noFaktur: string, lunas: boolean, reason?: string) {
   const { data } = await api.post<{
     noFaktur: string;
     isLunas: boolean;
     dibayar: number;
-  }>('/faktur/payment', { noFaktur, lunas });
+  }>('/faktur/payment', { noFaktur, lunas, ...(reason ? { reason } : {}) });
   return data;
 }
 

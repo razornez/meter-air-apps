@@ -4,12 +4,13 @@ import { Platform } from 'react-native';
 // (jelek di web) maupun Alert.alert (no-op di web). DialogHost mendaftarkan handler.
 
 export interface DialogRequest {
-  type: 'alert' | 'confirm';
+  type: 'alert' | 'confirm' | 'prompt';
   title: string;
   message?: string;
+  placeholder?: string;
   confirmText: string;
   cancelText: string;
-  resolve: (ok: boolean) => void;
+  resolve: (result: boolean | string | null) => void;
 }
 
 let handler: ((req: DialogRequest) => void) | null = null;
@@ -27,7 +28,7 @@ export function confirmDialog(
 ): Promise<boolean> {
   return new Promise((resolve) => {
     if (handler) {
-      handler({ type: 'confirm', title, message, confirmText, cancelText, resolve });
+      handler({ type: 'confirm', title, message, confirmText, cancelText, resolve: (r) => resolve(r === true) });
       return;
     }
     // Fallback (host belum mount) — sangat jarang.
@@ -49,5 +50,28 @@ export function alertDialog(title: string, message?: string): Promise<void> {
       window.alert(message ? `${title}\n\n${message}` : title);
     }
     resolve();
+  });
+}
+
+/** Dialog input teks (mis. alasan). Resolve string yang diisi, atau null bila dibatalkan. */
+export function promptDialog(
+  title: string,
+  message: string,
+  opts?: { placeholder?: string; confirmText?: string; cancelText?: string },
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (handler) {
+      handler({
+        type: 'prompt', title, message, placeholder: opts?.placeholder,
+        confirmText: opts?.confirmText ?? 'Simpan', cancelText: opts?.cancelText ?? 'Batal',
+        resolve: (r) => resolve(typeof r === 'string' ? r : null),
+      });
+      return;
+    }
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.prompt === 'function') {
+      resolve(window.prompt(`${title}\n\n${message}`));
+    } else {
+      resolve(null);
+    }
   });
 }

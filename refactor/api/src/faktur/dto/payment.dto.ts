@@ -9,4 +9,9 @@ export class PaymentDto {
   @IsOptional()
   @IsBoolean()
   lunas?: boolean = true;
+
+  // Alasan (opsional) — terutama saat batal lunas. Dicatat di log aktivitas.
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
