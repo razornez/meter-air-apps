@@ -5,7 +5,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { RootStackParamList } from '../navigation/types';
-import { apiFakturDetail, apiGetConfig, apiListPayments, apiSetFakturLunas } from '../api/services';
+import { apiCheckoutOrder, apiFakturDetail, apiGetConfig, apiListPayments, apiSetFakturLunas } from '../api/services';
 import { apiErrorMessage } from '../api/client';
 import { AppConfig, FakturDetail, PaymentLogItem } from '../types';
 import { fonts, formatRupiah, pastels, radius, shadow, tracking, Theme } from '../theme';
@@ -92,13 +92,23 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
     }
   }
 
-  function openPayment() {
-    if (!data?.noFaktur) return;
-    navigation.navigate('PaymentSelect', {
-      noFaktur: data.noFaktur,
-      amount: data.total ?? 0,
-      customerName: data.pelanggan?.nama ?? null,
-    });
+  // Bayar via widget metode bayar hosted kasugai: buat order di backend → buka /checkout.
+  async function openPayment() {
+    if (!data?.noFaktur || acting) return;
+    setActing(true);
+    try {
+      const res = await apiCheckoutOrder(data.noFaktur);
+      if (res.alreadyPaid) { await alertDialog('Sudah Lunas', 'Faktur ini sudah lunas.'); load(); return; }
+      if (res.checkoutUrl) {
+        navigation.navigate('PaymentCheckout', { noFaktur: data.noFaktur, checkoutUrl: res.checkoutUrl });
+      } else {
+        await alertDialog('⚠️ Gagal', 'Tidak dapat membuka pembayaran. Silakan coba lagi.');
+      }
+    } catch (e) {
+      await alertDialog('⚠️ Gagal', apiErrorMessage(e));
+    } finally {
+      setActing(false);
+    }
   }
 
   async function onSendWA() {

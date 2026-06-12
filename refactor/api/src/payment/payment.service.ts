@@ -21,6 +21,7 @@ export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
   private readonly kasugaiBase: string;
   private readonly kasugaiSecretKey: string;
+  private readonly kasugaiPublicKey: string;
   private readonly kasugaiWebhookSecret: string;
   private readonly paymentReturnUrl: string;
 
@@ -37,6 +38,7 @@ export class PaymentService {
   ) {
     this.kasugaiBase = config.get('KASUGAI_BASE_URL', 'http://127.0.0.1:3099');
     this.kasugaiSecretKey = config.get('KASUGAI_SECRET_KEY', '');
+    this.kasugaiPublicKey = config.get('KASUGAI_PUBLIC_KEY', ''); // pk_ — utk URL checkout hosted
     this.kasugaiWebhookSecret = config.get('KASUGAI_WEBHOOK_SECRET', '');
     // finishUrl → snap-return kasugai (punya tombol "Tutup" yang benar) dengan returnUrl
     // balik ke endpoint kita. WebView native menangkap "snap-return"; web/redirect mendarat
@@ -154,6 +156,48 @@ export class PaymentService {
       clientKey: payData.clientKey ?? null, // utk Snap.js in-app popup di web
       orderId,
     };
+  }
+
+  /**
+   * Buat order kasugai SAJA untuk halaman /checkout hosted (widget metode bayar kasugai).
+   * Halaman checkout yang memanggil /pay + Snap secara internal — kita TAK memanggil /pay.
+   * Status lunas tetap dari webhook (sumber kebenaran). Mengembalikan URL checkout siap dibuka.
+   */
+  async createCheckoutOrder(noFaktur: string, _kasirId: number, tenantId: number) {
+    const f = await this.faktur.findOne({ where: { noFaktur, tenantId } });
+    if (!f) throw new NotFoundException(`Faktur ${noFaktur} tidak ditemukan`);
+    if (f.isLunas === 1) return { alreadyPaid: true, orderId: null, amount: 0, checkoutUrl: null };
+
+    const total = Math.round(f.total ?? 0);
+    if (total <= 0) throw new BadRequestException(`Total faktur tidak valid: ${total}`);
+
+    const customerId = f.customer ? Number(f.customer) : null;
+    const cust = customerId ? await this.customers.findOne({ where: { id: customerId, tenantId } }) : null;
+
+    // orderId ber-prefix T<tenantId> agar webhook/reconcile menandai faktur tenant yang benar.
+    const orderId = `T${tenantId}-${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
+    const orderRes = await fetch(`${this.kasugaiBase}/v1/payment/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.kasugaiSecretKey}` },
+      body: JSON.stringify({
+        orderId,
+        amount: total,
+        customer: { nama: (cust?.nama ?? 'Pelanggan').slice(0, 255), telp: cust?.telp ?? undefined },
+      }),
+    });
+    if (!orderRes.ok) {
+      const err = await orderRes.text();
+      this.logger.error(`checkout order error (${noFaktur}): ${err}`);
+      throw new Error(`kasugai order: ${err}`);
+    }
+
+    await this.intents.insert({ tenantId, orderId, noFaktur, amount: total, status: 'pending' })
+      .catch((e) => this.logger.warn(`payment_intent insert gagal (${orderId}): ${String(e)}`));
+
+    const checkoutUrl = `${this.kasugaiBase}/checkout?publicKey=${encodeURIComponent(this.kasugaiPublicKey)}`
+      + `&orderId=${encodeURIComponent(orderId)}&amount=${total}`;
+    this.logger.log(`checkout order: ${noFaktur} orderId=${orderId} amount=${total}`);
+    return { alreadyPaid: false, orderId, amount: total, checkoutUrl };
   }
 
   async handleWebhook(rawBody: Buffer, signature: string) {

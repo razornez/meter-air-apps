@@ -47,6 +47,7 @@ import AboutScreen from './src/screens/AboutScreen';
 import FakturListScreen from './src/screens/FakturListScreen';
 import CustomersListScreen from './src/screens/CustomersListScreen';
 import PaymentWebViewScreen from './src/screens/PaymentWebViewScreen';
+import PaymentCheckoutScreen from './src/screens/PaymentCheckoutScreen';
 import CustomerCardScreen from './src/screens/CustomerCardScreen';
 import PaymentSelectScreen from './src/screens/PaymentSelectScreen';
 import CashPaymentScreen from './src/screens/CashPaymentScreen';
@@ -100,6 +101,7 @@ function RootNavigator() {
           <Stack.Screen name="FakturList" component={FakturListScreen} options={{ title: 'Tagihan' }} />
           <Stack.Screen name="CustomersList" component={CustomersListScreen} options={{ title: 'Pelanggan' }} />
           <Stack.Screen name="PaymentWebView" component={PaymentWebViewScreen} options={{ title: 'Pembayaran' }} />
+          <Stack.Screen name="PaymentCheckout" component={PaymentCheckoutScreen} options={{ title: 'Pembayaran' }} />
           <Stack.Screen name="CustomerCard" component={CustomerCardScreen} options={{ title: 'Kartu Pelanggan' }} />
           <Stack.Screen name="PaymentSelect" component={PaymentSelectScreen} options={{ title: 'Pilih Metode Bayar' }} />
           <Stack.Screen name="CashPayment" component={CashPaymentScreen} options={{ title: 'Pembayaran Tunai' }} />

@@ -26,6 +26,13 @@ export class PaymentController {
     return this.payment.createKasugaiPayment(noFaktur, user.id, req.tenantId);
   }
 
+  // Buat order utk halaman /checkout hosted kasugai (widget metode bayar). App buka checkoutUrl.
+  @UseGuards(JwtAuthGuard)
+  @Post('checkout')
+  checkout(@Body('noFaktur') noFaktur: string, @CurrentUser() user: AuthUser, @Req() req: { tenantId: number }) {
+    return this.payment.createCheckoutOrder(noFaktur, user.id, req.tenantId);
+  }
+
   // Konfirmasi aktif: app panggil ini saat Snap sukses → backend cek status ke kasugai
   // & tandai lunas SEKETIKA (tak menunggu webhook). Aman: status diverifikasi ke gateway.
   @UseGuards(JwtAuthGuard)

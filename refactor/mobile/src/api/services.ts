@@ -220,6 +220,17 @@ export async function apiConfirmPayment(noFaktur: string) {
   return data;
 }
 
+// Buat order utk halaman /checkout hosted kasugai (widget metode bayar). App buka checkoutUrl.
+export async function apiCheckoutOrder(noFaktur: string) {
+  const { data } = await api.post<{
+    alreadyPaid: boolean;
+    orderId: string | null;
+    amount: number;
+    checkoutUrl: string | null;
+  }>('/payment/checkout', { noFaktur });
+  return data;
+}
+
 export async function apiOcrMeter(photoUri: string) {
   const form = new FormData();
   form.append('photo', {
