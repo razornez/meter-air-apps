@@ -3,33 +3,35 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { alertDialog } from '../utils/dialog';
 import { pollLunas } from '../utils/paymentStatus';
+import { PaymentResultOverlay, ResultStatus } from '../components/PaymentResultOverlay';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PaymentCheckout'>;
 
 /**
- * Native: render halaman /checkout hosted kasugai dalam WebView. Hasil bayar dikirim halaman
- * via window.ReactNativeWebView.postMessage(JSON) → onMessage. Status lunas final dari webhook.
- */
+ * Native: halaman /checkout hosted kasugai dalam WebView. Hasil via ReactNativeWebView.postMessage.
+ * Status lunas final dari webhook; overlay beranimasi memberi umpan balik. */
 export default function PaymentCheckoutScreen({ route, navigation }: Props) {
-  const { noFaktur, checkoutUrl } = route.params;
+  const { noFaktur, checkoutUrl, amount } = route.params;
   const [loading, setLoading] = useState(true);
-  const [verifying, setVerifying] = useState(false);
+  const [result, setResult] = useState<ResultStatus | null>(null);
   const handled = useRef(false);
 
   async function handleResult(status: string) {
     if (handled.current) return;
-    if (status === 'error') { await alertDialog('Pembayaran Gagal', 'Pembayaran gagal atau dibatalkan.'); return; }
+    if (status === 'error') { setResult('error'); return; }
     handled.current = true;
     if (status === 'success') {
-      setVerifying(true);
+      setResult('verifying');
       const lunas = await pollLunas(noFaktur);
-      setVerifying(false);
-      await alertDialog('✅ Pembayaran Diterima', lunas ? 'Faktur sudah LUNAS.' : 'Pembayaran berhasil. Status diperbarui otomatis.');
+      setResult(lunas ? 'success' : 'pending');
     } else {
-      await alertDialog('Menunggu Pembayaran', 'Selesaikan pembayaran sesuai instruksi. Status diperbarui otomatis.');
+      setResult('pending');
     }
+  }
+
+  function onDone() {
+    if (result === 'error') { handled.current = false; setResult(null); return; } // tutup, boleh coba lagi
     navigation.goBack();
   }
 
@@ -50,17 +52,15 @@ export default function PaymentCheckoutScreen({ route, navigation }: Props) {
         onMessage={onMessage}
         onLoadEnd={() => setLoading(false)}
       />
-      {(loading || verifying) && (
-        <View style={s.overlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={s.text}>{verifying ? 'Mengecek status pembayaran…' : 'Memuat…'}</Text>
-        </View>
+      {loading && !result && (
+        <View style={s.loading}><ActivityIndicator size="large" color="#16a34a" /><Text style={s.t}>Memuat…</Text></View>
       )}
+      {result && <PaymentResultOverlay status={result} amount={amount} onDone={onDone} />}
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.7)', alignItems: 'center', justifyContent: 'center', gap: 14 },
-  text: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  loading: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  t: { color: '#6B7280', fontSize: 14, fontWeight: '600' },
 });

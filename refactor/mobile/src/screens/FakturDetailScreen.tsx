@@ -100,7 +100,7 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
       const res = await apiCheckoutOrder(data.noFaktur);
       if (res.alreadyPaid) { await alertDialog('Sudah Lunas', 'Faktur ini sudah lunas.'); load(); return; }
       if (res.checkoutUrl) {
-        navigation.navigate('PaymentCheckout', { noFaktur: data.noFaktur, checkoutUrl: res.checkoutUrl });
+        navigation.navigate('PaymentCheckout', { noFaktur: data.noFaktur, checkoutUrl: res.checkoutUrl, amount: res.amount });
       } else {
         await alertDialog('⚠️ Gagal', 'Tidak dapat membuka pembayaran. Silakan coba lagi.');
       }

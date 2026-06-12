@@ -34,7 +34,7 @@ export type RootStackParamList = {
   // Sprint 12
   // snapUrl = redirectUrl dari Midtrans API (sudah termasuk environment sandbox/production)
   PaymentWebView: { noFaktur: string; snapToken: string; snapUrl?: string };
-  PaymentCheckout: { noFaktur: string; checkoutUrl: string }; // widget metode bayar hosted kasugai
+  PaymentCheckout: { noFaktur: string; checkoutUrl: string; amount?: number }; // widget metode bayar hosted kasugai
   CustomerCard: { id: number };
   // Multi-payment screens
   PaymentSelect: { noFaktur: string; amount: number; customerName: string | null };
