@@ -129,6 +129,12 @@ export class PaymentService {
     if (!orderRes.ok) {
       const err = await orderRes.text();
       this.logger.error(`kasugai create order error (${noFaktur}): ${err}`);
+      // Kasugai bisa menolak bila faktur pernah dibayar di sisi mereka (mis. setelah batal lunas
+      // di sistem kita). Perlakukan sebagai alreadyPaid agar UI memperbarui status, bukan error.
+      if (/lunas|paid|already|duplicate/i.test(err)) {
+        this.logger.warn(`kasugai anggap ${noFaktur} sudah lunas — kembalikan alreadyPaid`);
+        return { alreadyPaid: true, token: null, redirectUrl: null };
+      }
       throw new Error(`kasugai order: ${err}`);
     }
 
@@ -200,6 +206,10 @@ export class PaymentService {
     if (!orderRes.ok) {
       const err = await orderRes.text();
       this.logger.error(`checkout order error (${noFaktur}): ${err}`);
+      if (/lunas|paid|already|duplicate/i.test(err)) {
+        this.logger.warn(`kasugai anggap ${noFaktur} sudah lunas — kembalikan alreadyPaid`);
+        return { alreadyPaid: true, orderId: null, amount: 0, checkoutUrl: null };
+      }
       throw new Error(`kasugai order: ${err}`);
     }
 

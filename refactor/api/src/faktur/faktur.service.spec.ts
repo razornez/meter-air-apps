@@ -13,6 +13,14 @@ function makeService(faktur: any) {
     find: jest.fn(async () => []),
   };
   const noop = {} as any;
+  const intents = {
+    createQueryBuilder: jest.fn(() => ({
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      execute: jest.fn(async () => ({})),
+    })),
+  };
   const service = new FakturService(
     dataSource as any,
     fakturRepo as any,
@@ -21,6 +29,7 @@ function makeService(faktur: any) {
     noop, // customer repo
     logs as any,
     pembayaran as any,
+    intents as any,
   );
   return { service, transaction, logs, fakturRepo, pembayaran };
 }

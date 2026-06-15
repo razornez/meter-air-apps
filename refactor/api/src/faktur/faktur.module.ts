@@ -8,6 +8,7 @@ import { HistoryMeter } from '../meter/entities/history-meter.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
 import { Pembayaran } from './entities/pembayaran.entity';
+import { PaymentIntent } from '../payment/entities/payment-intent.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Pembayaran } from './entities/pembayaran.entity';
       Customer,
       ActivityLog,
       Pembayaran,
+      PaymentIntent,
     ]),
   ],
   controllers: [FakturController],

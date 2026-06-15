@@ -7,6 +7,7 @@ import { HistoryMeter } from '../meter/entities/history-meter.entity';
 import { Customer } from '../customers/entities/customer.entity';
 import { ActivityLog } from '../auth/entities/activity-log.entity';
 import { Pembayaran } from './entities/pembayaran.entity';
+import { PaymentIntent } from '../payment/entities/payment-intent.entity';
 import { ListFakturDto } from './dto/list-faktur.dto';
 import { normalizeFakturRow, RawFakturRow } from './faktur-mapper.util';
 
@@ -41,6 +42,7 @@ export class FakturService {
     @InjectRepository(Customer) private readonly customers: Repository<Customer>,
     @InjectRepository(ActivityLog) private readonly logs: Repository<ActivityLog>,
     @InjectRepository(Pembayaran) private readonly pembayaran: Repository<Pembayaran>,
+    @InjectRepository(PaymentIntent) private readonly intents: Repository<PaymentIntent>,
   ) {}
 
   private async recordPayment(noFaktur: string, jumlah: number, lunas: boolean, userId: number, tenantId: number, reason?: string) {
@@ -91,6 +93,20 @@ export class FakturService {
       await manager.update(Faktur, { id: f.id }, { isLunas: lunas ? 1 : 0 });
       await manager.update(Transaksi, { faktur: noFaktur, tenantId }, { dibayar });
     });
+
+    // Batal lunas: void semua payment_intent agar:
+    // 1. Cron rekonsiliasi tidak me-re-mark faktur jadi lunas lagi.
+    // 2. Checkout berikutnya buat order BARU di Kasugai (orderId lama sudah tidak valid).
+    if (!lunas) {
+      await this.intents.createQueryBuilder()
+        .update()
+        .set({ status: 'voided' })
+        .where('no_faktur = :nf AND tenant_id = :tid AND status IN (:...statuses)', {
+          nf: noFaktur, tid: tenantId, statuses: ['pending', 'paid'],
+        })
+        .execute()
+        .catch((e) => this.logger.warn(`Gagal void intents ${noFaktur}: ${String(e)}`));
+    }
 
     const alasan = reason?.trim();
     await this.logs.insert({
