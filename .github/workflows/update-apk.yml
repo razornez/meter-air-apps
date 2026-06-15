@@ -1,0 +1,30 @@
+name: Update APK on VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versi APK (contoh: 1.6.4)'
+        required: true
+        default: '1.6.4'
+      apk_url:
+        description: 'URL download APK dari EAS'
+        required: true
+
+jobs:
+  update-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload APK & update version.txt via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -e
+            echo "⬇️  Download APK v${{ github.event.inputs.version }}..."
+            curl -L -o /tmp/meterair-new.apk "${{ github.event.inputs.apk_url }}"
+            mv /tmp/meterair-new.apk /var/www/meter-air/public/downloads/meterair.apk
+            echo "${{ github.event.inputs.version }}" > /var/www/meter-air/public/downloads/version.txt
+            echo "✅ APK v${{ github.event.inputs.version }} live at $(date)"
