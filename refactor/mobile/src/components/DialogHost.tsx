@@ -46,6 +46,8 @@ export function DialogHost() {
   const variant = emojiKey ? VARIANTS[emojiKey] : null;
   const title = emojiKey ? rawTitle.replace(emojiKey, '').trim() : rawTitle;
   const accent = variant?.fg ?? t.primary;
+  // Prompt wajib (mis. alasan batal lunas): tombol konfirmasi nonaktif sampai diisi.
+  const confirmDisabled = isPrompt && !!req.required && !input.trim();
 
   return (
     <Modal transparent animationType="fade" visible onRequestClose={() => close(isPrompt ? null : false)}>
@@ -79,8 +81,13 @@ export function DialogHost() {
               </Pressable>
             )}
             <Pressable
-              style={({ pressed }) => [styles.btn, styles.btnPrimary, { backgroundColor: accent }, pressed && { opacity: 0.88 }]}
-              onPress={() => close(isPrompt ? input.trim() : true)}
+              disabled={confirmDisabled}
+              style={({ pressed }) => [
+                styles.btn, styles.btnPrimary, { backgroundColor: accent },
+                confirmDisabled && { opacity: 0.45 },
+                pressed && !confirmDisabled && { opacity: 0.88 },
+              ]}
+              onPress={() => { if (!confirmDisabled) close(isPrompt ? input.trim() : true); }}
             >
               <Text style={[styles.btnText, { color: '#fff' }]}>{req.confirmText || 'OK'}</Text>
             </Pressable>

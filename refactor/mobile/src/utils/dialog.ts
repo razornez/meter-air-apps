@@ -8,6 +8,7 @@ export interface DialogRequest {
   title: string;
   message?: string;
   placeholder?: string;
+  required?: boolean; // prompt: input wajib diisi (tombol nonaktif bila kosong)
   confirmText: string;
   cancelText: string;
   resolve: (result: boolean | string | null) => void;
@@ -57,12 +58,12 @@ export function alertDialog(title: string, message?: string): Promise<void> {
 export function promptDialog(
   title: string,
   message: string,
-  opts?: { placeholder?: string; confirmText?: string; cancelText?: string },
+  opts?: { placeholder?: string; confirmText?: string; cancelText?: string; required?: boolean },
 ): Promise<string | null> {
   return new Promise((resolve) => {
     if (handler) {
       handler({
-        type: 'prompt', title, message, placeholder: opts?.placeholder,
+        type: 'prompt', title, message, placeholder: opts?.placeholder, required: opts?.required,
         confirmText: opts?.confirmText ?? 'Simpan', cancelText: opts?.cancelText ?? 'Batal',
         resolve: (r) => resolve(typeof r === 'string' ? r : null),
       });

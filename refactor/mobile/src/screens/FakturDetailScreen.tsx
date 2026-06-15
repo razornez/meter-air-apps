@@ -85,10 +85,11 @@ export default function FakturDetailScreen({ route, navigation }: Props) {
       const r = await promptDialog(
         '⚠️ ' + tr('faktur_detail_alert_cancel_paid_title'),
         `Kembalikan faktur ${data.noFaktur} ke BELUM LUNAS? Tuliskan alasannya:`,
-        { placeholder: 'Mis. salah input / refund / dobel bayar', confirmText: 'Batalkan Lunas', cancelText: tr('faktur_detail_alert_cancel') },
+        { placeholder: 'Mis. salah input / refund / dobel bayar', confirmText: 'Batalkan Lunas', cancelText: tr('faktur_detail_alert_cancel'), required: true },
       );
-      if (r === null) return; // dibatalkan
-      reason = r || undefined;
+      if (r === null) return;       // dibatalkan
+      reason = r.trim();
+      if (!reason) return;          // jaga-jaga: alasan wajib (BUG-03)
     }
     setActing(true);
     try {

@@ -12,6 +12,23 @@ import { normalizeFakturRow, RawFakturRow } from './faktur-mapper.util';
 
 const MAX_LIMIT = 100;
 
+// Normalisasi status pembayaran lintas-app: desktop Laravel menulis 'paid'/'pending',
+// app/NestJS pakai 'lunas'/'batal'. Tanpa ini, baris 'paid' tampil "Pending" di app (BUG-01).
+const PAID_RE = /paid|lunas|settle|capture|success/i;
+const CANCEL_RE = /batal|cancel|void|refund|fail|expire|deny/i;
+function normalizePayStatus(s: unknown): 'lunas' | 'batal' | 'pending' {
+  const v = String(s ?? '');
+  if (CANCEL_RE.test(v)) return 'batal';
+  if (PAID_RE.test(v)) return 'lunas';
+  return 'pending';
+}
+
+// Keterangan hanya bermakna sbg "alasan" untuk pembatalan. Untuk baris lunas, ref gateway
+// (mis. "KASUGAI-xxxx") BUKAN alasan → jangan tampilkan sebagai alasan di riwayat.
+function paymentKeterangan(rawStatus: unknown, ref: unknown): string | null {
+  return normalizePayStatus(rawStatus) === 'batal' ? (ref ? String(ref) : null) : null;
+}
+
 @Injectable()
 export class FakturService {
   private readonly logger = new Logger(FakturService.name);
@@ -42,7 +59,7 @@ export class FakturService {
   async listPayments(noFaktur: string, tenantId: number) {
     // Audit trail: siapa (nama petugas), metode, jumlah, status, kapan.
     try {
-      return await this.pembayaran
+      const rows = await this.pembayaran
         .createQueryBuilder('p')
         .leftJoin('users', 'u', 'u.id = p.petugas')
         .select('p.id', 'id')
@@ -55,6 +72,12 @@ export class FakturService {
         .where('p.no_faktur = :nf AND p.tenant_id = :tid', { nf: noFaktur, tid: tenantId })
         .orderBy('p.id', 'DESC')
         .getRawMany();
+      // Samakan kosakata status lintas-app + jangan jadikan ref gateway sebagai "alasan".
+      return rows.map((r) => ({
+        ...r,
+        keterangan: paymentKeterangan(r.status, r.keterangan),
+        status: normalizePayStatus(r.status),
+      }));
     } catch { return []; }
   }
 

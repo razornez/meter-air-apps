@@ -171,6 +171,18 @@ export class PaymentService {
     const total = Math.round(f.total ?? 0);
     if (total <= 0) throw new BadRequestException(`Total faktur tidak valid: ${total}`);
 
+    // Idempoten (BUG-02): reuse intent pending dgn nominal sama, jadi buka-tutup halaman
+    // checkout tak membanjiri order kasugai & baris pending. Buat baru hanya bila belum ada
+    // atau nominal berubah (mis. denda bertambah).
+    const existing = await this.intents.findOne({
+      where: { noFaktur, tenantId, status: 'pending', amount: total },
+      order: { createdAt: 'DESC' },
+    });
+    if (existing) {
+      this.logger.log(`checkout reuse pending order ${existing.orderId} (${noFaktur})`);
+      return { alreadyPaid: false, orderId: existing.orderId, amount: total, checkoutUrl: this.buildCheckoutUrl(existing.orderId, total) };
+    }
+
     const customerId = f.customer ? Number(f.customer) : null;
     const cust = customerId ? await this.customers.findOne({ where: { id: customerId, tenantId } }) : null;
 
@@ -194,10 +206,14 @@ export class PaymentService {
     await this.intents.insert({ tenantId, orderId, noFaktur, amount: total, status: 'pending' })
       .catch((e) => this.logger.warn(`payment_intent insert gagal (${orderId}): ${String(e)}`));
 
-    const checkoutUrl = `${this.kasugaiBase}/checkout?publicKey=${encodeURIComponent(this.kasugaiPublicKey)}`
-      + `&orderId=${encodeURIComponent(orderId)}&amount=${total}`;
+    const checkoutUrl = this.buildCheckoutUrl(orderId, total);
     this.logger.log(`checkout order: ${noFaktur} orderId=${orderId} amount=${total}`);
     return { alreadyPaid: false, orderId, amount: total, checkoutUrl };
+  }
+
+  private buildCheckoutUrl(orderId: string, amount: number): string {
+    return `${this.kasugaiBase}/checkout?publicKey=${encodeURIComponent(this.kasugaiPublicKey)}`
+      + `&orderId=${encodeURIComponent(orderId)}&amount=${amount}`;
   }
 
   async handleWebhook(rawBody: Buffer, signature: string) {
