@@ -25,6 +25,13 @@ export class PaymentService {
   private readonly kasugaiWebhookSecret: string;
   private readonly paymentReturnUrl: string;
 
+  /** fetch ke Kasugai dengan timeout 20 detik — cegah hang selamanya bila Kasugai lambat/down. */
+  private kasugaiFetch(url: string, init?: RequestInit): Promise<Response> {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20_000);
+    return fetch(url, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  }
+
   constructor(
     private readonly config: ConfigService,
     private readonly dataSource: DataSource,
@@ -116,7 +123,7 @@ export class PaymentService {
     const authHeader = `Bearer ${this.kasugaiSecretKey}`;
 
     // 1. Buat order di kasugai
-    const orderRes = await fetch(`${this.kasugaiBase}/v1/payment/orders`, {
+    const orderRes = await this.kasugaiFetch(`${this.kasugaiBase}/v1/payment/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
       body: JSON.stringify({
@@ -139,7 +146,7 @@ export class PaymentService {
     }
 
     // 2. Inisiasi pembayaran
-    const payRes = await fetch(`${this.kasugaiBase}/v1/payment/pay`, {
+    const payRes = await this.kasugaiFetch(`${this.kasugaiBase}/v1/payment/pay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': authHeader },
       body: JSON.stringify({ orderId, method: kasugaiMethod, finishUrl: this.paymentReturnUrl }),
@@ -194,7 +201,7 @@ export class PaymentService {
 
     // orderId ber-prefix T<tenantId> agar webhook/reconcile menandai faktur tenant yang benar.
     const orderId = `T${tenantId}-${noFaktur.replace(/\//g, '-')}-${Date.now()}`;
-    const orderRes = await fetch(`${this.kasugaiBase}/v1/payment/orders`, {
+    const orderRes = await this.kasugaiFetch(`${this.kasugaiBase}/v1/payment/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.kasugaiSecretKey}` },
       body: JSON.stringify({
@@ -298,7 +305,7 @@ export class PaymentService {
     if (!intent) return { lunas: false };
 
     try {
-      const res = await fetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(intent.orderId)}`, {
+      const res = await this.kasugaiFetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(intent.orderId)}`, {
         headers: { Authorization: `Bearer ${this.kasugaiSecretKey}` },
       });
       if (!res.ok) return { lunas: false };
@@ -347,7 +354,7 @@ export class PaymentService {
   /** Proses satu intent: cek status ke kasugai → tandai lunas bila perlu. Return true bila menandai. */
   private async reconcileOne(it: PaymentIntent): Promise<boolean> {
     try {
-      const res = await fetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(it.orderId)}`, {
+      const res = await this.kasugaiFetch(`${this.kasugaiBase}/v1/payment/orders/${encodeURIComponent(it.orderId)}`, {
         headers: { Authorization: `Bearer ${this.kasugaiSecretKey}` },
       });
       if (!res.ok) return false;
