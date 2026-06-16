@@ -134,6 +134,11 @@ export async function apiListPayments(noFaktur: string) {
   return data;
 }
 
+export async function apiChangelog() {
+  const { data } = await api.get<{ version: string; date: string; id: string[]; en: string[] }[]>('/changelog');
+  return data;
+}
+
 // ---- Sprint 3 ----
 
 export async function apiGetConfig() {

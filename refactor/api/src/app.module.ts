@@ -1,5 +1,7 @@
 import { Controller, Get, Module } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CHANGELOG_DATA } from './changelog.data';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -19,6 +21,12 @@ export class HealthController {
     } catch {
       return { status: 'degraded', db: 'error', ts: new Date().toISOString() };
     }
+  }
+
+  @SkipThrottle()
+  @Get('changelog')
+  getChangelog() {
+    return CHANGELOG_DATA;
   }
 }
 import { AuthModule } from './auth/auth.module';

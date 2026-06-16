@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,8 +6,9 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import { fonts, pastels, radius, shadow, Theme } from '../theme';
 import { useTheme } from '../ThemeContext';
-import { CHANGELOG, changelogLines } from '../data/changelog';
+import { CHANGELOG, ChangelogEntry, changelogLines } from '../data/changelog';
 import { alertDialog } from '../utils/dialog';
+import { apiChangelog } from '../api/services';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.5.0';
 
@@ -16,6 +17,13 @@ export default function AboutScreen() {
   const { t: tr } = useTranslation();
   const s = useMemo(() => createStyles(t), [t]);
   const lang = i18n.language;
+  const [entries, setEntries] = useState<ChangelogEntry[]>(CHANGELOG);
+
+  useEffect(() => {
+    apiChangelog()
+      .then((remote) => { if (remote?.length) setEntries(remote as ChangelogEntry[]); })
+      .catch(() => { /* fallback ke data lokal sudah di-set di useState */ });
+  }, []);
 
   // Update via download APK (andal) — OTA dimatikan karena tak stabil di app ini.
   function onCheckUpdate() {
@@ -60,7 +68,7 @@ export default function AboutScreen() {
 
       {/* Changelog */}
       <Text style={s.sectionTitle}>{tr('about_changelog_title')}</Text>
-      {CHANGELOG.map((entry, idx) => (
+      {entries.map((entry, idx) => (
         <View key={entry.version + entry.date} style={[s.entry, idx === 0 && s.entryLatest]}>
           <View style={s.entryHead}>
             <View style={[s.verBadge, idx === 0 ? s.verBadgeLatest : null]}>

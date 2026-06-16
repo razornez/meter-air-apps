@@ -11,7 +11,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { CHANGELOG, CHANGELOG_MARKER, changelogLines } from '../data/changelog';
+import { CHANGELOG, ChangelogEntry, changelogLines } from '../data/changelog';
 import { alertDialog } from '../utils/dialog';
 import { fetchWeather, WeatherData } from '../utils/weather';
 import i18nInstance, { LANG_KEY, Language } from '../i18n';
@@ -24,7 +24,7 @@ import { RootStackParamList } from '../navigation/types';
 import { useAuth } from '../auth/AuthContext';
 import { useOffline } from '../offline/OfflineContext';
 import { useTheme, useThemeMode } from '../ThemeContext';
-import { apiResolveCustomer, apiWorklist } from '../api/services';
+import { apiChangelog, apiResolveCustomer, apiWorklist } from '../api/services';
 import { apiErrorMessage, isNetworkError } from '../api/client';
 import { fonts, palette, radius, shadow, tracking, Theme } from '../theme';
 import WaveBackground from '../components/ui/WaveBackground';
@@ -67,25 +67,35 @@ export default function HomeScreen({ navigation }: Props) {
   } = useOffline();
   const [manualCode, setManualCode] = useState('');
   const [lang, setLang] = useState<Language>(i18nInstance.language as Language);
+  const [entries, setEntries] = useState<ChangelogEntry[]>(CHANGELOG);
 
   const [clock, setClock] = useState('');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [whatsNew, setWhatsNew] = useState(false);
 
-  // "Yang Baru" — tampil sekali tiap rilis (termasuk update OTA)
+  // "Yang Baru" — tampil sekali tiap rilis; cek marker dari remote changelog (fallback lokal)
   const WHATSNEW_KEY = 'meterair_whatsnew_marker';
   useEffect(() => {
     (async () => {
+      let list: ChangelogEntry[] = CHANGELOG;
       try {
+        const remote = await apiChangelog();
+        if (remote?.length) { list = remote as ChangelogEntry[]; setEntries(list); }
+      } catch {}
+      try {
+        const marker = `${list[0].version}|${list[0].date}`;
         const seen = await AsyncStorage.getItem(WHATSNEW_KEY);
-        if (seen !== CHANGELOG_MARKER) setWhatsNew(true);
+        if (seen !== marker) setWhatsNew(true);
       } catch {}
     })();
   }, []);
 
   async function dismissWhatsNew() {
     setWhatsNew(false);
-    try { await AsyncStorage.setItem(WHATSNEW_KEY, CHANGELOG_MARKER); } catch {}
+    try {
+      const marker = `${entries[0].version}|${entries[0].date}`;
+      await AsyncStorage.setItem(WHATSNEW_KEY, marker);
+    } catch {}
   }
 
   async function toggleLang() {
@@ -357,9 +367,9 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={s.wnCard}>
           <View style={s.wnIcon}><Ionicons name="sparkles" size={26} color={t.primary} /></View>
           <Text style={s.wnTitle}>{i18n('about_new_modal_title')}</Text>
-          <Text style={s.wnVer}>v{CHANGELOG[0].version}</Text>
+          <Text style={s.wnVer}>v{entries[0].version}</Text>
           <ScrollView style={{ maxHeight: 260, alignSelf: 'stretch' }} contentContainerStyle={{ paddingVertical: 4 }}>
-            {changelogLines(CHANGELOG[0], lang).map((line, i) => (
+            {changelogLines(entries[0], lang).map((line, i) => (
               <View key={i} style={s.wnLine}>
                 <Text style={s.wnBullet}>•</Text>
                 <Text style={s.wnLineText}>{line}</Text>
