@@ -9,6 +9,40 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.6.4',
+    date: '2026-06-15',
+    id: [
+      'Riwayat pembayaran tidak lagi tampil "Pending · KASUGAI" setelah berhasil bayar',
+      'Halaman bayar tidak membuat order baru tiap kali dibuka (tidak dobel)',
+      'Input alasan batal lunas wajib diisi — tombol nonaktif bila kosong',
+      'Perbaikan 3 bug dari laporan QA regresi pembayaran',
+    ],
+    en: [
+      'Payment history no longer shows "Pending · KASUGAI" after successful payment',
+      'Checkout page reuses existing order instead of creating duplicates',
+      'Cancel-paid reason field is now mandatory — button disabled when empty',
+      '3 bug fixes from payment QA regression report',
+    ],
+  },
+  {
+    version: '1.6.3',
+    date: '2026-06-13',
+    id: [
+      'Bayar via Kasugai — semua metode: QRIS, kartu, VA, e-wallet dari satu halaman',
+      'Animasi overlay saat tandai lunas & batal lunas',
+      'Ikon dialog lebih tajam (vektor Ionicons, tidak blur)',
+      'Alasan batal lunas tersimpan & tampil di Riwayat Pembayaran',
+      'Status lunas diperbarui otomatis ~1–3 dtk setelah bayar',
+    ],
+    en: [
+      'Pay via Kasugai — all methods: QRIS, card, VA, e-wallet in one page',
+      'Overlay animation when marking paid & cancelling payment',
+      'Crisp vector dialog icons (Ionicons, no blur)',
+      'Cancel-paid reason saved and shown in Payment History',
+      'Paid status auto-updates ~1–3s after payment',
+    ],
+  },
+  {
     version: '1.6.2',
     date: '2026-06-09',
     id: [
