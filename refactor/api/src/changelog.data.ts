@@ -1,6 +1,16 @@
 /** Changelog aplikasi. Tambah entri BARU di paling atas tiap rilis. */
 export const CHANGELOG_DATA = [
   {
+    version: '1.6.5',
+    date: '2026-06-16',
+    id: [
+      'Riwayat pembaruan diambil langsung dari server — tidak perlu update APK hanya untuk lihat changelog',
+    ],
+    en: [
+      'Update history now fetched from server — no APK update needed just to view changelog',
+    ],
+  },
+  {
     version: '1.6.4',
     date: '2026-06-15',
     id: [
