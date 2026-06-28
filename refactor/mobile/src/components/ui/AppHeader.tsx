@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import Animated, {
@@ -12,6 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fonts, shadow, tracking } from '../../theme';
 import { useTheme } from '../../ThemeContext';
+import { useBranding } from '../../branding/BrandingContext';
 import { ArrowLeftIcon } from './Icons';
 
 const { width: W } = Dimensions.get('window');
@@ -60,6 +61,7 @@ function WaveLayer({ amplitude, duration, waveColor, reverse = false }: {
 export default function AppHeader({ navigation, route, options }: any) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { logoWhiteUri } = useBranding();
   const title: string = options?.title ?? route?.name ?? '';
   const canBack: boolean = navigation?.canGoBack?.() ?? false;
   const right = options?.headerRight?.({ tintColor: '#fff' });
@@ -91,7 +93,11 @@ export default function AppHeader({ navigation, route, options }: any) {
           <View style={styles.slot} />
         )}
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
-        <View style={styles.slot}>{right}</View>
+        <View style={styles.slot}>
+          {right ?? (logoWhiteUri ? (
+            <Image source={{ uri: logoWhiteUri }} style={styles.headerLogo} resizeMode="contain" />
+          ) : null)}
+        </View>
       </View>
     </View>
   );
@@ -113,6 +119,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   slot: { minWidth: 40, alignItems: 'flex-end', justifyContent: 'center' },
+  headerLogo: { width: 36, height: 36 },
   title: {
     flex: 1, color: '#fff',
     fontFamily: fonts.displayBold, fontSize: 21,

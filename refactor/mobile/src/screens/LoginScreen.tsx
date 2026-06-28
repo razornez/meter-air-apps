@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Dimensions, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Dimensions, Image, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +13,7 @@ import { apiErrorMessage } from '../api/client';
 import { alertDialog } from '../utils/dialog';
 import { fonts, palette, radius, shadow, Theme } from '../theme';
 import { useTheme, useThemeMode } from '../ThemeContext';
+import { useBranding } from '../branding/BrandingContext';
 import Constants from 'expo-constants';
 import WaveBackground from '../components/ui/WaveBackground';
 import { CheckIcon, DropMark, EyeIcon, EyeOffIcon, MoonIcon, SunIcon } from '../components/ui/Icons';
@@ -28,6 +29,7 @@ export default function LoginScreen() {
   const s = useMemo(() => createStyles(th), [th]);
   const { mode, toggle } = useThemeMode();
   const { login } = useAuth();
+  const { logoUri } = useBranding();
 
   const [kode, setKode] = useState('BUMDES-KRK');
   const [username, setUsername] = useState('');
@@ -118,7 +120,17 @@ export default function LoginScreen() {
               <View style={{ flex: 1, justifyContent: 'center' }}>
               {/* Brand */}
               <View style={s.brandWrap}>
-                <View style={s.mark}><DropMark size={46} color={palette.white} /></View>
+                <View style={s.mark}>
+                  {logoUri ? (
+                    <Image
+                      source={{ uri: logoUri }}
+                      style={s.logoImg}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <DropMark size={46} color={palette.white} />
+                  )}
+                </View>
                 <Text style={s.title}>{t('login_title')}</Text>
                 <Text style={s.subtitle}>{t('login_subtitle')}</Text>
               </View>
@@ -282,6 +294,7 @@ const createStyles = (t: Theme) =>
       borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)',
       alignItems: 'center', justifyContent: 'center',
     },
+    logoImg: { width: 46, height: 46, borderRadius: 8 },
     title: { fontSize: 30, fontFamily: fonts.displayBlack, color: palette.white, marginTop: 10, letterSpacing: -1 },
     subtitle: { fontSize: 11.5, color: palette.foam, marginTop: 3, fontFamily: fonts.medium, letterSpacing: 0.3 },
     card: {

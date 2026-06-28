@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import { ActivityIndicator, AppState, KeyboardAvoidingView, Platform, View } from 'react-native';
+import { ActivityIndicator, AppState, Image, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,6 +28,7 @@ import {
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { OfflineProvider } from './src/offline/OfflineContext';
 import { ThemeProvider, useTheme } from './src/ThemeContext';
+import { BrandingProvider, useBranding } from './src/branding/BrandingContext';
 import { RootStackParamList } from './src/navigation/types';
 import MainTabs from './src/navigation/MainTabs';
 import AppHeader from './src/components/ui/AppHeader';
@@ -61,8 +62,16 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function Splash() {
   const t = useTheme();
+  const { iconUri } = useBranding();
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: t.primaryDark }}>
+      {iconUri ? (
+        <Image
+          source={{ uri: iconUri }}
+          style={{ width: 80, height: 80, borderRadius: 20, marginBottom: 24 }}
+          resizeMode="contain"
+        />
+      ) : null}
       <ActivityIndicator size="large" color="#fff" />
     </View>
   );
@@ -169,9 +178,11 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <OfflineProvider>{fontsLoaded ? <ThemedApp /> : <Splash />}</OfflineProvider>
-          </AuthProvider>
+          <BrandingProvider>
+            <AuthProvider>
+              <OfflineProvider>{fontsLoaded ? <ThemedApp /> : <Splash />}</OfflineProvider>
+            </AuthProvider>
+          </BrandingProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
