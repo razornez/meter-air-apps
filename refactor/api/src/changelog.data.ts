@@ -1,6 +1,18 @@
 /** Changelog aplikasi. Tambah entri BARU di paling atas tiap rilis. */
 export const CHANGELOG_DATA = [
   {
+    version: '1.6.6',
+    date: '2026-06-16',
+    id: [
+      'Logo dan ikon aplikasi kini diambil dari server — admin bisa ganti branding tanpa update APK',
+      'Logo tampil di halaman login, loading screen, dan header navigasi',
+    ],
+    en: [
+      'App logo and icon now fetched from server — admin can update branding without APK update',
+      'Logo shown on login screen, loading screen, and navigation header',
+    ],
+  },
+  {
     version: '1.6.5',
     date: '2026-06-16',
     id: [
