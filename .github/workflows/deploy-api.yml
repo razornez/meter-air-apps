@@ -36,10 +36,32 @@ jobs:
             cd refactor/api
             npm ci
             npm run build
+            sudo node scripts/repair-api-env.mjs
             sudo cp deploy/meter-air-api.service /etc/systemd/system/meter-air-api.service
             sudo systemctl daemon-reload
             sudo systemctl restart meter-air-api
             sleep 3
+            sudo tee /etc/nginx/sites-available/api.meterair.online >/dev/null <<'NGINX'
+            server {
+                listen 80;
+                listen [::]:80;
+                server_name api.meterair.online;
+
+                client_max_body_size 20M;
+
+                location / {
+                    proxy_pass http://127.0.0.1:4010;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            NGINX
+            sudo ln -sf /etc/nginx/sites-available/api.meterair.online /etc/nginx/sites-enabled/api.meterair.online
+            sudo nginx -t
+            sudo systemctl reload nginx
             sudo systemctl status meter-air-api --no-pager || true
             sudo journalctl -u meter-air-api -n 80 --no-pager || true
             sudo tail -n 120 /var/log/meter-air-api/out.log || true
@@ -48,8 +70,8 @@ jobs:
             echo "meter-air-api MainPID=${MAIN_PID}"
             if [ -n "$MAIN_PID" ] && [ "$MAIN_PID" != "0" ]; then ps -fp "$MAIN_PID" || true; fi
             ps -eo pid,ppid,cmd | grep '[n]ode' || true
-            ss -ltnp | grep ':4000' || true
-            curl --fail --show-error --silent http://127.0.0.1:4000/api/health
+            ss -ltnp | grep ':4010' || true
+            curl --fail --show-error --silent http://127.0.0.1:4010/api/health
             curl --fail --show-error --silent https://api.meterair.online/api/health
             echo "✅ API deployed at $(date)"
 
