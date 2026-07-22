@@ -44,6 +44,10 @@ jobs:
             sudo journalctl -u meter-air-api -n 80 --no-pager || true
             sudo tail -n 120 /var/log/meter-air-api/out.log || true
             sudo tail -n 120 /var/log/meter-air-api/err.log || true
+            MAIN_PID="$(systemctl show -p MainPID --value meter-air-api || true)"
+            echo "meter-air-api MainPID=${MAIN_PID}"
+            if [ -n "$MAIN_PID" ] && [ "$MAIN_PID" != "0" ]; then ps -fp "$MAIN_PID" || true; fi
+            ps -eo pid,ppid,cmd | grep '[n]ode' || true
             ss -ltnp | grep ':4000' || true
             curl --fail --show-error --silent http://127.0.0.1:4000/api/health
             curl --fail --show-error --silent https://api.meterair.online/api/health
