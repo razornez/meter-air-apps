@@ -42,8 +42,55 @@ jobs:
             sudo cp deploy/meter-air-api.service /etc/systemd/system/meter-air-api.service
             sudo systemctl daemon-reload
             sudo systemctl restart meter-air-api
-            sleep 3
-            sudo tee /etc/nginx/sites-available/api.meterair.online >/dev/null <<'NGINX'
+            for i in $(seq 1 45); do
+              if curl --fail --silent http://127.0.0.1:4010/api/health >/tmp/meter-air-api-health.json; then
+                cat /tmp/meter-air-api-health.json
+                echo
+                break
+              fi
+              if [ "$i" = "45" ]; then
+                echo "API did not become ready on 127.0.0.1:4010"
+                sudo systemctl status meter-air-api --no-pager || true
+                sudo journalctl -u meter-air-api -n 120 --no-pager || true
+                sudo tail -n 160 /var/log/meter-air-api/out.log || true
+                sudo tail -n 160 /var/log/meter-air-api/err.log || true
+                exit 1
+              fi
+              echo "Waiting for API on 127.0.0.1:4010 ($i/45)..."
+              sleep 2
+            done
+            if sudo test -f /etc/letsencrypt/live/api.meterair.online/fullchain.pem && sudo test -f /etc/letsencrypt/live/api.meterair.online/privkey.pem; then
+              sudo tee /etc/nginx/sites-available/api.meterair.online >/dev/null <<'NGINX'
+            server {
+                listen 80;
+                listen [::]:80;
+                server_name api.meterair.online;
+
+                return 301 https://$host$request_uri;
+            }
+
+            server {
+                listen 443 ssl http2;
+                listen [::]:443 ssl http2;
+                server_name api.meterair.online;
+
+                ssl_certificate /etc/letsencrypt/live/api.meterair.online/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/api.meterair.online/privkey.pem;
+
+                client_max_body_size 20M;
+
+                location / {
+                    proxy_pass http://127.0.0.1:4010;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            NGINX
+            else
+              sudo tee /etc/nginx/sites-available/api.meterair.online >/dev/null <<'NGINX'
             server {
                 listen 80;
                 listen [::]:80;
@@ -61,6 +108,8 @@ jobs:
                 }
             }
             NGINX
+              echo "HTTPS certificate for api.meterair.online not found; deployed HTTP-only API proxy"
+            fi
             sudo ln -sf /etc/nginx/sites-available/api.meterair.online /etc/nginx/sites-enabled/api.meterair.online
             sudo nginx -t
             sudo systemctl reload nginx
@@ -74,7 +123,11 @@ jobs:
             ps -eo pid,ppid,cmd | grep '[n]ode' || true
             ss -ltnp | grep ':4010' || true
             curl --fail --show-error --silent http://127.0.0.1:4010/api/health
-            curl --fail --show-error --silent https://api.meterair.online/api/health
+            if sudo test -f /etc/letsencrypt/live/api.meterair.online/fullchain.pem && sudo test -f /etc/letsencrypt/live/api.meterair.online/privkey.pem; then
+              curl --fail --show-error --silent https://api.meterair.online/api/health
+            else
+              curl --fail --show-error --silent http://api.meterair.online/api/health
+            fi
             echo "✅ API deployed at $(date)"
 
       - name: Notify on failure
