@@ -12,6 +12,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
+    "seed:demo": "node scripts/ensure-demo.mjs",
     "perf": "node scripts/perf-check.mjs"
   },
   "dependencies": {

@@ -37,6 +37,9 @@ jobs:
             npm ci
             npm run build
             sudo systemctl restart meter-air-api
+            sleep 3
+            curl --fail --show-error --silent http://127.0.0.1:4000/api/health
+            curl --fail --show-error --silent https://api.meterair.online/api/health
             echo "✅ API deployed at $(date)"
 
       - name: Notify on failure
