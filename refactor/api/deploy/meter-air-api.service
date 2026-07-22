@@ -12,6 +12,7 @@ User=www-data
 WorkingDirectory=/var/www/meter-air-api/refactor/api
 ExecStart=/usr/bin/node dist/main.js
 Environment=NODE_ENV=production
+Environment=PORT=4000
 # .env dibaca otomatis (dotenv) dari WorkingDirectory di atas.
 Restart=on-failure
 RestartSec=5

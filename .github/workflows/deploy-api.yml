@@ -36,8 +36,13 @@ jobs:
             cd refactor/api
             npm ci
             npm run build
+            sudo cp deploy/meter-air-api.service /etc/systemd/system/meter-air-api.service
+            sudo systemctl daemon-reload
             sudo systemctl restart meter-air-api
             sleep 3
+            sudo systemctl status meter-air-api --no-pager || true
+            sudo journalctl -u meter-air-api -n 80 --no-pager || true
+            ss -ltnp | grep ':4000' || true
             curl --fail --show-error --silent http://127.0.0.1:4000/api/health
             curl --fail --show-error --silent https://api.meterair.online/api/health
             echo "✅ API deployed at $(date)"
