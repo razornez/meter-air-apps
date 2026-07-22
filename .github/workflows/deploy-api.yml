@@ -25,6 +25,8 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
+          timeout: 120s
+          command_timeout: 15m
           script: |
             set -e
             # Repo dimiliki www-data; tandai aman agar git tak tolak "dubious ownership".
